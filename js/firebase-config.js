@@ -1,4 +1,3 @@
-// Configuração do Firebase
 const firebaseConfig = {
     apiKey: "AIzaSyAlkv8AVRzCZqDaweXDFEd-Xv26YnKFQpk",
     authDomain: "eduplan-sistema.firebaseapp.com",
@@ -9,15 +8,12 @@ const firebaseConfig = {
     measurementId: "G-X6L0W559DD"
 };
 
-// Inicializar Firebase
 firebase.initializeApp(firebaseConfig);
 
-// Inicializar serviços
 const auth = firebase.auth();
 const db = firebase.firestore();
 const storage = firebase.storage();
 
-// Configurações do Firestore
 db.settings({
     timestampsInSnapshots: true
 });
