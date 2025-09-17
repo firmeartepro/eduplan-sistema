@@ -40,7 +40,7 @@
                     <h2 class="text-lg font-medium text-gray-900 mb-4">Planejamento para Ensino Fundamental 1</h2>
                     <p class="text-gray-600 mb-6">Gerencie suas disciplinas e planeje suas aulas conforme a BNCC.</p>
                     
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                         <button onclick="openDisciplinasModal()" class="bg-purple-500 hover:bg-purple-600 text-white p-4 rounded-lg text-center">
                             <div class="text-2xl mb-2">📖</div>
                             <div class="font-medium">Minhas Disciplinas</div>
@@ -54,6 +54,11 @@
                         <button onclick="loadPlans()" class="bg-green-500 hover:bg-green-600 text-white p-4 rounded-lg text-center">
                             <div class="text-2xl mb-2">📚</div>
                             <div class="font-medium">Minhas Aulas</div>
+                        </button>
+                        
+                        <button onclick="openGeminiModal()" class="bg-orange-500 hover:bg-orange-600 text-white p-4 rounded-lg text-center">
+                            <div class="text-2xl mb-2">🤖</div>
+                            <div class="font-medium">Configurar IA</div>
                         </button>
                     </div>
                 </div>
@@ -86,9 +91,73 @@
                     </div>
                 </div>
                 
+                <div class="mb-6">
+                    <h4 class="font-medium text-gray-700 mb-3">Minhas Disciplinas Personalizadas</h4>
+                    <div class="space-y-2" id="disciplinasPersonalizadas">
+                        <!-- Será preenchido via JavaScript -->
+                    </div>
+                    
+                    <div class="mt-3 p-3 bg-gray-50 rounded-lg">
+                        <h5 class="text-sm font-medium text-gray-700 mb-2">Criar Nova Disciplina</h5>
+                        <div class="flex space-x-2">
+                            <input type="text" id="novaDisciplinaNome" placeholder="Nome da disciplina..." class="flex-1 text-sm border border-gray-300 rounded px-2 py-1">
+                            <button onclick="criarNovaDisciplina()" class="bg-blue-500 hover:bg-blue-600 text-white text-sm px-3 py-1 rounded">
+                                Criar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
                 <div class="flex justify-end space-x-3">
                     <button onclick="closeDisciplinasModal()" class="bg-gray-300 hover:bg-gray-400 text-gray-700 px-4 py-2 rounded-lg">
                         Fechar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gemini Configuration Modal -->
+    <div id="geminiModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-lg max-w-2xl w-full p-6 max-h-96 overflow-y-auto">
+                <h3 class="text-lg font-medium text-gray-900 mb-4">🤖 Configurar Gemini AI</h3>
+                
+                <div class="mb-6">
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                        <h4 class="font-medium text-blue-800 mb-2">📋 Como obter sua API Key do Gemini (GRÁTIS):</h4>
+                        <ol class="text-sm text-blue-700 space-y-1 list-decimal list-inside">
+                            <li>Acesse: <a href="https://aistudio.google.com/app/apikey" target="_blank" class="underline font-medium">aistudio.google.com/app/apikey</a></li>
+                            <li>Faça login com sua conta Google</li>
+                            <li>Clique em "Create API Key"</li>
+                            <li>Copie a chave gerada</li>
+                            <li>Cole aqui embaixo e clique em "Salvar"</li>
+                        </ol>
+                        <p class="text-xs text-blue-600 mt-2">💡 O plano gratuito permite até 15 requisições por minuto!</p>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Sua API Key do Gemini:</label>
+                            <input type="password" id="geminiApiKey" placeholder="Cole sua API Key aqui..." class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                            <p class="text-xs text-gray-500 mt-1">🔒 Sua chave fica salva apenas no seu navegador</p>
+                        </div>
+                        
+                        <div id="geminiStatus" class="hidden">
+                            <!-- Status será mostrado aqui -->
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex justify-end space-x-3">
+                    <button onclick="closeGeminiModal()" class="bg-gray-300 hover:bg-gray-400 text-gray-700 px-4 py-2 rounded-lg">
+                        Fechar
+                    </button>
+                    <button onclick="testGeminiConnection()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg">
+                        Testar Conexão
+                    </button>
+                    <button onclick="saveGeminiConfig()" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg">
+                        Salvar
                     </button>
                 </div>
             </div>
@@ -127,15 +196,42 @@
                             <input type="date" name="date" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 border">
                         </div>
                         
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Quantidade de Aulas</label>
+                                <select name="duration" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 border">
+                                    <option value="">Selecione</option>
+                                    <option value="1">1 hora/aula</option>
+                                    <option value="2">2 horas/aula</option>
+                                    <option value="3">3 horas/aula</option>
+                                    <option value="4">4 horas/aula</option>
+                                    <option value="5">5 horas/aula</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Aulas por Semana</label>
+                                <select name="weeklyClasses" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 border">
+                                    <option value="">Selecione</option>
+                                    <option value="1">1x por semana</option>
+                                    <option value="2">2x por semana</option>
+                                    <option value="3">3x por semana</option>
+                                    <option value="4">4x por semana</option>
+                                    <option value="5">5x por semana</option>
+                                </select>
+                            </div>
+                        </div>
+                        
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">Quantidade de Aulas</label>
-                            <select name="duration" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 border">
-                                <option value="">Selecione</option>
-                                <option value="1">1 hora/aula</option>
-                                <option value="2">2 horas/aula</option>
-                                <option value="3">3 horas/aula</option>
-                                <option value="4">4 horas/aula</option>
-                                <option value="5">5 horas/aula</option>
+                            <label class="block text-sm font-medium text-gray-700">Quantidade de Turmas</label>
+                            <select name="classCount" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 border">
+                                <option value="">Quantas turmas você tem?</option>
+                                <option value="1">1 turma</option>
+                                <option value="2">2 turmas</option>
+                                <option value="3">3 turmas</option>
+                                <option value="4">4 turmas</option>
+                                <option value="5">5 turmas</option>
+                                <option value="6">6 turmas ou mais</option>
                             </select>
                         </div>
                         
@@ -148,7 +244,15 @@
                         
                         <div>
                             <label class="block text-sm font-medium text-gray-700">Conteúdo/Objetivo</label>
-                            <textarea name="content" rows="3" placeholder="Descreva o conteúdo e objetivos da aula..." class="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 border"></textarea>
+                            <div class="relative">
+                                <textarea name="content" rows="3" placeholder="Descreva o conteúdo e objetivos da aula..." class="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 border"></textarea>
+                                <button type="button" onclick="generateAISuggestion()" class="absolute top-2 right-2 bg-orange-500 hover:bg-orange-600 text-white text-xs px-2 py-1 rounded" id="aiSuggestionBtn">
+                                    🤖 Sugerir com IA
+                                </button>
+                            </div>
+                            <div id="aiSuggestionResult" class="hidden mt-2 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                                <!-- Sugestões da IA aparecerão aqui -->
+                            </div>
                         </div>
                     </div>
                     
@@ -282,6 +386,9 @@
                 const user = firebase.auth().currentUser;
                 if (!user) return;
                 
+                // Carregar disciplinas personalizadas primeiro
+                await loadCustomSubjectsToHabilidades();
+                
                 const userSubjects = await getUserSubjects(user.uid);
                 updateSubjectSelect(userSubjects);
                 
@@ -323,6 +430,7 @@
                 
                 // Buscar disciplinas do usuário
                 const userSubjects = await getUserSubjects(user.uid);
+                const customSubjects = await getCustomSubjects(user.uid);
                 
                 // Preencher disciplinas básicas
                 const basicasContainer = document.getElementById('disciplinasBasicas');
@@ -356,8 +464,152 @@
                     especialistasContainer.appendChild(div);
                 });
                 
+                // Preencher disciplinas personalizadas
+                const personalizadasContainer = document.getElementById('disciplinasPersonalizadas');
+                personalizadasContainer.innerHTML = '';
+                
+                customSubjects.forEach(disciplina => {
+                    const isSelected = userSubjects.includes(disciplina.name);
+                    const div = document.createElement('div');
+                    div.innerHTML = `
+                        <div class="flex items-center justify-between p-2 border rounded ${isSelected ? 'bg-green-50 border-green-300' : 'border-gray-300'}">
+                            <label class="flex items-center space-x-2 flex-1">
+                                <input type="checkbox" ${isSelected ? 'checked' : ''} onchange="toggleSubject('${disciplina.name}')" class="rounded">
+                                <span class="text-sm">${disciplina.name}</span>
+                            </label>
+                            <button onclick="excluirDisciplinaPersonalizada('${disciplina.id}')" class="text-red-500 hover:text-red-700 text-xs ml-2">
+                                🗑️
+                            </button>
+                        </div>
+                    `;
+                    personalizadasContainer.appendChild(div);
+                });
+                
             } catch (error) {
                 console.error('Erro ao carregar disciplinas do modal:', error);
+            }
+        }
+        
+        // Criar nova disciplina personalizada
+        async function criarNovaDisciplina() {
+            try {
+                const user = firebase.auth().currentUser;
+                if (!user) return;
+                
+                const nomeInput = document.getElementById('novaDisciplinaNome');
+                const nome = nomeInput.value.trim();
+                
+                if (!nome) {
+                    alert('Digite o nome da disciplina');
+                    return;
+                }
+                
+                // Verificar se já existe
+                const userSubjects = await getUserSubjects(user.uid);
+                const customSubjects = await getCustomSubjects(user.uid);
+                
+                const allSubjects = [
+                    ...disciplinasBNCC.basicas,
+                    ...disciplinasBNCC.especialistas,
+                    ...customSubjects.map(s => s.name)
+                ];
+                
+                if (allSubjects.includes(nome)) {
+                    alert('Esta disciplina já existe!');
+                    return;
+                }
+                
+                // Criar habilidades padrão para a nova disciplina
+                const habilidadesPadrao = {
+                    '1º ano': [`Introdução aos conceitos básicos de ${nome}`, `Desenvolvimento de habilidades fundamentais em ${nome}`, `Prática e aplicação de ${nome} no cotidiano`],
+                    '2º ano': [`Aprofundamento dos conceitos de ${nome}`, `Desenvolvimento de competências em ${nome}`, `Aplicação prática de ${nome}`],
+                    '3º ano': [`Consolidação dos conhecimentos em ${nome}`, `Desenvolvimento de habilidades avançadas em ${nome}`, `Projetos práticos em ${nome}`],
+                    '4º ano': [`Aprofundamento teórico-prático em ${nome}`, `Desenvolvimento de competências complexas em ${nome}`, `Análise crítica em ${nome}`],
+                    '5º ano': [`Síntese dos conhecimentos em ${nome}`, `Aplicação avançada de ${nome}`, `Preparação para etapas posteriores em ${nome}`]
+                };
+                
+                // Salvar disciplina personalizada
+                const disciplinaData = {
+                    name: nome,
+                    userId: user.uid,
+                    habilidades: habilidadesPadrao,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                };
+                
+                await saveCustomSubject(disciplinaData);
+                
+                // Adicionar às habilidades locais
+                habilidadesBNCC[nome] = habilidadesPadrao;
+                
+                // Limpar input
+                nomeInput.value = '';
+                
+                // Recarregar modal
+                loadDisciplinasModal();
+                
+                alert(`Disciplina "${nome}" criada com sucesso!`);
+                
+            } catch (error) {
+                console.error('Erro ao criar disciplina:', error);
+                alert('Erro ao criar disciplina: ' + error.message);
+            }
+        }
+        
+        // Excluir disciplina personalizada
+        async function excluirDisciplinaPersonalizada(disciplinaId) {
+            try {
+                if (!confirm('Tem certeza que deseja excluir esta disciplina?')) {
+                    return;
+                }
+                
+                const user = firebase.auth().currentUser;
+                if (!user) return;
+                
+                // Buscar nome da disciplina antes de excluir
+                const disciplina = await getCustomSubject(disciplinaId);
+                if (!disciplina) return;
+                
+                // Remover das disciplinas do usuário se estiver selecionada
+                let userSubjects = await getUserSubjects(user.uid);
+                if (userSubjects.includes(disciplina.name)) {
+                    userSubjects = userSubjects.filter(s => s !== disciplina.name);
+                    await saveUserSubjects(user.uid, userSubjects);
+                    updateSubjectSelect(userSubjects);
+                }
+                
+                // Excluir disciplina personalizada
+                await deleteCustomSubject(disciplinaId);
+                
+                // Remover das habilidades locais
+                delete habilidadesBNCC[disciplina.name];
+                
+                // Recarregar modal
+                loadDisciplinasModal();
+                
+                alert('Disciplina excluída com sucesso!');
+                
+            } catch (error) {
+                console.error('Erro ao excluir disciplina:', error);
+                alert('Erro ao excluir disciplina: ' + error.message);
+            }
+        }
+        
+        // Carregar disciplinas personalizadas nas habilidades
+        async function loadCustomSubjectsToHabilidades() {
+            try {
+                const user = firebase.auth().currentUser;
+                if (!user) return;
+                
+                const customSubjects = await getCustomSubjects(user.uid);
+                
+                customSubjects.forEach(disciplina => {
+                    if (disciplina.habilidades) {
+                        habilidadesBNCC[disciplina.name] = disciplina.habilidades;
+                    }
+                });
+                
+            } catch (error) {
+                console.error('Erro ao carregar disciplinas personalizadas:', error);
             }
         }
         
@@ -462,7 +714,11 @@
                                         <div class="border rounded-lg p-4">
                                             <div class="flex justify-between items-start mb-2">
                                                 <h4 class="font-medium text-gray-900">${plan.subject} - ${plan.class}</h4>
-                                                <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">${plan.duration} aula(s)</span>
+                                                <div class="flex space-x-1">
+                                                    <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">${plan.duration} aula(s)</span>
+                                                    ${plan.weeklyClasses ? `<span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">${plan.weeklyClasses}x/sem</span>` : ''}
+                                                    ${plan.classCount ? `<span class="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded">${plan.classCount} turma(s)</span>` : ''}
+                                                </div>
                                             </div>
                                             <p class="text-sm text-gray-600">📅 ${new Date(plan.date).toLocaleDateString('pt-BR')}</p>
                                             ${plan.habilidade ? `<p class="text-xs text-purple-600 mt-1">🎯 ${plan.habilidade}</p>` : ''}
@@ -530,6 +786,196 @@
             signOutUser();
         }
 
+        // Funções do Gemini AI
+        function openGeminiModal() {
+            console.log('Abrindo modal do Gemini');
+            loadGeminiConfig();
+            document.getElementById('geminiModal').classList.remove('hidden');
+        }
+
+        function closeGeminiModal() {
+            console.log('Fechando modal do Gemini');
+            document.getElementById('geminiModal').classList.add('hidden');
+        }
+        
+        function loadGeminiConfig() {
+            const apiKey = localStorage.getItem('gemini_api_key');
+            if (apiKey) {
+                document.getElementById('geminiApiKey').value = apiKey;
+                showGeminiStatus('✅ API Key configurada', 'success');
+            }
+        }
+        
+        function saveGeminiConfig() {
+            const apiKey = document.getElementById('geminiApiKey').value.trim();
+            
+            if (!apiKey) {
+                alert('Digite sua API Key do Gemini');
+                return;
+            }
+            
+            localStorage.setItem('gemini_api_key', apiKey);
+            showGeminiStatus('✅ API Key salva com sucesso!', 'success');
+            
+            setTimeout(() => {
+                closeGeminiModal();
+            }, 1500);
+        }
+        
+        async function testGeminiConnection() {
+            const apiKey = document.getElementById('geminiApiKey').value.trim();
+            
+            if (!apiKey) {
+                alert('Digite sua API Key primeiro');
+                return;
+            }
+            
+            showGeminiStatus('🔄 Testando conexão...', 'loading');
+            
+            try {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        contents: [{
+                            parts: [{
+                                text: "Responda apenas: 'Conexão OK'"
+                            }]
+                        }]
+                    })
+                });
+                
+                if (response.ok) {
+                    showGeminiStatus('✅ Conexão bem-sucedida!', 'success');
+                } else {
+                    const error = await response.json();
+                    showGeminiStatus(`❌ Erro: ${error.error?.message || 'API Key inválida'}`, 'error');
+                }
+                
+            } catch (error) {
+                console.error('Erro ao testar Gemini:', error);
+                showGeminiStatus('❌ Erro de conexão. Verifique sua internet.', 'error');
+            }
+        }
+        
+        function showGeminiStatus(message, type) {
+            const statusDiv = document.getElementById('geminiStatus');
+            statusDiv.className = `p-3 rounded-lg text-sm ${
+                type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' :
+                type === 'error' ? 'bg-red-50 text-red-700 border border-red-200' :
+                'bg-blue-50 text-blue-700 border border-blue-200'
+            }`;
+            statusDiv.textContent = message;
+            statusDiv.classList.remove('hidden');
+        }
+        
+        async function generateAISuggestion() {
+            const apiKey = localStorage.getItem('gemini_api_key');
+            
+            if (!apiKey) {
+                alert('Configure sua API Key do Gemini primeiro! Clique em "Configurar IA"');
+                return;
+            }
+            
+            // Coletar dados do formulário
+            const subject = document.querySelector('select[name="subject"]').value;
+            const classYear = document.querySelector('select[name="class"]').value;
+            const duration = document.querySelector('select[name="duration"]').value;
+            const weeklyClasses = document.querySelector('select[name="weeklyClasses"]').value;
+            const classCount = document.querySelector('select[name="classCount"]').value;
+            const habilidade = document.querySelector('select[name="habilidade"]').value;
+            
+            if (!subject || !classYear) {
+                alert('Selecione a disciplina e o ano primeiro');
+                return;
+            }
+            
+            const btn = document.getElementById('aiSuggestionBtn');
+            const resultDiv = document.getElementById('aiSuggestionResult');
+            
+            btn.textContent = '🔄 Gerando...';
+            btn.disabled = true;
+            
+            try {
+                const prompt = `
+Como especialista em educação do Ensino Fundamental 1, crie uma sugestão de aula para:
+
+📚 Disciplina: ${subject}
+👥 Ano: ${classYear}
+⏰ Duração: ${duration} hora(s)/aula
+📅 Frequência: ${weeklyClasses}x por semana
+🏫 Turmas: ${classCount}
+🎯 Habilidade BNCC: ${habilidade || 'Não especificada'}
+
+Forneça:
+1. **Objetivo da Aula** (1-2 frases)
+2. **Conteúdo Principal** (tópicos a abordar)
+3. **Atividades Sugeridas** (2-3 atividades práticas)
+4. **Recursos Necessários** (materiais)
+5. **Avaliação** (como verificar o aprendizado)
+
+Seja prático, criativo e adequado à faixa etária. Máximo 300 palavras.
+                `;
+                
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        contents: [{
+                            parts: [{
+                                text: prompt
+                            }]
+                        }]
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Erro na API do Gemini');
+                }
+                
+                const data = await response.json();
+                const suggestion = data.candidates[0].content.parts[0].text;
+                
+                resultDiv.innerHTML = `
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-center">
+                            <h4 class="font-medium text-orange-800">🤖 Sugestão da IA:</h4>
+                            <button onclick="useAISuggestion()" class="text-xs bg-orange-500 text-white px-2 py-1 rounded hover:bg-orange-600">
+                                Usar Sugestão
+                            </button>
+                        </div>
+                        <div class="text-sm text-gray-700 whitespace-pre-line" id="aiSuggestionText">${suggestion}</div>
+                    </div>
+                `;
+                resultDiv.classList.remove('hidden');
+                
+            } catch (error) {
+                console.error('Erro ao gerar sugestão:', error);
+                resultDiv.innerHTML = `
+                    <div class="text-red-600 text-sm">
+                        ❌ Erro ao gerar sugestão. Verifique sua API Key e tente novamente.
+                    </div>
+                `;
+                resultDiv.classList.remove('hidden');
+            } finally {
+                btn.textContent = '🤖 Sugerir com IA';
+                btn.disabled = false;
+            }
+        }
+        
+        function useAISuggestion() {
+            const suggestionText = document.getElementById('aiSuggestionText').textContent;
+            const contentTextarea = document.querySelector('textarea[name="content"]');
+            contentTextarea.value = suggestionText;
+            
+            // Esconder a sugestão
+            document.getElementById('aiSuggestionResult').classList.add('hidden');
+        }
+
         // Handler do formulário
         document.getElementById('newPlanForm').addEventListener('submit', async function(e) {
             e.preventDefault();
@@ -542,6 +988,8 @@
                     class: formData.get('class'),
                     date: formData.get('date'),
                     duration: formData.get('duration'),
+                    weeklyClasses: formData.get('weeklyClasses'),
+                    classCount: formData.get('classCount'),
                     habilidade: formData.get('habilidade'),
                     content: formData.get('content')
                 };
@@ -561,7 +1009,7 @@
         
         console.log('=== SCRIPT CARREGADO ===');
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'980afca7b2baae5d',t:'MTc1ODEzNzA5OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'980be719a2e4344f',t:'MTc1ODE0NjcwMi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
 
 
