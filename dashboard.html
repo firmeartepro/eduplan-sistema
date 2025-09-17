@@ -165,12 +165,18 @@
         </div>
     </div>
 
-    <!-- Scripts carregados na ordem correta -->
+    <!-- Scripts do Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    
+    <!-- Scripts locais -->
+    <script src="js/firebase-config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/database.js"></script>
+    
     <script>
-        console.log('=== INICIANDO CARREGAMENTO ===');
-        
-        // Variáveis globais
-        let firebase, auth, db;
+        console.log('=== INICIANDO DASHBOARD ===');
         
         // Disciplinas da BNCC - Ensino Fundamental 1
         const disciplinasBNCC = {
@@ -245,95 +251,38 @@
             }
         };
         
-        // Função para carregar scripts em ordem
-        function loadScript(src) {
-            return new Promise((resolve, reject) => {
-                const script = document.createElement('script');
-                script.src = src;
-                script.onload = resolve;
-                script.onerror = reject;
-                document.head.appendChild(script);
-            });
-        }
-        
-        // Carregar Firebase em ordem
-        async function initializeFirebase() {
-            try {
-                console.log('1. Carregando Firebase App...');
-                await loadScript('https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js');
+        // Inicializar quando Firebase estiver pronto
+        function initializeDashboard() {
+            console.log('Inicializando dashboard...');
+            
+            // Verificar autenticação
+            firebase.auth().onAuthStateChanged(function(user) {
+                console.log('Auth state changed:', user ? 'logado' : 'não logado');
                 
-                console.log('2. Carregando Firebase Auth...');
-                await loadScript('https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js');
-                
-                console.log('3. Carregando Firebase Firestore...');
-                await loadScript('https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js');
-                
-                console.log('4. Inicializando Firebase...');
-                const firebaseConfig = {
-                    apiKey: "AIzaSyBqJJcT8fX9wLqKoOoN8pMzQvGxHjKjY8E",
-                    authDomain: "eduplan-b5d94.firebaseapp.com",
-                    projectId: "eduplan-b5d94",
-                    storageBucket: "eduplan-b5d94.firebasestorage.app",
-                    messagingSenderId: "590470983307",
-                    appId: "1:590470983307:web:7c8a4b5d9e2f1a3b4c5d6e"
-                };
-                
-                firebase.initializeApp(firebaseConfig);
-                auth = firebase.auth();
-                db = firebase.firestore();
-                
-                console.log('5. Firebase inicializado com sucesso!');
-                
-                // Configurar observer de autenticação
-                auth.onAuthStateChanged(function(user) {
-                    console.log('Auth state changed:', user ? 'logado' : 'não logado');
+                if (user) {
+                    console.log('Usuário logado:', user.email);
                     
-                    if (user) {
-                        console.log('Usuário logado:', user.email);
-                        console.log('Display Name:', user.displayName);
-                        console.log('Todos os dados do usuário:', user);
-                        
-                        // Usar o nome real do Firebase ou email como fallback
-                        const userName = user.displayName || user.email.split('@')[0];
-                        document.getElementById('userName').textContent = userName;
-                        document.getElementById('loadingScreen').style.display = 'none';
-                        
-                        // Carregar disciplinas do usuário
-                        loadUserSubjects();
-                    } else {
-                        console.log('Usuário não logado, redirecionando...');
-                        window.location.href = 'index.html';
-                    }
-                });
-                
-            } catch (error) {
-                console.error('Erro ao carregar Firebase:', error);
-                document.getElementById('loadingScreen').innerHTML = `
-                    <div class="text-center">
-                        <div class="text-red-500 text-4xl mb-4">❌</div>
-                        <p class="text-red-600">Erro ao carregar Firebase</p>
-                        <button onclick="location.reload()" class="mt-4 bg-blue-500 text-white px-4 py-2 rounded">
-                            Tentar novamente
-                        </button>
-                    </div>
-                `;
-            }
+                    // Usar o nome real do Firebase ou email como fallback
+                    const userName = user.displayName || user.email.split('@')[0];
+                    document.getElementById('userName').textContent = userName;
+                    document.getElementById('loadingScreen').style.display = 'none';
+                    
+                    // Carregar disciplinas do usuário
+                    loadUserSubjects();
+                } else {
+                    console.log('Usuário não logado, redirecionando...');
+                    window.location.href = 'index.html';
+                }
+            });
         }
         
         // Carregar disciplinas do usuário
         async function loadUserSubjects() {
             try {
-                const user = auth.currentUser;
+                const user = firebase.auth().currentUser;
                 if (!user) return;
                 
-                const doc = await db.collection('userSubjects').doc(user.uid).get();
-                let userSubjects = [];
-                
-                if (doc.exists) {
-                    userSubjects = doc.data().subjects || [];
-                }
-                
-                // Atualizar select de disciplinas no formulário
+                const userSubjects = await getUserSubjects(user.uid);
                 updateSubjectSelect(userSubjects);
                 
             } catch (error) {
@@ -369,16 +318,11 @@
         // Carregar disciplinas no modal
         async function loadDisciplinasModal() {
             try {
-                const user = auth.currentUser;
+                const user = firebase.auth().currentUser;
                 if (!user) return;
                 
                 // Buscar disciplinas do usuário
-                const doc = await db.collection('userSubjects').doc(user.uid).get();
-                let userSubjects = [];
-                
-                if (doc.exists) {
-                    userSubjects = doc.data().subjects || [];
-                }
+                const userSubjects = await getUserSubjects(user.uid);
                 
                 // Preencher disciplinas básicas
                 const basicasContainer = document.getElementById('disciplinasBasicas');
@@ -420,16 +364,11 @@
         // Toggle disciplina
         async function toggleSubject(disciplina) {
             try {
-                const user = auth.currentUser;
+                const user = firebase.auth().currentUser;
                 if (!user) return;
                 
                 // Buscar disciplinas atuais
-                const doc = await db.collection('userSubjects').doc(user.uid).get();
-                let userSubjects = [];
-                
-                if (doc.exists) {
-                    userSubjects = doc.data().subjects || [];
-                }
+                let userSubjects = await getUserSubjects(user.uid);
                 
                 // Toggle disciplina
                 if (userSubjects.includes(disciplina)) {
@@ -439,10 +378,7 @@
                 }
                 
                 // Salvar no Firebase
-                await db.collection('userSubjects').doc(user.uid).set({
-                    subjects: userSubjects,
-                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
+                await saveUserSubjects(user.uid, userSubjects);
                 
                 // Atualizar select do formulário
                 updateSubjectSelect(userSubjects);
@@ -496,48 +432,15 @@
             }
         });
 
-        // Salvar aula
-        async function saveLessonPlan(planData) {
-            console.log('Salvando aula:', planData);
-            
-            try {
-                const user = auth.currentUser;
-                if (!user) throw new Error('Usuário não autenticado');
-                
-                const docData = {
-                    ...planData,
-                    userId: user.uid,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                };
-                
-                const docRef = await db.collection('lessonPlans').add(docData);
-                console.log('Aula salva com ID:', docRef.id);
-                return docRef.id;
-                
-            } catch (error) {
-                console.error('Erro ao salvar:', error);
-                throw error;
-            }
-        }
-
         // Carregar aulas
         async function loadPlans() {
             console.log('Carregando aulas...');
             
             try {
-                const user = auth.currentUser;
+                const user = firebase.auth().currentUser;
                 if (!user) throw new Error('Usuário não autenticado');
                 
-                const snapshot = await db.collection('lessonPlans')
-                    .where('userId', '==', user.uid)
-                    .orderBy('createdAt', 'desc')
-                    .get();
-                
-                const plans = [];
-                snapshot.forEach(doc => {
-                    plans.push({ id: doc.id, ...doc.data() });
-                });
-                
+                const plans = await getLessonPlans(user.uid);
                 console.log('Aulas encontradas:', plans.length);
                 
                 const contentArea = document.getElementById('contentArea');
@@ -591,14 +494,12 @@
         // Replicar aula
         async function replicateLesson(lessonId) {
             try {
-                const user = auth.currentUser;
+                const user = firebase.auth().currentUser;
                 if (!user) throw new Error('Usuário não autenticado');
                 
                 // Buscar a aula original
-                const doc = await db.collection('lessonPlans').doc(lessonId).get();
-                if (!doc.exists) throw new Error('Aula não encontrada');
-                
-                const originalLesson = doc.data();
+                const originalLesson = await getLessonPlan(lessonId);
+                if (!originalLesson) throw new Error('Aula não encontrada');
                 
                 // Criar nova data (próximo dia útil)
                 const today = new Date();
@@ -608,13 +509,12 @@
                 // Criar cópia da aula
                 const replicatedLesson = {
                     ...originalLesson,
-                    date: nextDay.toISOString().split('T')[0],
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    date: nextDay.toISOString().split('T')[0]
                 };
                 
                 delete replicatedLesson.id;
                 
-                await db.collection('lessonPlans').add(replicatedLesson);
+                await saveLessonPlan(replicatedLesson);
                 
                 alert('Aula replicada com sucesso!');
                 loadPlans(); // Recarregar lista
@@ -627,12 +527,7 @@
 
         // Logout
         function logout() {
-            auth.signOut().then(() => {
-                console.log('Usuário deslogado');
-                window.location.href = 'index.html';
-            }).catch((error) => {
-                console.error('Erro ao fazer logout:', error);
-            });
+            signOutUser();
         }
 
         // Handler do formulário
@@ -662,11 +557,11 @@
         });
         
         // Inicializar quando a página carregar
-        window.addEventListener('load', initializeFirebase);
+        window.addEventListener('load', initializeDashboard);
         
         console.log('=== SCRIPT CARREGADO ===');
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'980ae0c466d9f258',t:'MTc1ODEzNTk1Ny4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'980afca7b2baae5d',t:'MTc1ODEzNzA5OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
 
 
