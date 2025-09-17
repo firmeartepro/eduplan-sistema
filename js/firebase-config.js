@@ -1,7 +1,5 @@
 // Configuração do Firebase
 const firebaseConfig = {
-    // VOCÊ PRECISA SUBSTITUIR ESTAS INFORMAÇÕES PELAS SUAS DO FIREBASE
-   const firebaseConfig = {
     apiKey: "AIzaSyAlkv8AVRzCZqDaweXDFEd-Xv26YnKFQpk",
     authDomain: "eduplan-sistema.firebaseapp.com",
     projectId: "eduplan-sistema",
