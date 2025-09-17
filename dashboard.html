@@ -3,6 +3,160 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduPlan - Login</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+    <div class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-md w-full space-y-8">
+            <div>
+                <div class="mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-blue-100">
+                    <span class="text-2xl">📚</span>
+                </div>
+                <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+                    EduPlan - Fundamental 1
+                </h2>
+                <p class="mt-2 text-center text-sm text-gray-600">
+                    Sistema de Planejamento Educacional
+                </p>
+            </div>
+
+            <!-- Login Form -->
+            <div id="loginForm" class="bg-white rounded-lg shadow-md p-8">
+                <form class="space-y-6" onsubmit="handleLogin(event)">
+                    <div>
+                        <label for="email" class="block text-sm font-medium text-gray-700">
+                            Email
+                        </label>
+                        <input id="email" name="email" type="email" required 
+                               class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                               placeholder="seu@email.com">
+                    </div>
+                    
+                    <div>
+                        <label for="password" class="block text-sm font-medium text-gray-700">
+                            Senha
+                        </label>
+                        <input id="password" name="password" type="password" required 
+                               class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                               placeholder="Sua senha">
+                    </div>
+
+                    <div>
+                        <button type="submit" 
+                                class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            Entrar
+                        </button>
+                    </div>
+
+                    <div class="text-center">
+                        <p class="text-gray-600 text-sm">Acesso restrito - Entre em contato com o administrador para criar sua conta</p>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Loading -->
+            <div id="loading" class="hidden text-center">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                <p class="mt-2 text-gray-600">Entrando...</p>
+            </div>
+
+            <!-- Error Message -->
+            <div id="errorMessage" class="hidden bg-red-50 border border-red-200 rounded-md p-4">
+                <div class="flex">
+                    <div class="ml-3">
+                        <h3 class="text-sm font-medium text-red-800">
+                            Erro no login
+                        </h3>
+                        <div class="mt-2 text-sm text-red-700" id="errorText">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts do Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    
+    <!-- Scripts locais -->
+    <script src="js/firebase-config.js"></script>
+    <script src="js/auth.js"></script>
+
+    <script>
+        console.log('=== INICIANDO LOGIN ===');
+
+        // Verificar se já está logado
+        firebase.auth().onAuthStateChanged(function(user) {
+            if (user) {
+                console.log('Usuário já logado, redirecionando...');
+                window.location.href = 'dashboard.html';
+            }
+        });
+
+        // Handle login
+        async function handleLogin(event) {
+            event.preventDefault();
+            console.log('Tentativa de login...');
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            showLoading(true);
+            hideError();
+            
+            try {
+                await signInUser(email, password);
+                console.log('Login bem-sucedido!');
+                window.location.href = 'dashboard.html';
+            } catch (error) {
+                console.error('Erro no login:', error);
+                showError(getErrorMessage(error.code));
+                showLoading(false);
+            }
+        }
+
+        function showLoading(show) {
+            document.getElementById('loading').classList.toggle('hidden', !show);
+            document.getElementById('loginForm').classList.toggle('hidden', show);
+        }
+
+        function showError(message) {
+            document.getElementById('errorText').textContent = message;
+            document.getElementById('errorMessage').classList.remove('hidden');
+        }
+
+        function hideError() {
+            document.getElementById('errorMessage').classList.add('hidden');
+        }
+
+        function getErrorMessage(errorCode) {
+            switch (errorCode) {
+                case 'auth/user-not-found':
+                    return 'Usuário não encontrado. Verifique o email.';
+                case 'auth/wrong-password':
+                    return 'Senha incorreta.';
+                case 'auth/invalid-email':
+                    return 'Email inválido.';
+                case 'auth/user-disabled':
+                    return 'Conta desabilitada.';
+                case 'auth/too-many-requests':
+                    return 'Muitas tentativas. Tente novamente mais tarde.';
+                default:
+                    return 'Erro no login. Tente novamente.';
+            }
+        }
+
+        console.log('=== SCRIPT DE LOGIN CARREGADO ===');
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'980c075c26785cf3',t:'MTc1ODE0ODAyNC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html><!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EduPlan - Ensino Fundamental 1</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
@@ -74,43 +228,22 @@
     <!-- Modal Disciplinas -->
     <div id="disciplinasModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
         <div class="flex items-center justify-center min-h-screen p-4">
-            <div class="bg-white rounded-lg max-w-2xl w-full p-6 max-h-96 overflow-y-auto">
-                <h3 class="text-lg font-medium text-gray-900 mb-4">Gerenciar Minhas Disciplinas</h3>
+            <div class="bg-white rounded-lg max-w-4xl w-full p-6 max-h-96 overflow-y-auto">
+                <h3 class="text-lg font-medium text-gray-900 mb-4">Configurar Minhas Disciplinas e Horários</h3>
                 
                 <div class="mb-6">
-                    <h4 class="font-medium text-gray-700 mb-3">Disciplinas Básicas (BNCC)</h4>
-                    <div class="grid grid-cols-2 gap-2" id="disciplinasBasicas">
+                    <h4 class="font-medium text-gray-700 mb-3">Selecione suas disciplinas da BNCC:</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="disciplinasContainer">
                         <!-- Será preenchido via JavaScript -->
-                    </div>
-                </div>
-                
-                <div class="mb-6">
-                    <h4 class="font-medium text-gray-700 mb-3">Disciplinas de Especialistas</h4>
-                    <div class="grid grid-cols-2 gap-2" id="disciplinasEspecialistas">
-                        <!-- Será preenchido via JavaScript -->
-                    </div>
-                </div>
-                
-                <div class="mb-6">
-                    <h4 class="font-medium text-gray-700 mb-3">Minhas Disciplinas Personalizadas</h4>
-                    <div class="space-y-2" id="disciplinasPersonalizadas">
-                        <!-- Será preenchido via JavaScript -->
-                    </div>
-                    
-                    <div class="mt-3 p-3 bg-gray-50 rounded-lg">
-                        <h5 class="text-sm font-medium text-gray-700 mb-2">Criar Nova Disciplina</h5>
-                        <div class="flex space-x-2">
-                            <input type="text" id="novaDisciplinaNome" placeholder="Nome da disciplina..." class="flex-1 text-sm border border-gray-300 rounded px-2 py-1">
-                            <button onclick="criarNovaDisciplina()" class="bg-blue-500 hover:bg-blue-600 text-white text-sm px-3 py-1 rounded">
-                                Criar
-                            </button>
-                        </div>
                     </div>
                 </div>
                 
                 <div class="flex justify-end space-x-3">
                     <button onclick="closeDisciplinasModal()" class="bg-gray-300 hover:bg-gray-400 text-gray-700 px-4 py-2 rounded-lg">
                         Fechar
+                    </button>
+                    <button onclick="saveDisciplinasConfig()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg">
+                        Salvar Configurações
                     </button>
                 </div>
             </div>
@@ -167,7 +300,7 @@
     <!-- New Plan Modal -->
     <div id="newPlanModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
         <div class="flex items-center justify-center min-h-screen p-4">
-            <div class="bg-white rounded-lg max-w-md w-full p-6">
+            <div class="bg-white rounded-lg max-w-md w-full p-6 max-h-screen overflow-y-auto">
                 <h3 class="text-lg font-medium text-gray-900 mb-4">Nova Aula</h3>
                 
                 <form id="newPlanForm">
@@ -181,7 +314,7 @@
                         
                         <div>
                             <label class="block text-sm font-medium text-gray-700">Ano/Turma</label>
-                            <select name="class" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 border">
+                            <select name="class" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 border" id="classSelect">
                                 <option value="">Selecione o ano</option>
                                 <option value="1º ano">1º ano</option>
                                 <option value="2º ano">2º ano</option>
@@ -191,61 +324,41 @@
                             </select>
                         </div>
                         
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700">Data</label>
-                            <input type="date" name="date" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 border">
-                        </div>
-                        
                         <div class="grid grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-sm font-medium text-gray-700">Quantidade de Aulas</label>
-                                <select name="duration" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 border">
-                                    <option value="">Selecione</option>
-                                    <option value="1">1 hora/aula</option>
-                                    <option value="2">2 horas/aula</option>
-                                    <option value="3">3 horas/aula</option>
-                                    <option value="4">4 horas/aula</option>
-                                    <option value="5">5 horas/aula</option>
-                                </select>
+                                <label class="block text-sm font-medium text-gray-700">Data</label>
+                                <input type="date" name="date" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 border">
                             </div>
                             
                             <div>
-                                <label class="block text-sm font-medium text-gray-700">Aulas por Semana</label>
-                                <select name="weeklyClasses" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 border">
-                                    <option value="">Selecione</option>
-                                    <option value="1">1x por semana</option>
-                                    <option value="2">2x por semana</option>
-                                    <option value="3">3x por semana</option>
-                                    <option value="4">4x por semana</option>
-                                    <option value="5">5x por semana</option>
-                                </select>
+                                <label class="block text-sm font-medium text-gray-700">Horário</label>
+                                <input type="time" name="time" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 border">
                             </div>
                         </div>
                         
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">Quantidade de Turmas</label>
-                            <select name="classCount" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 border">
-                                <option value="">Quantas turmas você tem?</option>
-                                <option value="1">1 turma</option>
-                                <option value="2">2 turmas</option>
-                                <option value="3">3 turmas</option>
-                                <option value="4">4 turmas</option>
-                                <option value="5">5 turmas</option>
-                                <option value="6">6 turmas ou mais</option>
+                            <label class="block text-sm font-medium text-gray-700">Duração (horas/aula)</label>
+                            <select name="duration" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 border">
+                                <option value="">Selecione</option>
+                                <option value="1">1 hora/aula</option>
+                                <option value="2">2 horas/aula</option>
+                                <option value="3">3 horas/aula</option>
+                                <option value="4">4 horas/aula</option>
+                                <option value="5">5 horas/aula</option>
                             </select>
                         </div>
                         
                         <div>
                             <label class="block text-sm font-medium text-gray-700">Habilidades BNCC</label>
                             <select name="habilidade" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 border" id="habilidadeSelect">
-                                <option value="">Selecione uma habilidade</option>
+                                <option value="">Primeiro selecione disciplina e ano</option>
                             </select>
                         </div>
                         
                         <div>
                             <label class="block text-sm font-medium text-gray-700">Conteúdo/Objetivo</label>
                             <div class="relative">
-                                <textarea name="content" rows="3" placeholder="Descreva o conteúdo e objetivos da aula..." class="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 border"></textarea>
+                                <textarea name="content" rows="4" placeholder="Descreva o conteúdo e objetivos da aula..." class="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 border"></textarea>
                                 <button type="button" onclick="generateAISuggestion()" class="absolute top-2 right-2 bg-orange-500 hover:bg-orange-600 text-white text-xs px-2 py-1 rounded" id="aiSuggestionBtn">
                                     🤖 Sugerir com IA
                                 </button>
@@ -283,10 +396,31 @@
         console.log('=== INICIANDO DASHBOARD ===');
         
         // Disciplinas da BNCC - Ensino Fundamental 1
-        const disciplinasBNCC = {
-            basicas: ['Língua Portuguesa', 'Matemática', 'Ciências', 'História', 'Geografia'],
-            especialistas: ['Arte', 'Educação Física', 'Informática', 'Inglês']
-        };
+        const disciplinasBNCC = [
+            'Língua Portuguesa',
+            'Matemática', 
+            'Ciências',
+            'História',
+            'Geografia',
+            'Arte',
+            'Educação Física',
+            'Inglês'
+        ];
+        
+        // Dias da semana
+        const diasSemana = [
+            'Segunda-feira',
+            'Terça-feira', 
+            'Quarta-feira',
+            'Quinta-feira',
+            'Sexta-feira'
+        ];
+        
+        // Horários padrão
+        const horariosDisponiveis = [
+            '07:00', '07:50', '08:40', '09:30', '10:20', '11:10',
+            '13:00', '13:50', '14:40', '15:30', '16:20', '17:10'
+        ];
         
         // Habilidades da BNCC por disciplina (principais códigos)
         const habilidadesBNCC = {
@@ -345,13 +479,6 @@
                 '3º ano': ['EF03LI01 - Cumprimentar, apresentar-se e despedir-se, utilizando a língua inglesa para se comunicar', 'EF03LI02 - Coletar informações do grupo, perguntando e respondendo sobre a família, os amigos, a escola e a comunidade', 'EF03LI03 - Interagir com o professor e os colegas, utilizando cumprimentos, dados pessoais e informações do contexto escolar', 'EF03LI04 - Reconhecer o inglês como língua franca, identificando o seu uso no cotidiano', 'EF03LI05 - Conhecer diferentes países que têm o inglês como língua materna e/ou oficial'],
                 '4º ano': ['EF04LI01 - Cumprimentar, apresentar-se e despedir-se, utilizando a língua inglesa para se comunicar', 'EF04LI02 - Coletar informações do grupo, perguntando e respondendo sobre a família, os amigos, a escola e a comunidade', 'EF04LI03 - Interagir com o professor e os colegas, utilizando cumprimentos, dados pessoais e informações do contexto escolar', 'EF04LI04 - Reconhecer o inglês como língua franca, identificando o seu uso no cotidiano', 'EF04LI05 - Conhecer diferentes países que têm o inglês como língua materna e/ou oficial'],
                 '5º ano': ['EF05LI01 - Participar de conversas, utilizando estratégias para se fazer entender', 'EF05LI02 - Coletar informações do grupo, perguntando e respondendo sobre a família, os amigos, a escola e a comunidade', 'EF05LI03 - Interagir com o professor e os colegas, utilizando cumprimentos, dados pessoais e informações do contexto escolar', 'EF05LI04 - Reconhecer o inglês como língua franca, identificando o seu uso no cotidiano', 'EF05LI05 - Conhecer diferentes países que têm o inglês como língua materna e/ou oficial']
-            },
-            'Informática': {
-                '1º ano': ['Conceitos básicos de informática', 'Uso correto do mouse e teclado', 'Desenho e pintura digital', 'Jogos educativos simples', 'Cuidados com equipamentos'],
-                '2º ano': ['Navegação básica em programas', 'Criação de textos simples', 'Uso de programas educativos', 'Pesquisa orientada na internet', 'Segurança digital básica'],
-                '3º ano': ['Editor de texto básico', 'Apresentações simples', 'Internet segura', 'Projetos digitais colaborativos', 'Organização de arquivos'],
-                '4º ano': ['Planilhas básicas', 'Pesquisa e seleção de informações', 'Criação de conteúdo digital', 'Pensamento computacional', 'Ética digital'],
-                '5º ano': ['Programação básica (Scratch)', 'Projetos multimídia', 'Cidadania digital', 'Resolução de problemas com tecnologia', 'Inovação e criatividade digital']
             }
         };
         
@@ -386,9 +513,6 @@
                 const user = firebase.auth().currentUser;
                 if (!user) return;
                 
-                // Carregar disciplinas personalizadas primeiro
-                await loadCustomSubjectsToHabilidades();
-                
                 const userSubjects = await getUserSubjects(user.uid);
                 updateSubjectSelect(userSubjects);
                 
@@ -404,8 +528,8 @@
             
             userSubjects.forEach(subject => {
                 const option = document.createElement('option');
-                option.value = subject;
-                option.textContent = subject;
+                option.value = subject.name;
+                option.textContent = subject.name;
                 select.appendChild(option);
             });
         }
@@ -428,61 +552,61 @@
                 const user = firebase.auth().currentUser;
                 if (!user) return;
                 
-                // Buscar disciplinas do usuário
+                // Buscar disciplinas configuradas do usuário
                 const userSubjects = await getUserSubjects(user.uid);
-                const customSubjects = await getCustomSubjects(user.uid);
+                const userSubjectNames = userSubjects.map(s => s.name);
                 
-                // Preencher disciplinas básicas
-                const basicasContainer = document.getElementById('disciplinasBasicas');
-                basicasContainer.innerHTML = '';
+                // Preencher container de disciplinas
+                const container = document.getElementById('disciplinasContainer');
+                container.innerHTML = '';
                 
-                disciplinasBNCC.basicas.forEach(disciplina => {
-                    const isSelected = userSubjects.includes(disciplina);
+                disciplinasBNCC.forEach(disciplina => {
+                    const isSelected = userSubjectNames.includes(disciplina);
+                    const userSubject = userSubjects.find(s => s.name === disciplina);
+                    
                     const div = document.createElement('div');
                     div.innerHTML = `
-                        <label class="flex items-center space-x-2 p-2 border rounded ${isSelected ? 'bg-blue-50 border-blue-300' : 'border-gray-300'}">
-                            <input type="checkbox" ${isSelected ? 'checked' : ''} onchange="toggleSubject('${disciplina}')" class="rounded">
-                            <span class="text-sm">${disciplina}</span>
-                        </label>
-                    `;
-                    basicasContainer.appendChild(div);
-                });
-                
-                // Preencher disciplinas de especialistas
-                const especialistasContainer = document.getElementById('disciplinasEspecialistas');
-                especialistasContainer.innerHTML = '';
-                
-                disciplinasBNCC.especialistas.forEach(disciplina => {
-                    const isSelected = userSubjects.includes(disciplina);
-                    const div = document.createElement('div');
-                    div.innerHTML = `
-                        <label class="flex items-center space-x-2 p-2 border rounded ${isSelected ? 'bg-blue-50 border-blue-300' : 'border-gray-300'}">
-                            <input type="checkbox" ${isSelected ? 'checked' : ''} onchange="toggleSubject('${disciplina}')" class="rounded">
-                            <span class="text-sm">${disciplina}</span>
-                        </label>
-                    `;
-                    especialistasContainer.appendChild(div);
-                });
-                
-                // Preencher disciplinas personalizadas
-                const personalizadasContainer = document.getElementById('disciplinasPersonalizadas');
-                personalizadasContainer.innerHTML = '';
-                
-                customSubjects.forEach(disciplina => {
-                    const isSelected = userSubjects.includes(disciplina.name);
-                    const div = document.createElement('div');
-                    div.innerHTML = `
-                        <div class="flex items-center justify-between p-2 border rounded ${isSelected ? 'bg-green-50 border-green-300' : 'border-gray-300'}">
-                            <label class="flex items-center space-x-2 flex-1">
-                                <input type="checkbox" ${isSelected ? 'checked' : ''} onchange="toggleSubject('${disciplina.name}')" class="rounded">
-                                <span class="text-sm">${disciplina.name}</span>
+                        <div class="border rounded-lg p-4 ${isSelected ? 'bg-blue-50 border-blue-300' : 'border-gray-300'}">
+                            <label class="flex items-center space-x-2 mb-3">
+                                <input type="checkbox" ${isSelected ? 'checked' : ''} 
+                                       onchange="toggleDisciplina('${disciplina}')" 
+                                       class="rounded" id="check_${disciplina.replace(/\s+/g, '_')}">
+                                <span class="font-medium">${disciplina}</span>
                             </label>
-                            <button onclick="excluirDisciplinaPersonalizada('${disciplina.id}')" class="text-red-500 hover:text-red-700 text-xs ml-2">
-                                🗑️
-                            </button>
+                            
+                            <div class="space-y-2 ${isSelected ? '' : 'hidden'}" id="config_${disciplina.replace(/\s+/g, '_')}">
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">Dias da semana:</label>
+                                    <div class="grid grid-cols-2 gap-1">
+                                        ${diasSemana.map(dia => `
+                                            <label class="flex items-center space-x-1 text-xs">
+                                                <input type="checkbox" 
+                                                       ${userSubject && userSubject.dias && userSubject.dias.includes(dia) ? 'checked' : ''}
+                                                       onchange="updateDisciplinaConfig('${disciplina}', 'dias', '${dia}', this.checked)"
+                                                       class="rounded text-xs">
+                                                <span>${dia.substring(0, 3)}</span>
+                                            </label>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">Horário principal:</label>
+                                    <select onchange="updateDisciplinaConfig('${disciplina}', 'horario', this.value)" 
+                                            class="w-full text-xs border border-gray-300 rounded px-2 py-1">
+                                        <option value="">Selecione</option>
+                                        ${horariosDisponiveis.map(horario => `
+                                            <option value="${horario}" 
+                                                    ${userSubject && userSubject.horario === horario ? 'selected' : ''}>
+                                                ${horario}
+                                            </option>
+                                        `).join('')}
+                                    </select>
+                                </div>
+                            </div>
                         </div>
                     `;
-                    personalizadasContainer.appendChild(div);
+                    container.appendChild(div);
                 });
                 
             } catch (error) {
@@ -490,156 +614,80 @@
             }
         }
         
-        // Criar nova disciplina personalizada
-        async function criarNovaDisciplina() {
-            try {
-                const user = firebase.auth().currentUser;
-                if (!user) return;
-                
-                const nomeInput = document.getElementById('novaDisciplinaNome');
-                const nome = nomeInput.value.trim();
-                
-                if (!nome) {
-                    alert('Digite o nome da disciplina');
-                    return;
-                }
-                
-                // Verificar se já existe
-                const userSubjects = await getUserSubjects(user.uid);
-                const customSubjects = await getCustomSubjects(user.uid);
-                
-                const allSubjects = [
-                    ...disciplinasBNCC.basicas,
-                    ...disciplinasBNCC.especialistas,
-                    ...customSubjects.map(s => s.name)
-                ];
-                
-                if (allSubjects.includes(nome)) {
-                    alert('Esta disciplina já existe!');
-                    return;
-                }
-                
-                // Criar habilidades padrão para a nova disciplina
-                const habilidadesPadrao = {
-                    '1º ano': [`Introdução aos conceitos básicos de ${nome}`, `Desenvolvimento de habilidades fundamentais em ${nome}`, `Prática e aplicação de ${nome} no cotidiano`],
-                    '2º ano': [`Aprofundamento dos conceitos de ${nome}`, `Desenvolvimento de competências em ${nome}`, `Aplicação prática de ${nome}`],
-                    '3º ano': [`Consolidação dos conhecimentos em ${nome}`, `Desenvolvimento de habilidades avançadas em ${nome}`, `Projetos práticos em ${nome}`],
-                    '4º ano': [`Aprofundamento teórico-prático em ${nome}`, `Desenvolvimento de competências complexas em ${nome}`, `Análise crítica em ${nome}`],
-                    '5º ano': [`Síntese dos conhecimentos em ${nome}`, `Aplicação avançada de ${nome}`, `Preparação para etapas posteriores em ${nome}`]
-                };
-                
-                // Salvar disciplina personalizada
-                const disciplinaData = {
-                    name: nome,
-                    userId: user.uid,
-                    habilidades: habilidadesPadrao,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                };
-                
-                await saveCustomSubject(disciplinaData);
-                
-                // Adicionar às habilidades locais
-                habilidadesBNCC[nome] = habilidadesPadrao;
-                
-                // Limpar input
-                nomeInput.value = '';
-                
-                // Recarregar modal
-                loadDisciplinasModal();
-                
-                alert(`Disciplina "${nome}" criada com sucesso!`);
-                
-            } catch (error) {
-                console.error('Erro ao criar disciplina:', error);
-                alert('Erro ao criar disciplina: ' + error.message);
+        // Toggle disciplina
+        function toggleDisciplina(disciplina) {
+            const checkbox = document.getElementById(`check_${disciplina.replace(/\s+/g, '_')}`);
+            const configDiv = document.getElementById(`config_${disciplina.replace(/\s+/g, '_')}`);
+            
+            if (checkbox.checked) {
+                configDiv.classList.remove('hidden');
+                configDiv.parentElement.classList.add('bg-blue-50', 'border-blue-300');
+                configDiv.parentElement.classList.remove('border-gray-300');
+            } else {
+                configDiv.classList.add('hidden');
+                configDiv.parentElement.classList.remove('bg-blue-50', 'border-blue-300');
+                configDiv.parentElement.classList.add('border-gray-300');
             }
         }
         
-        // Excluir disciplina personalizada
-        async function excluirDisciplinaPersonalizada(disciplinaId) {
-            try {
-                if (!confirm('Tem certeza que deseja excluir esta disciplina?')) {
-                    return;
-                }
-                
-                const user = firebase.auth().currentUser;
-                if (!user) return;
-                
-                // Buscar nome da disciplina antes de excluir
-                const disciplina = await getCustomSubject(disciplinaId);
-                if (!disciplina) return;
-                
-                // Remover das disciplinas do usuário se estiver selecionada
-                let userSubjects = await getUserSubjects(user.uid);
-                if (userSubjects.includes(disciplina.name)) {
-                    userSubjects = userSubjects.filter(s => s !== disciplina.name);
-                    await saveUserSubjects(user.uid, userSubjects);
-                    updateSubjectSelect(userSubjects);
-                }
-                
-                // Excluir disciplina personalizada
-                await deleteCustomSubject(disciplinaId);
-                
-                // Remover das habilidades locais
-                delete habilidadesBNCC[disciplina.name];
-                
-                // Recarregar modal
-                loadDisciplinasModal();
-                
-                alert('Disciplina excluída com sucesso!');
-                
-            } catch (error) {
-                console.error('Erro ao excluir disciplina:', error);
-                alert('Erro ao excluir disciplina: ' + error.message);
-            }
+        // Atualizar configuração da disciplina
+        function updateDisciplinaConfig(disciplina, tipo, valor, checked = true) {
+            // Esta função será usada para atualizar as configurações em tempo real
+            // Os dados serão salvos quando o usuário clicar em "Salvar Configurações"
         }
         
-        // Carregar disciplinas personalizadas nas habilidades
-        async function loadCustomSubjectsToHabilidades() {
+        // Salvar configurações das disciplinas
+        async function saveDisciplinasConfig() {
             try {
                 const user = firebase.auth().currentUser;
                 if (!user) return;
                 
-                const customSubjects = await getCustomSubjects(user.uid);
+                const disciplinasConfig = [];
                 
-                customSubjects.forEach(disciplina => {
-                    if (disciplina.habilidades) {
-                        habilidadesBNCC[disciplina.name] = disciplina.habilidades;
+                disciplinasBNCC.forEach(disciplina => {
+                    const checkbox = document.getElementById(`check_${disciplina.replace(/\s+/g, '_')}`);
+                    
+                    if (checkbox.checked) {
+                        const configDiv = document.getElementById(`config_${disciplina.replace(/\s+/g, '_')}`);
+                        
+                        // Coletar dias selecionados
+                        const diasCheckboxes = configDiv.querySelectorAll('input[type="checkbox"]');
+                        const diasSelecionados = [];
+                        diasCheckboxes.forEach(cb => {
+                            if (cb.checked) {
+                                // Extrair o dia do onchange
+                                const onchangeAttr = cb.getAttribute('onchange');
+                                const diaMatch = onchangeAttr.match(/'([^']+)'/g);
+                                if (diaMatch && diaMatch[2]) {
+                                    diasSelecionados.push(diaMatch[2].replace(/'/g, ''));
+                                }
+                            }
+                        });
+                        
+                        // Coletar horário
+                        const horarioSelect = configDiv.querySelector('select');
+                        const horario = horarioSelect.value;
+                        
+                        disciplinasConfig.push({
+                            name: disciplina,
+                            dias: diasSelecionados,
+                            horario: horario
+                        });
                     }
                 });
                 
-            } catch (error) {
-                console.error('Erro ao carregar disciplinas personalizadas:', error);
-            }
-        }
-        
-        // Toggle disciplina
-        async function toggleSubject(disciplina) {
-            try {
-                const user = firebase.auth().currentUser;
-                if (!user) return;
-                
-                // Buscar disciplinas atuais
-                let userSubjects = await getUserSubjects(user.uid);
-                
-                // Toggle disciplina
-                if (userSubjects.includes(disciplina)) {
-                    userSubjects = userSubjects.filter(s => s !== disciplina);
-                } else {
-                    userSubjects.push(disciplina);
-                }
-                
                 // Salvar no Firebase
-                await saveUserSubjects(user.uid, userSubjects);
+                await saveUserSubjects(user.uid, disciplinasConfig);
                 
                 // Atualizar select do formulário
-                updateSubjectSelect(userSubjects);
+                updateSubjectSelect(disciplinasConfig);
                 
-                console.log('Disciplinas atualizadas:', userSubjects);
+                alert('Configurações salvas com sucesso!');
+                closeDisciplinasModal();
                 
             } catch (error) {
-                console.error('Erro ao atualizar disciplina:', error);
-                alert('Erro ao atualizar disciplina: ' + error.message);
+                console.error('Erro ao salvar configurações:', error);
+                alert('Erro ao salvar configurações: ' + error.message);
             }
         }
         
@@ -653,30 +701,32 @@
             console.log('Fechando modal de nova aula');
             document.getElementById('newPlanModal').classList.add('hidden');
             document.getElementById('newPlanForm').reset();
-            document.getElementById('habilidadeSelect').innerHTML = '<option value="">Selecione uma habilidade</option>';
+            document.getElementById('habilidadeSelect').innerHTML = '<option value="">Primeiro selecione disciplina e ano</option>';
+            document.getElementById('aiSuggestionResult').classList.add('hidden');
         }
         
         // Atualizar habilidades quando disciplina ou ano mudar
-        document.addEventListener('DOMContentLoaded', function() {
-            const subjectSelect = document.getElementById('subjectSelect');
-            const classSelect = document.querySelector('select[name="class"]');
+        function updateHabilidades() {
+            const subject = document.getElementById('subjectSelect').value;
+            const classYear = document.getElementById('classSelect').value;
             const habilidadeSelect = document.getElementById('habilidadeSelect');
             
-            function updateHabilidades() {
-                const subject = subjectSelect.value;
-                const classYear = classSelect.value;
-                
-                habilidadeSelect.innerHTML = '<option value="">Selecione uma habilidade</option>';
-                
-                if (subject && classYear && habilidadesBNCC[subject] && habilidadesBNCC[subject][classYear]) {
-                    habilidadesBNCC[subject][classYear].forEach(habilidade => {
-                        const option = document.createElement('option');
-                        option.value = habilidade;
-                        option.textContent = habilidade;
-                        habilidadeSelect.appendChild(option);
-                    });
-                }
+            habilidadeSelect.innerHTML = '<option value="">Selecione uma habilidade</option>';
+            
+            if (subject && classYear && habilidadesBNCC[subject] && habilidadesBNCC[subject][classYear]) {
+                habilidadesBNCC[subject][classYear].forEach(habilidade => {
+                    const option = document.createElement('option');
+                    option.value = habilidade;
+                    option.textContent = habilidade;
+                    habilidadeSelect.appendChild(option);
+                });
             }
+        }
+        
+        // Event listeners para atualizar habilidades
+        document.addEventListener('DOMContentLoaded', function() {
+            const subjectSelect = document.getElementById('subjectSelect');
+            const classSelect = document.getElementById('classSelect');
             
             if (subjectSelect && classSelect) {
                 subjectSelect.addEventListener('change', updateHabilidades);
@@ -716,8 +766,7 @@
                                                 <h4 class="font-medium text-gray-900">${plan.subject} - ${plan.class}</h4>
                                                 <div class="flex space-x-1">
                                                     <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">${plan.duration} aula(s)</span>
-                                                    ${plan.weeklyClasses ? `<span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">${plan.weeklyClasses}x/sem</span>` : ''}
-                                                    ${plan.classCount ? `<span class="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded">${plan.classCount} turma(s)</span>` : ''}
+                                                    ${plan.time ? `<span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">${plan.time}</span>` : ''}
                                                 </div>
                                             </div>
                                             <p class="text-sm text-gray-600">📅 ${new Date(plan.date).toLocaleDateString('pt-BR')}</p>
@@ -883,8 +932,6 @@
             const subject = document.querySelector('select[name="subject"]').value;
             const classYear = document.querySelector('select[name="class"]').value;
             const duration = document.querySelector('select[name="duration"]').value;
-            const weeklyClasses = document.querySelector('select[name="weeklyClasses"]').value;
-            const classCount = document.querySelector('select[name="classCount"]').value;
             const habilidade = document.querySelector('select[name="habilidade"]').value;
             
             if (!subject || !classYear) {
@@ -905,8 +952,6 @@ Como especialista em educação do Ensino Fundamental 1, crie uma sugestão de a
 📚 Disciplina: ${subject}
 👥 Ano: ${classYear}
 ⏰ Duração: ${duration} hora(s)/aula
-📅 Frequência: ${weeklyClasses}x por semana
-🏫 Turmas: ${classCount}
 🎯 Habilidade BNCC: ${habilidade || 'Não especificada'}
 
 Forneça:
@@ -987,9 +1032,8 @@ Seja prático, criativo e adequado à faixa etária. Máximo 300 palavras.
                     subject: formData.get('subject'),
                     class: formData.get('class'),
                     date: formData.get('date'),
+                    time: formData.get('time'),
                     duration: formData.get('duration'),
-                    weeklyClasses: formData.get('weeklyClasses'),
-                    classCount: formData.get('classCount'),
                     habilidade: formData.get('habilidade'),
                     content: formData.get('content')
                 };
@@ -1009,7 +1053,7 @@ Seja prático, criativo e adequado à faixa etária. Máximo 300 palavras.
         
         console.log('=== SCRIPT CARREGADO ===');
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'980be719a2e4344f',t:'MTc1ODE0NjcwMi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</body>
 </html>
 
 
