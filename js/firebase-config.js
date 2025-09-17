@@ -1,13 +1,15 @@
 // Configuração do Firebase
 const firebaseConfig = {
     // VOCÊ PRECISA SUBSTITUIR ESTAS INFORMAÇÕES PELAS SUAS DO FIREBASE
-    apiKey: "SUA_API_KEY_AQUI",
-    authDomain: "seu-projeto.firebaseapp.com",
-    projectId: "seu-projeto-id",
-    storageBucket: "seu-projeto.appspot.com",
-    messagingSenderId: "123456789",
-    appId: "sua-app-id"
-};
+   const firebaseConfig = {
+    apiKey: "AIzaSyAlkv8AVRzCZqDaweXDFEd-Xv26YnKFQpk",
+    authDomain: "eduplan-sistema.firebaseapp.com",
+    projectId: "eduplan-sistema",
+    storageBucket: "eduplan-sistema.firebasestorage.app",
+    messagingSenderId: "711061743746",
+    appId: "1:711061743746:web:1d07bdd0d84433fe036c9b",
+    measurementId: "G-X6L0W559DD"
+  };
 
 // Inicializar Firebase
 firebase.initializeApp(firebaseConfig);
