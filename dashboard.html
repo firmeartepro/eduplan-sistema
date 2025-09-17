@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduPlan - Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-storage-compat.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .card-hover { transition: all 0.3s ease; }
+        .card-hover:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Header -->
+    <header class="gradient-bg text-white shadow-lg">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <i class="fas fa-graduation-cap text-2xl"></i>
+                    <h1 class="text-2xl font-bold">EduPlan</h1>
+                </div>
+                <nav class="hidden md:flex space-x-6">
+                    <button onclick="showSection('dashboard')" class="nav-btn hover:text-blue-200 transition-colors">Dashboard</button>
+                    <button onclick="showSection('planner')" class="nav-btn hover:text-blue-200 transition-colors">Planejamento</button>
+                    <button onclick="showSection('activities')" class="nav-btn hover:text-blue-200 transition-colors">Atividades</button>
+                    <button onclick="showSection('reports')" class="nav-btn hover:text-blue-200 transition-colors">Relatórios</button>
+                </nav>
+                <div class="flex items-center space-x-3">
+                    <span id="userName" class="text-sm">Carregando...</span>
+                    <div class="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                        <i class="fas fa-user text-sm"></i>
+                    </div>
+                    <button onclick="logout()" class="text-sm hover:text-blue-200 transition-colors">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Dashboard Section -->
+    <section id="dashboard" class="section-content">
+        <div class="container mx-auto px-6 py-8">
+            <div class="mb-8">
+                <h2 class="text-3xl font-bold text-gray-800 mb-2">Dashboard</h2>
+                <p class="text-gray-600">Visão geral dos seus planejamentos e atividades</p>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div class="bg-white rounded-lg shadow-md p-6 card-hover">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600">Aulas Planejadas</p>
+                            <p id="totalPlans" class="text-2xl font-bold text-blue-600">0</p>
+                        </div>
+                        <i class="fas fa-calendar-alt text-3xl text-blue-500"></i>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow-md p-6 card-hover">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600">Atividades Criadas</p>
+                            <p id="totalActivities" class="text-2xl font-bold text-green-600">0</p>
+                        </div>
+                        <i class="fas fa-tasks text-3xl text-green-500"></i>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow-md p-6 card-hover">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600">Esta Semana</p>
+                            <p id="thisWeekPlans" class="text-2xl font-bold text-purple-600">0</p>
+                        </div>
+                        <i class="fas fa-calendar-week text-3xl text-purple-500"></i>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow-md p-6 card-hover">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600">Plano Ativo</p>
+                            <p id="userPlan" class="text-2xl font-bold text-orange-600">Trial</p>
+                        </div>
+                        <i class="fas fa-crown text-3xl text-orange-500"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4">Ações Rápidas</h3>
+                    <div class="space-y-3">
+                        <button onclick="showSection('planner')" class="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2">
+                            <i class="fas fa-plus"></i>
+                            <span>Nova Aula</span>
+                        </button>
+                        <button onclick="duplicateLastWeek()" class="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center space-x-2">
+                            <i class="fas fa-copy"></i>
+                            <span>Duplicar Semana Anterior</span>
+                        </button>
+                        <button onclick="showSection('activities')" class="w-full bg-purple-600 text-white py-3 px-4 rounded-lg hover:bg-purple-700 transition-colors flex items-center justify-center space-x-2">
+                            <i class="fas fa-search"></i>
+                            <span>Buscar Atividades</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4">Últimos Planejamentos</h3>
+                    <div id="recentPlans" class="space-y-3">
+                        <p class="text-gray-500 text-center py-4">Nenhum planejamento encontrado</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Planner Section -->
+    <section id="planner" class="section-content hidden">
+        <div class="container mx-auto px-6 py-8">
+            <div class="mb-8">
+                <h2 class="text-3xl font-bold text-gray-800 mb-2">Planejamento de Aulas</h2>
+                <p class="text-gray-600">Crie e organize seus planejamentos semanais</p>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <form id="lessonPlanForm" class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Disciplina</label>
+                            <select id="subject" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <option value="">Selecione a disciplina</option>
+                                <option value="matematica">Matemática</option>
+                                <option value="portugues">Português</option>
+                                <option value="historia">História</option>
+                                <option value="geografia">Geografia</option>
+                                <option value="ciencias">Ciências</option>
+                                <option value="ingles">Inglês</option>
+                                <option value="educacao_fisica">Educação Física</option>
+                                <option value="artes">Artes</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Turma</label>
+                            <select id="class" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <option value="">Selecione a turma</option>
+                                <option value="6a">6º Ano A</option>
+                                <option value="6b">6º Ano B</option>
+                                <option value="7a">7º Ano A</option>
+                                <option value="7b">7º Ano B</option>
+                                <option value="8a">8º Ano A</option>
+                                <option value="8b">8º Ano B</option>
+                                <option value="9a">9º Ano A</option>
+                                <option value="9b">9º Ano B</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Data</label>
+                            <input type="date" id="lessonDate" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Habilidade BNCC</label>
+                        <select id="bnccSkill" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <option value="">Selecione a habilidade BNCC</option>
+                            <option value="EF06MA01">EF06MA01 - Comparar, ordenar, ler e escrever números naturais e números racionais</option>
+                            <option value="EF06MA02">EF06MA02 - Reconhecer o sistema de numeração decimal</option>
+                            <option value="EF06MA03">EF06MA03 - Resolver e elaborar problemas que envolvam cálculos</option>
+                            <option value="EF07LP01">EF07LP01 - Distinguir diferentes propostas editoriais</option>
+                            <option value="EF07LP02">EF07LP02 - Comparar informações sobre um mesmo fato</option>
+                            <option value="EF08HI01">EF08HI01 - Identificar os principais aspectos conceituais do iluminismo</option>
+                        </select>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Objetivos</label>
+                            <textarea id="objectives" rows="4" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Descreva os objetivos da aula..."></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Conteúdo</label>
+                            <textarea id="content" rows="4" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Descreva o conteúdo a ser trabalhado..."></textarea>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Estratégias</label>
+                            <textarea id="strategies" rows="4" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Descreva as estratégias metodológicas..."></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Recursos</label>
+                            <textarea id="resources" rows="4" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Liste os recursos necessários..."></textarea>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Avaliação</label>
+                        <textarea id="evaluation" rows="3" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Descreva como será feita a avaliação..."></textarea>
+                    </div>
+
+                    <div class="flex space-x-4">
+                        <button type="submit" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2">
+                            <i class="fas fa-save"></i>
+                            <span>Salvar Planejamento</span>
+                        </button>
+                        <button type="button" onclick="generatePDF()" class="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2">
+                            <i class="fas fa-file-pdf"></i>
+                            <span>Exportar PDF</span>
+                        </button>
+                        <button type="button" onclick="suggestActivities()" class="bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors flex items-center space-x-2">
+                            <i class="fas fa-lightbulb"></i>
+                            <span>Sugerir Atividades</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Suggested Activities -->
+            <div id="suggestedActivities" class="mt-8 bg-white rounded-lg shadow-md p-6 hidden">
+                <h3 class="text-xl font-semibold text-gray-800 mb-4">Atividades Sugeridas</h3>
+                <div id="activitiesList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- Activities will be populated here -->
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Activities Section -->
+    <section id="activities" class="section-content hidden">
+        <div class="container mx-auto px-6 py-8">
+            <div class="mb-8">
+                <h2 class="text-3xl font-bold text-gray-800 mb-2">Banco de Atividades</h2>
+                <p class="text-gray-600">Gerencie e organize suas atividades pedagógicas</p>
+            </div>
+
+            <!-- Search and Filter -->
+            <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div>
+                        <input type="text" id="searchActivities" placeholder="Buscar atividades..." class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                    <div>
+                        <select id="filterSubject" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <option value="">Todas as disciplinas</option>
+                            <option value="matematica">Matemática</option>
+                            <option value="portugues">Português</option>
+                            <option value="historia">História</option>
+                            <option value="geografia">Geografia</option>
+                            <option value="ciencias">Ciências</option>
+                        </select>
+                    </div>
+                    <div>
+                        <select id="filterGrade" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <option value="">Todas as séries</option>
+                            <option value="6">6º Ano</option>
+                            <option value="7">7º Ano</option>
+                            <option value="8">8º Ano</option>
+                            <option value="9">9º Ano</option>
+                        </select>
+                    </div>
+                    <div>
+                        <button onclick="createNewActivity()" class="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">
+                            <i class="fas fa-plus mr-2"></i>Nova Atividade
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Activities Grid -->
+            <div id="activitiesGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Activities will be loaded here -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Reports Section -->
+    <section id="reports" class="section-content hidden">
+        <div class="container mx-auto px-6 py-8">
+            <div class="mb-8">
+                <h2 class="text-3xl font-bold text-gray-800 mb-2">Relatórios</h2>
+                <p class="text-gray-600">Acompanhe o progresso dos seus planejamentos</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Progress Chart -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4">Progresso por Disciplina</h3>
+                    <div id="progressChart" class="space-y-4">
+                        <!-- Progress bars will be generated here -->
+                    </div>
+                </div>
+
+                <!-- Weekly Summary -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4">Resumo Semanal</h3>
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                            <div class="flex items-center space-x-3">
+                                <i class="fas fa-calendar-check text-blue-600"></i>
+                                <span class="text-gray-800">Aulas Planejadas</span>
+                            </div>
+                            <span id="weeklyPlanned" class="font-semibold text-blue-600">0</span>
+                        </div>
+                        <div class="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                            <div class="flex items-center space-x-3">
+                                <i class="fas fa-check-circle text-green-600"></i>
+                                <span class="text-gray-800">Atividades Criadas</span>
+                            </div>
+                            <span id="weeklyActivities" class="font-semibold text-green-600">0</span>
+                        </div>
+                        <div class="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
+                            <div class="flex items-center space-x-3">
+                                <i class="fas fa-tasks text-purple-600"></i>
+                                <span class="text-gray-800">Disciplinas Ativas</span>
+                            </div>
+                            <span id="activeSubjects" class="font-semibold text-purple-600">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Activity Modal -->
+    <div id="activityModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-screen overflow-y-auto">
+                <div class="p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-xl font-semibold text-gray-800">Nova Atividade</h3>
+                        <button onclick="closeActivityModal()" class="text-gray-400 hover:text-gray-600">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
+                    <form id="activityForm" class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Título</label>
+                                <input type="text" id="activityTitle" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Tipo</label>
+                                <select id="activityType" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    <option value="exercicio">Exercício</option>
+                                    <option value="quiz">Quiz</option>
+                                    <option value="dinamica">Dinâmica</option>
+                                    <option value="jogo">Jogo Pedagógico</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Disciplina</label>
+                                <select id="activitySubject" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    <option value="">Selecione</option>
+                                    <option value="matematica">Matemática</option>
+                                    <option value="portugues">Português</option>
+                                    <option value="historia">História</option>
+                                    <option value="geografia">Geografia</option>
+                                    <option value="ciencias">Ciências</option>
+                                    <option value="ingles">Inglês</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Série</label>
+                                <select id="activityGrade" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    <option value="">Selecione</option>
+                                    <option value="6">6º Ano</option>
+                                    <option value="7">7º Ano</option>
+                                    <option value="8">8º Ano</option>
+                                    <option value="9">9º Ano</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Descrição</label>
+                            <textarea id="activityDescription" rows="4" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Descreva a atividade..."></textarea>
+                        </div>
+                        <div class="flex space-x-4">
+                            <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                                Salvar Atividade
+                            </button>
+                            <button type="button" onclick="closeActivityModal()" class="bg-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-400 transition-colors">
+                                Cancelar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/firebase-config.js"></script>
+    <script src="js/database.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        // Global variables
+        let currentSection = 'dashboard';
+        let currentUser = null;
+        let userLessonPlans = [];
+        let userActivities = [];
+
+        // Navigation
+        function showSection(sectionName) {
+            document.querySelectorAll('.section-content').forEach(section => {
+                section.classList.add('hidden');
+            });
+            
+            document.getElementById(sectionName).classList.remove('hidden');
+            currentSection = sectionName;
+            
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('text-blue-200');
+            });
+            
+            if (sectionName === 'activities') {
+                loadUserActivities();
+            } else if (sectionName === 'reports') {
+                loadReports();
+            }
+        }
+
+        // Initialize dashboard data
+        async function initializeDashboard() {
+            try {
+                const user = auth.currentUser;
+                if (!user) return;
+
+                // Load user data
+                const userData = await getUserData();
+                document.getElementById('userName').textContent = userData.name || 'Professor';
+                document.getElementById('userPlan').textContent = userData.subscription?.plan || 'Trial';
+
+                // Load lesson plans
+                userLessonPlans = await getUserLessonPlans();
+                document.getElementById('totalPlans').textContent = userLessonPlans.length;
+
+                // Load activities
+                userActivities = await getUserActivities();
+                document.getElementById('totalActivities').textContent = userActivities.length;
+
+                // Calculate this week's plans
+                const thisWeek = getWeekNumber(new Date());
+                const thisWeekPlans = userLessonPlans.filter(plan => {
+                    const planDate = new Date(plan.date);
+                    return getWeekNumber(planDate) === thisWeek;
+                });
+                document.getElementById('thisWeekPlans').textContent = thisWeekPlans.length;
+
+                // Load recent plans
+                loadRecentPlans();
+
+            } catch (error) {
+                console.error('Erro ao carregar dashboard:', error);
+            }
+        }
+
+        // Load recent plans
+        function loadRecentPlans() {
+            const recentPlansDiv = document.getElementById('recentPlans');
+            
+            if (userLessonPlans.length === 0) {
+                recentPlansDiv.innerHTML = '<p class="text-gray-500 text-center py-4">Nenhum planejamento encontrado</p>';
+                return;
+            }
+
+            const recentPlans = userLessonPlans.slice(0, 5);
+            recentPlansDiv.innerHTML = '';
+
+            recentPlans.forEach(plan => {
+                const planDiv = document.createElement('div');
+                planDiv.className = 'border-l-4 border-blue-500 pl-4 py-2';
+                planDiv.innerHTML = `
+                    <p class="font-medium text-gray-800">${plan.subject} - ${plan.class}</p>
+                    <p class="text-sm text-gray-600">${plan.content?.substring(0, 50)}... - ${formatDate(plan.date)}</p>
+                `;
+                recentPlansDiv.appendChild(planDiv);
+            });
+        }
+
+        // Lesson Plan Form
+        document.getElementById('lessonPlanForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            try {
+                const formData = {
+                    subject: document.getElementById('subject').value,
+                    class: document.getElementById('class').value,
+                    date: document.getElementById('lessonDate').value,
+                    bnccSkill: document.getElementById('bnccSkill').value,
+                    objectives: document.getElementById('objectives').value,
+                    content: document.getElementById('content').value,
+                    strategies: document.getElementById('strategies').value,
+                    resources: document.getElementById('resources').value,
+                    evaluation: document.getElementById('evaluation').value
+                };
+                
+                await saveLessonPlan(formData);
+                alert('Planejamento salvo com sucesso!');
+                document.getElementById('lessonPlanForm').reset();
+                
+                // Refresh dashboard data
+                await initializeDashboard();
+                
+            } catch (error) {
+                console.error('Erro ao salvar planejamento:', error);
+                alert('Erro ao salvar planejamento: ' + error.message);
+            }
+        });
+
+        // Activity Form
+        document.getElementById('activityForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            try {
+                const activityData = {
+                    title: document.getElementById('activityTitle').value,
+                    type: document.getElementById('activityType').value,
+                    subject: document.getElementById('activitySubject').value,
+                    grade: document.getElementById('activityGrade').value,
+                    description: document.getElementById('activityDescription').value
+                };
+                
+                await saveActivity(activityData);
+                closeActivityModal();
+                alert('Atividade criada com sucesso!');
+                
+                // Refresh activities if on activities section
+                if (currentSection === 'activities') {
+                    loadUserActivities();
+                }
+                
+                // Refresh dashboard data
+                await initializeDashboard();
+                
+            } catch (error) {
+                console.error('Erro ao salvar atividade:', error);
+                alert('Erro ao salvar atividade: ' + error.message);
+            }
+        });
+
+        // Load user activities
+        async function loadUserActivities() {
+            try {
+                userActivities = await getUserActivities();
+                const activitiesGrid = document.getElementById('activitiesGrid');
+                
+                if (userActivities.length === 0) {
+                    activitiesGrid.innerHTML = '<div class="col-span-full text-center py-8 text-gray-500">Nenhuma atividade encontrada. Crie sua primeira atividade!</div>';
+                    return;
+                }
+
+                activitiesGrid.innerHTML = '';
+                userActivities.forEach(activity => {
+                    const activityCard = createActivityCard(activity);
+                    activitiesGrid.appendChild(activityCard);
+                });
+
+            } catch (error) {
+                console.error('Erro ao carregar atividades:', error);
+            }
+        }
+
+        // Create activity card
+        function createActivityCard(activity) {
+            const card = document.createElement('div');
+            card.className = 'bg-white rounded-lg shadow-md p-6 card-hover';
+            
+            const subjectColors = {
+                matematica: 'blue',
+                portugues: 'green',
+                historia: 'purple',
+                geografia: 'yellow',
+                ciencias: 'red',
+                ingles: 'indigo'
+            };
+            
+            const color = subjectColors[activity.subject] || 'gray';
+            
+            card.innerHTML = `
+                <div class="flex items-center justify-between mb-4">
+                    <span class="bg-${color}-100 text-${color}-800 text-xs font-medium px-2.5 py-0.5 rounded">${activity.subject}</span>
+                    <span class="text-gray-500 text-sm">${activity.grade}º Ano</span>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-800 mb-2">${activity.title}</h3>
+                <p class="text-gray-600 text-sm mb-4">${activity.description.substring(0, 100)}...</p>
+                <div class="flex space-x-2">
+                    <button onclick="viewActivity('${activity.id}')" class="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700 transition-colors">
+                        <i class="fas fa-eye mr-1"></i>Ver
+                    </button>
+                    <button onclick="editActivity('${activity.id}')" class="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 transition-colors">
+                        <i class="fas fa-edit mr-1"></i>Editar
+                    </button>
+                    <button onclick="useActivity('${activity.title}')" class="bg-purple-600 text-white px-3 py-1 rounded text-sm hover:bg-purple-700 transition-colors">
+                        <i class="fas fa-copy mr-1"></i>Usar
+                    </button>
+                </div>
+            `;
+            
+            return card;
+        }
+
+        // Generate PDF
+        function generatePDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            const subject = document.getElementById('subject').value || 'Não informado';
+            const className = document.getElementById('class').value || 'Não informado';
+            const date = document.getElementById('lessonDate').value || 'Não informado';
+            const bnccSkill = document.getElementById('bnccSkill').value || 'Não informado';
+            const objectives = document.getElementById('objectives').value || 'Não informado';
+            const content = document.getElementById('content').value || 'Não informado';
+            const strategies = document.getElementById('strategies').value || 'Não informado';
+            const resources = document.getElementById('resources').value || 'Não informado';
+            const evaluation = document.getElementById('evaluation').value || 'Não informado';
+            
+            doc.setFontSize(20);
+            doc.text('Planejamento de Aula', 20, 20);
+            
+            doc.setFontSize(12);
+            let yPosition = 40;
+            
+            doc.text(`Disciplina: ${subject}`, 20, yPosition);
+            yPosition += 10;
+            doc.text(`Turma: ${className}`, 20, yPosition);
+            yPosition += 10;
+            doc.text(`Data: ${formatDate(date)}`, 20, yPosition);
+            yPosition += 10;
+            doc.text(`Habilidade BNCC: ${bnccSkill}`, 20, yPosition);
+            yPosition += 20;
+            
+            doc.text('Objetivos:', 20, yPosition);
+            yPosition += 10;
+            const objectiveLines = doc.splitTextToSize(objectives, 170);
+            doc.text(objectiveLines, 20, yPosition);
+            yPosition += objectiveLines.length * 5 + 10;
+            
+            doc.text('Conteúdo:', 20, yPosition);
+            yPosition += 10;
+            const contentLines = doc.splitTextToSize(content, 170);
+            doc.text(contentLines, 20, yPosition);
+            yPosition += contentLines.length * 5 + 10;
+            
+            if (yPosition > 250) {
+                doc.addPage();
+                yPosition = 20;
+            }
+            
+            doc.text('Estratégias:', 20, yPosition);
+            yPosition += 10;
+            const strategyLines = doc.splitTextToSize(strategies, 170);
+            doc.text(strategyLines, 20, yPosition);
+            yPosition += strategyLines.length * 5 + 10;
+            
+            doc.text('Recursos:', 20, yPosition);
+            yPosition += 10;
+            const resourceLines = doc.splitTextToSize(resources, 170);
+            doc.text(resourceLines, 20, yPosition);
+            yPosition += resourceLines.length * 5 + 10;
+            
+            doc.text('Avaliação:', 20, yPosition);
+            yPosition += 10;
+            const evaluationLines = doc.splitTextToSize(evaluation, 170);
+            doc.text(evaluationLines, 20, yPosition);
+            
+            doc.save(`planejamento-${subject}-${className}-${date}.pdf`);
+        }
+
+        // Suggest Activities
+        function suggestActivities() {
+            const subject = document.getElementById('subject').value;
+            const className = document.getElementById('class').value;
+            
+            if (!subject || !className) {
+                alert('Por favor, selecione a disciplina e a turma primeiro.');
+                return;
+            }
+            
+            const suggestedActivitiesDiv = document.getElementById('suggestedActivities');
+            const activitiesList = document.getElementById('activitiesList');
+            
+            const suggestions = {
+                matematica: [
+                    { title: 'Exercícios de Frações', description: 'Lista de exercícios práticos sobre operações com frações' },
+                    { title: 'Jogo da Tabuada', description: 'Jogo interativo para memorização da tabuada' },
+                    { title: 'Problemas do Cotidiano', description: 'Situações-problema envolvendo matemática básica' }
+                ],
+                portugues: [
+                    { title: 'Quiz de Verbos', description: 'Quiz interativo sobre conjugação verbal' },
+                    { title: 'Produção Textual', description: 'Atividade de criação de textos narrativos' },
+                    { title: 'Interpretação de Texto', description: 'Exercícios de compreensão textual' }
+                ],
+                historia: [
+                    { title: 'Linha do Tempo', description: 'Construção de linha do tempo histórica' },
+                    { title: 'Debate Histórico', description: 'Simulação de debates de época' },
+                    { title: 'Pesquisa Dirigida', description: 'Atividade de pesquisa sobre período histórico' }
+                ]
+            };
+            
+            const subjectSuggestions = suggestions[subject] || [];
+            
+            activitiesList.innerHTML = '';
+            subjectSuggestions.forEach(activity => {
+                const activityCard = document.createElement('div');
+                activityCard.className = 'bg-gray-50 rounded-lg p-4 border border-gray-200';
+                activityCard.innerHTML = `
+                    <h4 class="font-semibold text-gray-800 mb-2">${activity.title}</h4>
+                    <p class="text-gray-600 text-sm mb-3">${activity.description}</p>
+                    <button onclick="useActivity('${activity.title}')" class="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 transition-colors">
+                        <i class="fas fa-plus mr-1"></i>Usar
+                    </button>
+                `;
+                activitiesList.appendChild(activityCard);
+            });
+            
+            suggestedActivitiesDiv.classList.remove('hidden');
+        }
+
+        // Use suggested activity
+        function useActivity(activityTitle) {
+            const strategiesField = document.getElementById('strategies');
+            const currentStrategies = strategiesField.value;
+            const newStrategy = currentStrategies ? `${currentStrategies}\n- ${activityTitle}` : `- ${activityTitle}`;
+            strategiesField.value = newStrategy;
+            
+            alert(`Atividade "${activityTitle}" adicionada às estratégias!`);
+        }
+
+        // Duplicate last week
+        async function duplicateLastWeek() {
+            if (userLessonPlans.length === 0) {
+                alert('Nenhum planejamento anterior encontrado.');
+                return;
+            }
+            
+            const lastPlan = userLessonPlans[0]; // Most recent plan
+            
+            document.getElementById('subject').value = lastPlan.subject;
+            document.getElementById('class').value = lastPlan.class;
+            document.getElementById('bnccSkill').value = lastPlan.bnccSkill;
+            document.getElementById('objectives').value = lastPlan.objectives;
+            document.getElementById('content').value = lastPlan.content;
+            document.getElementById('strategies').value = lastPlan.strategies;
+            document.getElementById('resources').value = lastPlan.resources;
+            document.getElementById('evaluation').value = lastPlan.evaluation;
+            
+            const today = new Date();
+            const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+            document.getElementById('lessonDate').value = nextWeek.toISOString().split('T')[0];
+            
+            showSection('planner');
+            alert('Planejamento da semana anterior duplicado! Ajuste as informações conforme necessário.');
+        }
+
+        // Activity Management
+        function createNewActivity() {
+            document.getElementById('activityModal').classList.remove('hidden');
+        }
+
+        function closeActivityModal() {
+            document.getElementById('activityModal').classList.add('hidden');
+            document.getElementById('activityForm').reset();
+        }
+
+        function viewActivity(activityId) {
+            const activity = userActivities.find(a => a.id === activityId);
+            if (activity) {
+                alert(`Atividade: ${activity.title}\n\nDescrição: ${activity.description}`);
+            }
+        }
+
+        function editActivity(activityId) {
+            alert('Funcionalidade de edição será implementada em breve!');
+        }
+
+        // Load reports
+        function loadReports() {
+            // Update weekly summary
+            const thisWeek = getWeekNumber(new Date());
+            const thisWeekPlans = userLessonPlans.filter(plan => {
+                const planDate = new Date(plan.date);
+                return getWeekNumber(planDate) === thisWeek;
+            });
+            
+            document.getElementById('weeklyPlanned').textContent = thisWeekPlans.length;
+            document.getElementById('weeklyActivities').textContent = userActivities.length;
+            
+            // Count active subjects
+            const activeSubjects = new Set(userLessonPlans.map(plan => plan.subject));
+            document.getElementById('activeSubjects').textContent = activeSubjects.size;
+            
+            // Generate progress chart
+            generateProgressChart();
+        }
+
+        // Generate progress chart
+        function generateProgressChart() {
+            const progressChart = document.getElementById('progressChart');
+            const subjectCounts = {};
+            
+            userLessonPlans.forEach(plan => {
+                subjectCounts[plan.subject] = (subjectCounts[plan.subject] || 0) + 1;
+            });
+            
+            progressChart.innerHTML = '';
+            
+            Object.entries(subjectCounts).forEach(([subject, count]) => {
+                const percentage = Math.min((count / 20) * 100, 100); // Assuming 20 lessons per subject as target
+                
+                const progressDiv = document.createElement('div');
+                progressDiv.innerHTML = `
+                    <div class="flex justify-between text-sm text-gray-600 mb-1">
+                        <span>${subject}</span>
+                        <span>${count} aulas</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div class="bg-blue-600 h-2 rounded-full" style="width: ${percentage}%"></div>
+                    </div>
+                `;
+                progressChart.appendChild(progressDiv);
+            });
+        }
+
+        // Utility functions
+        function getWeekNumber(date) {
+            const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+            const dayNum = d.getUTCDay() || 7;
+            d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+            const yearStart = new Date(Date.UTC(d.getUTCFullYear(),0,1));
+            return Math.ceil((((d - yearStart) / 86400000) + 1)/7);
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return 'Data não informada';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('pt-BR');
+        }
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('lessonDate').value = today;
+            
+            // Wait for auth state to be determined
+            auth.onAuthStateChanged(async (user) => {
+                if (user) {
+                    currentUser = user;
+                    await initializeDashboard();
+                    showSection('dashboard');
+                }
+            });
+        });
+
+        // Close modal when clicking outside
+        document.getElementById('activityModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeActivityModal();
+            }
+        });
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'980a18ab61bbc075',t:'MTc1ODEyNzc2MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
