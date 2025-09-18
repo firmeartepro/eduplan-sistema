@@ -3,371 +3,303 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EduPlan - Dashboard Coordenação</title>
+    <title>Coordenação - Semanário</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
         body { font-family: 'Inter', sans-serif; }
         .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-        .gradient-orange { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
         .card-hover { transition: all 0.3s ease; }
         .card-hover:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
-        .fade-in { animation: fadeIn 0.5s ease-in; }
+        .status-realizado { background: linear-gradient(135deg, #10b981, #059669); }
+        .status-ressalvas { background: linear-gradient(135deg, #f59e0b, #d97706); }
+        .status-completar { background: linear-gradient(135deg, #ef4444, #dc2626); }
+        .status-procurar { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+        .fade-in { animation: fadeIn 0.6s ease-in; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        .status-draft { background: #FEF3C7; color: #92400E; }
-        .status-submitted { background: #DBEAFE; color: #1E40AF; }
-        .status-approved { background: #D1FAE5; color: #065F46; }
-        .status-rejected { background: #FEE2E2; color: #991B1B; }
-        .sidebar-active { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
-        .priority-high { border-left: 4px solid #EF4444; }
-        .priority-medium { border-left: 4px solid #F59E0B; }
-        .priority-low { border-left: 4px solid #10B981; }
-        .notification-dot { animation: pulse 2s infinite; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .loading-spinner { animation: spin 1s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
     </style>
 </head>
-<body class="bg-gray-50">
-    <!-- Sidebar -->
-    <div id="sidebar" class="fixed left-0 top-0 h-full w-64 bg-white shadow-lg transform -translate-x-full lg:translate-x-0 transition-transform duration-300 z-50">
-        <div class="p-6 border-b">
-            <div class="flex items-center">
-                <div class="w-10 h-10 gradient-orange rounded-lg flex items-center justify-center mr-3">
-                    <i class="fas fa-users text-white"></i>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="gradient-bg shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
+                            <i class="fas fa-users text-indigo-600 text-xl"></i>
+                        </div>
+                        <div>
+                            <h1 class="text-xl font-bold text-white">Coordenação Pedagógica</h1>
+                            <p class="text-indigo-100 text-sm" id="schoolName">Carregando...</p>
+                        </div>
+                    </div>
                 </div>
-                <div>
-                    <h2 class="font-bold text-gray-800">EduPlan</h2>
-                    <p class="text-sm text-gray-600">Coordenação</p>
+                
+                <div class="flex items-center space-x-4">
+                    <div class="text-right">
+                        <p class="text-white font-medium" id="userName">Carregando...</p>
+                        <p class="text-indigo-100 text-sm">Coordenador(a)</p>
+                    </div>
+                    <button onclick="logout()" class="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-4 py-2 rounded-lg transition-all duration-200">
+                        <i class="fas fa-sign-out-alt mr-2"></i>
+                        Sair
+                    </button>
                 </div>
             </div>
         </div>
-        
-        <nav class="p-4">
-            <ul class="space-y-2">
-                <li>
-                    <a href="#" onclick="showSection('dashboard')" class="sidebar-item sidebar-active flex items-center p-3 rounded-lg transition-colors">
-                        <i class="fas fa-chart-pie mr-3"></i>
-                        Dashboard
-                    </a>
-                </li>
-                <li>
-                    <a href="#" onclick="showSection('approvals')" class="sidebar-item flex items-center p-3 rounded-lg hover:bg-gray-100 transition-colors">
-                        <i class="fas fa-clipboard-check mr-3"></i>
-                        Aprovações
-                        <span id="pendingBadge" class="ml-auto bg-red-500 text-white text-xs rounded-full px-2 py-1 hidden">0</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="#" onclick="showSection('teachers')" class="sidebar-item flex items-center p-3 rounded-lg hover:bg-gray-100 transition-colors">
-                        <i class="fas fa-chalkboard-teacher mr-3"></i>
-                        Professores
-                    </a>
-                </li>
-                <li>
-                    <a href="#" onclick="showSection('reports')" class="sidebar-item flex items-center p-3 rounded-lg hover:bg-gray-100 transition-colors">
-                        <i class="fas fa-chart-bar mr-3"></i>
-                        Relatórios
-                    </a>
-                </li>
-                <li>
-                    <a href="#" onclick="showSection('feedbacks')" class="sidebar-item flex items-center p-3 rounded-lg hover:bg-gray-100 transition-colors">
-                        <i class="fas fa-comment-dots mr-3"></i>
-                        Devolutivas
-                    </a>
-                </li>
-                <li>
-                    <a href="#" onclick="showSection('profile')" class="sidebar-item flex items-center p-3 rounded-lg hover:bg-gray-100 transition-colors">
-                        <i class="fas fa-user-cog mr-3"></i>
-                        Perfil
-                    </a>
-                </li>
-            </ul>
-        </nav>
-        
-        <div class="absolute bottom-4 left-4 right-4">
-            <button onclick="logout()" class="w-full flex items-center justify-center p-3 text-red-600 hover:bg-red-50 rounded-lg transition-colors">
-                <i class="fas fa-sign-out-alt mr-2"></i>
-                Sair
-            </button>
-        </div>
-    </div>
-
-    <!-- Mobile Menu Button -->
-    <button id="mobileMenuBtn" class="lg:hidden fixed top-4 left-4 z-50 p-2 bg-white rounded-lg shadow-lg">
-        <i class="fas fa-bars"></i>
-    </button>
+    </header>
 
     <!-- Main Content -->
-    <div class="lg:ml-64 min-h-screen">
-        <!-- Header -->
-        <header class="bg-white shadow-sm border-b p-4 lg:p-6">
-            <div class="flex items-center justify-between">
-                <div>
-                    <h1 class="text-2xl font-bold text-gray-800" id="pageTitle">Dashboard</h1>
-                    <p class="text-gray-600" id="pageSubtitle">Visão geral da coordenação pedagógica</p>
-                </div>
-                <div class="flex items-center space-x-4">
-                    <div class="relative">
-                        <button class="p-2 text-gray-600 hover:text-gray-800 relative">
-                            <i class="fas fa-bell text-xl"></i>
-                            <span id="notificationBadge" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center notification-dot hidden">0</span>
-                        </button>
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white rounded-xl shadow-sm p-6 card-hover fade-in">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-blue-100">
+                        <i class="fas fa-chalkboard-teacher text-blue-600 text-xl"></i>
                     </div>
-                    <div class="flex items-center">
-                        <div class="w-8 h-8 gradient-orange rounded-full flex items-center justify-center mr-2">
-                            <i class="fas fa-user text-white text-sm"></i>
-                        </div>
-                        <span class="text-sm font-medium text-gray-700" id="userName">Carregando...</span>
-                    </div>
-                </div>
-            </div>
-        </header>
-
-        <!-- Dashboard Section -->
-        <div id="dashboardSection" class="section-content p-4 lg:p-6">
-            <!-- Quick Stats -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                <div class="bg-white rounded-xl shadow-sm p-6 card-hover">
-                    <div class="flex items-center">
-                        <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mr-4">
-                            <i class="fas fa-clipboard-list text-blue-600 text-xl"></i>
-                        </div>
-                        <div>
-                            <p class="text-sm text-gray-600">Planos Pendentes</p>
-                            <p class="text-2xl font-bold text-gray-800" id="pendingPlans">0</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="bg-white rounded-xl shadow-sm p-6 card-hover">
-                    <div class="flex items-center">
-                        <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mr-4">
-                            <i class="fas fa-check-circle text-green-600 text-xl"></i>
-                        </div>
-                        <div>
-                            <p class="text-sm text-gray-600">Aprovados Hoje</p>
-                            <p class="text-2xl font-bold text-gray-800" id="approvedToday">0</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="bg-white rounded-xl shadow-sm p-6 card-hover">
-                    <div class="flex items-center">
-                        <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mr-4">
-                            <i class="fas fa-chalkboard-teacher text-purple-600 text-xl"></i>
-                        </div>
-                        <div>
-                            <p class="text-sm text-gray-600">Professores Ativos</p>
-                            <p class="text-2xl font-bold text-gray-800" id="activeTeachers">0</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="bg-white rounded-xl shadow-sm p-6 card-hover">
-                    <div class="flex items-center">
-                        <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mr-4">
-                            <i class="fas fa-star text-orange-600 text-xl"></i>
-                        </div>
-                        <div>
-                            <p class="text-sm text-gray-600">Avaliação Média</p>
-                            <p class="text-2xl font-bold text-gray-800" id="averageRating">0.0</p>
-                        </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Total Professores</p>
+                        <p class="text-2xl font-bold text-gray-900" id="totalProfessores">0</p>
                     </div>
                 </div>
             </div>
 
-            <!-- Charts and Priority Tasks -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                <div class="bg-white rounded-xl shadow-sm p-6">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Status dos Planos</h3>
-                    <canvas id="statusChart" width="400" height="200"></canvas>
-                </div>
-                
-                <div class="bg-white rounded-xl shadow-sm p-6">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Tarefas Prioritárias</h3>
-                    <div id="priorityTasks" class="space-y-3">
-                        <!-- Priority tasks will be loaded here -->
+            <div class="bg-white rounded-xl shadow-sm p-6 card-hover fade-in">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-green-100">
+                        <i class="fas fa-check-circle text-green-600 text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Semanários OK</p>
+                        <p class="text-2xl font-bold text-gray-900" id="semanarios-ok">0</p>
                     </div>
                 </div>
             </div>
 
-            <!-- Recent Activity -->
-            <div class="bg-white rounded-xl shadow-sm p-6">
-                <div class="flex items-center justify-between mb-6">
-                    <h3 class="text-lg font-semibold text-gray-800">Atividade Recente</h3>
-                    <button onclick="showSection('approvals')" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
-                        Ver todas
-                    </button>
+            <div class="bg-white rounded-xl shadow-sm p-6 card-hover fade-in">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-yellow-100">
+                        <i class="fas fa-exclamation-triangle text-yellow-600 text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Com Ressalvas</p>
+                        <p class="text-2xl font-bold text-gray-900" id="semanarios-ressalvas">0</p>
+                    </div>
                 </div>
-                <div id="recentActivity" class="space-y-4">
-                    <!-- Recent activity will be loaded here -->
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm p-6 card-hover fade-in">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-red-100">
+                        <i class="fas fa-times-circle text-red-600 text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Pendentes</p>
+                        <p class="text-2xl font-bold text-gray-900" id="semanarios-pendentes">0</p>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Approvals Section -->
-        <div id="approvalsSection" class="section-content hidden p-4 lg:p-6">
-            <div class="flex items-center justify-between mb-6">
-                <div>
-                    <h2 class="text-2xl font-bold text-gray-800">Aprovações</h2>
-                    <p class="text-gray-600">Analise e aprove planos de aula</p>
+        <!-- Filters -->
+        <div class="bg-white rounded-xl shadow-sm p-6 mb-8 fade-in">
+            <div class="flex flex-col sm:flex-row gap-4 items-center justify-between">
+                <div class="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Semana</label>
+                        <select id="semanaFilter" class="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                            <option value="">Todas as semanas</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                        <select id="statusFilter" class="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                            <option value="">Todos os status</option>
+                            <option value="realizado">Realizado com sucesso</option>
+                            <option value="ressalvas">Com ressalvas</option>
+                            <option value="completar">Favor completar</option>
+                            <option value="procurar">Procure a coordenação</option>
+                            <option value="sem-devolutiva">Sem devolutiva</option>
+                        </select>
+                    </div>
                 </div>
-                <div class="flex space-x-2">
-                    <button onclick="filterApprovals('all')" class="filter-btn active px-4 py-2 rounded-lg text-sm font-medium">Todos</button>
-                    <button onclick="filterApprovals('submitted')" class="filter-btn px-4 py-2 rounded-lg text-sm font-medium">Pendentes</button>
-                    <button onclick="filterApprovals('urgent')" class="filter-btn px-4 py-2 rounded-lg text-sm font-medium">Urgentes</button>
-                </div>
-            </div>
-
-            <!-- Approval Cards -->
-            <div id="approvalsList" class="space-y-4">
-                <!-- Approvals will be loaded here -->
-            </div>
-        </div>
-
-        <!-- Teachers Section -->
-        <div id="teachersSection" class="section-content hidden p-4 lg:p-6">
-            <div class="flex items-center justify-between mb-6">
-                <div>
-                    <h2 class="text-2xl font-bold text-gray-800">Professores</h2>
-                    <p class="text-gray-600">Gerencie o corpo docente</p>
-                </div>
-                <button onclick="showAddTeacherModal()" class="gradient-orange text-white px-6 py-3 rounded-lg font-semibold hover:opacity-90 transition-all">
-                    <i class="fas fa-plus mr-2"></i>
-                    Adicionar Professor
+                <button onclick="loadPlanejamentos()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors">
+                    <i class="fas fa-sync-alt mr-2"></i>
+                    Atualizar
                 </button>
             </div>
-
-            <!-- Teachers Grid -->
-            <div id="teachersGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <!-- Teachers will be loaded here -->
-            </div>
         </div>
 
-        <!-- Reports Section -->
-        <div id="reportsSection" class="section-content hidden p-4 lg:p-6">
-            <div class="mb-6">
-                <h2 class="text-2xl font-bold text-gray-800">Relatórios</h2>
-                <p class="text-gray-600">Análises e estatísticas detalhadas</p>
+        <!-- Planejamentos List -->
+        <div class="bg-white rounded-xl shadow-sm fade-in">
+            <div class="p-6 border-b border-gray-200">
+                <h2 class="text-xl font-bold text-gray-900">
+                    <i class="fas fa-calendar-week mr-2 text-indigo-600"></i>
+                    Semanários dos Professores
+                </h2>
             </div>
-
-            <!-- Report Cards -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                <div class="bg-white rounded-xl shadow-sm p-6">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Planos por Professor</h3>
-                    <canvas id="teacherChart" width="400" height="200"></canvas>
-                </div>
-                
-                <div class="bg-white rounded-xl shadow-sm p-6">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Aprovações por Mês</h3>
-                    <canvas id="monthlyChart" width="400" height="200"></canvas>
+            
+            <div id="loadingPlanejamentos" class="flex items-center justify-center py-12">
+                <div class="text-center">
+                    <i class="fas fa-spinner loading-spinner text-3xl text-indigo-600 mb-4"></i>
+                    <p class="text-gray-600">Carregando semanários...</p>
                 </div>
             </div>
 
-            <!-- Detailed Stats -->
-            <div class="bg-white rounded-xl shadow-sm p-6">
-                <h3 class="text-lg font-semibold text-gray-800 mb-6">Estatísticas Detalhadas</h3>
-                <div id="detailedStats" class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <!-- Detailed stats will be loaded here -->
-                </div>
+            <div id="planejamentosList" class="hidden">
+                <!-- Planejamentos will be loaded here -->
+            </div>
+
+            <div id="noPlanejamentos" class="hidden p-12 text-center">
+                <i class="fas fa-calendar-times text-4xl text-gray-400 mb-4"></i>
+                <h3 class="text-lg font-medium text-gray-900 mb-2">Nenhum semanário encontrado</h3>
+                <p class="text-gray-600">Não há semanários para os filtros selecionados.</p>
             </div>
         </div>
+    </main>
 
-        <!-- Feedbacks Section -->
-        <div id="feedbacksSection" class="section-content hidden p-4 lg:p-6">
-            <div class="flex items-center justify-between mb-6">
-                <div>
-                    <h2 class="text-2xl font-bold text-gray-800">Devolutivas</h2>
-                    <p class="text-gray-600">Feedback enviado aos professores</p>
-                </div>
-            </div>
-
-            <!-- Feedbacks List -->
-            <div id="feedbacksList" class="space-y-4">
-                <!-- Feedbacks will be loaded here -->
-            </div>
-        </div>
-
-        <!-- Profile Section -->
-        <div id="profileSection" class="section-content hidden p-4 lg:p-6">
-            <div class="bg-white rounded-xl shadow-sm p-6">
-                <h3 class="text-lg font-semibold text-gray-800 mb-6">Meu Perfil</h3>
-                <form id="profileForm" class="space-y-6">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Nome</label>
-                            <input type="text" id="profileName" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                            <input type="email" id="profileEmail" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" readonly>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Telefone</label>
-                            <input type="tel" id="profilePhone" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Área de Atuação</label>
-                            <input type="text" id="profileSubject" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                        </div>
-                    </div>
-                    <button type="submit" class="gradient-orange text-white px-6 py-3 rounded-lg font-semibold hover:opacity-90 transition-all">
-                        <i class="fas fa-save mr-2"></i>
-                        Salvar Alterações
-                    </button>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- Plan Review Modal -->
-    <div id="reviewModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-            <div class="p-6 border-b">
-                <div class="flex items-center justify-between">
-                    <h3 class="text-xl font-bold text-gray-800">Revisar Plano de Aula</h3>
-                    <button onclick="hideReviewModal()" class="text-gray-500 hover:text-gray-700">
+    <!-- Devolutiva Modal -->
+    <div id="devolutivaModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xl font-bold text-gray-900">Dar Devolutiva</h3>
+                    <button onclick="closeDevolutivaModal()" class="text-gray-500 hover:text-gray-700">
                         <i class="fas fa-times text-xl"></i>
                     </button>
                 </div>
             </div>
             
-            <div id="reviewContent" class="p-6">
-                <!-- Plan content will be loaded here -->
-            </div>
-            
-            <div class="p-6 border-t bg-gray-50">
-                <form id="reviewForm" class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Devolutiva</label>
-                        <textarea id="feedbackText" rows="4" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Escreva sua devolutiva..."></textarea>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Avaliação</label>
-                        <div class="flex items-center space-x-2">
-                            <div id="ratingStars" class="flex space-x-1">
-                                <i class="fas fa-star text-gray-300 cursor-pointer rating-star" data-rating="1"></i>
-                                <i class="fas fa-star text-gray-300 cursor-pointer rating-star" data-rating="2"></i>
-                                <i class="fas fa-star text-gray-300 cursor-pointer rating-star" data-rating="3"></i>
-                                <i class="fas fa-star text-gray-300 cursor-pointer rating-star" data-rating="4"></i>
-                                <i class="fas fa-star text-gray-300 cursor-pointer rating-star" data-rating="5"></i>
-                            </div>
-                            <span id="ratingText" class="text-sm text-gray-600">Selecione uma avaliação</span>
+            <div class="p-6">
+                <!-- Planejamento Info -->
+                <div class="bg-gray-50 rounded-lg p-4 mb-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <p class="text-sm text-gray-600">Professor</p>
+                            <p class="font-medium" id="modalProfessor">-</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600">Turma</p>
+                            <p class="font-medium" id="modalTurma">-</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600">Semana</p>
+                            <p class="font-medium" id="modalSemana">-</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600">Tema</p>
+                            <p class="font-medium" id="modalTema">-</p>
                         </div>
                     </div>
-                    <div class="flex items-center justify-end space-x-4">
-                        <button type="button" onclick="rejectPlan()" class="px-6 py-3 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition-colors">
-                            <i class="fas fa-times mr-2"></i>
-                            Rejeitar
-                        </button>
-                        <button type="button" onclick="approvePlan()" class="gradient-bg text-white px-6 py-3 rounded-lg font-semibold hover:opacity-90 transition-all">
-                            <i class="fas fa-check mr-2"></i>
-                            Aprovar
-                        </button>
+                </div>
+
+                <!-- Status Options -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-3">Status da Devolutiva</label>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <label class="flex items-center p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-green-300 transition-colors">
+                            <input type="radio" name="devolutivaStatus" value="realizado" class="sr-only">
+                            <div class="flex items-center w-full">
+                                <div class="w-4 h-4 rounded-full border-2 border-gray-300 mr-3 flex items-center justify-center">
+                                    <div class="w-2 h-2 rounded-full bg-green-500 hidden"></div>
+                                </div>
+                                <div>
+                                    <p class="font-medium text-gray-900">Realizado com sucesso</p>
+                                    <p class="text-sm text-gray-600">Semanário completo e adequado</p>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="flex items-center p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-yellow-300 transition-colors">
+                            <input type="radio" name="devolutivaStatus" value="ressalvas" class="sr-only">
+                            <div class="flex items-center w-full">
+                                <div class="w-4 h-4 rounded-full border-2 border-gray-300 mr-3 flex items-center justify-center">
+                                    <div class="w-2 h-2 rounded-full bg-yellow-500 hidden"></div>
+                                </div>
+                                <div>
+                                    <p class="font-medium text-gray-900">Com ressalvas</p>
+                                    <p class="text-sm text-gray-600">Precisa de alguns ajustes</p>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="flex items-center p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-red-300 transition-colors">
+                            <input type="radio" name="devolutivaStatus" value="completar" class="sr-only">
+                            <div class="flex items-center w-full">
+                                <div class="w-4 h-4 rounded-full border-2 border-gray-300 mr-3 flex items-center justify-center">
+                                    <div class="w-2 h-2 rounded-full bg-red-500 hidden"></div>
+                                </div>
+                                <div>
+                                    <p class="font-medium text-gray-900">Favor completar o semanário</p>
+                                    <p class="text-sm text-gray-600">Informações incompletas</p>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="flex items-center p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-purple-300 transition-colors">
+                            <input type="radio" name="devolutivaStatus" value="procurar" class="sr-only">
+                            <div class="flex items-center w-full">
+                                <div class="w-4 h-4 rounded-full border-2 border-gray-300 mr-3 flex items-center justify-center">
+                                    <div class="w-2 h-2 rounded-full bg-purple-500 hidden"></div>
+                                </div>
+                                <div>
+                                    <p class="font-medium text-gray-900">Procure a coordenação</p>
+                                    <p class="text-sm text-gray-600">Necessário conversa presencial</p>
+                                </div>
+                            </div>
+                        </label>
                     </div>
-                </form>
+                </div>
+
+                <!-- Comentários -->
+                <div class="mb-6">
+                    <label for="devolutivaComentario" class="block text-sm font-medium text-gray-700 mb-2">
+                        Comentários (opcional)
+                    </label>
+                    <textarea 
+                        id="devolutivaComentario" 
+                        rows="4" 
+                        class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        placeholder="Adicione observações, sugestões ou orientações específicas..."
+                    ></textarea>
+                </div>
+
+                <!-- Actions -->
+                <div class="flex space-x-3">
+                    <button 
+                        onclick="closeDevolutivaModal()" 
+                        class="flex-1 border border-gray-300 text-gray-700 py-3 px-4 rounded-lg hover:bg-gray-50 transition-colors"
+                    >
+                        Cancelar
+                    </button>
+                    <button 
+                        onclick="salvarDevolutiva()" 
+                        id="salvarDevolutivaBtn"
+                        class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-3 px-4 rounded-lg transition-colors"
+                    >
+                        <span id="salvarDevolutivaText">Salvar Devolutiva</span>
+                        <span id="salvarDevolutivaLoading" class="hidden">
+                            <i class="fas fa-spinner loading-spinner mr-2"></i>
+                            Salvando...
+                        </span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed top-4 right-4 bg-white border border-gray-200 rounded-lg shadow-lg p-4 transform translate-x-full transition-transform duration-300 z-50">
+        <div class="flex items-center">
+            <div id="toastIcon" class="mr-3"></div>
+            <div>
+                <p id="toastMessage" class="font-medium text-gray-900"></p>
             </div>
         </div>
     </div>
@@ -378,869 +310,489 @@
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNycXFoZWFjc2dsaHl5aHZmY2hnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgxNTMxMDMsImV4cCI6MjA3MzcyOTEwM30.ZOKVDK1FEyDM-lcPrw4-0xbVDxYLftek3NHYcmjc_7w';
         
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        
+
         let currentUser = null;
-        let currentSection = 'dashboard';
-        let currentPlanId = null;
-        let currentRating = 0;
+        let currentSchoolId = null;
+        let currentPlanejamento = null;
 
         // Initialize
         document.addEventListener('DOMContentLoaded', async () => {
             await checkAuth();
+            await loadUserData();
+            await loadWeekOptions();
+            await loadPlanejamentos();
             setupEventListeners();
-            await loadDashboardData();
         });
 
         // Check authentication
         async function checkAuth() {
-            try {
-                const { data: { session } } = await supabase.auth.getSession();
-                if (!session) {
-                    window.location.href = './index.html';
-                    return;
-                }
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) {
+                window.location.href = './index.html';
+                return;
+            }
+            currentUser = session.user;
+        }
 
-                const { data: userProfile } = await supabase
+        // Load user data
+        async function loadUserData() {
+            try {
+                const { data: userData, error } = await supabase
                     .from('users')
-                    .select('*, schools(name)')
-                    .eq('email', session.user.email)
+                    .select(`
+                        name, 
+                        user_type, 
+                        school_id,
+                        schools (name)
+                    `)
+                    .eq('id', currentUser.id)
                     .single();
 
-                if (!userProfile || userProfile.user_type !== 'coordenacao') {
-                    alert('Acesso negado. Esta área é apenas para coordenação.');
-                    window.location.href = './index.html';
+                if (error) throw error;
+
+                if (userData.user_type !== 'coordenacao') {
+                    showToast('Acesso negado', 'error');
+                    setTimeout(() => window.location.href = './index.html', 2000);
                     return;
                 }
 
-                currentUser = userProfile;
-                document.getElementById('userName').textContent = userProfile.name;
+                currentSchoolId = userData.school_id;
+                document.getElementById('userName').textContent = userData.name || 'Coordenador';
+                document.getElementById('schoolName').textContent = userData.schools?.name || 'Escola';
+
             } catch (error) {
-                console.error('Erro na autenticação:', error);
-                window.location.href = './index.html';
+                console.error('Erro ao carregar dados do usuário:', error);
+                showToast('Erro ao carregar dados do usuário', 'error');
             }
+        }
+
+        // Load week options
+        async function loadWeekOptions() {
+            const select = document.getElementById('semanaFilter');
+            const currentWeek = getCurrentWeek();
+            
+            // Add current and next weeks
+            for (let i = -2; i <= 10; i++) {
+                const week = getWeekNumber(currentWeek + i);
+                const option = document.createElement('option');
+                option.value = week;
+                option.textContent = `Semana ${week}`;
+                if (i === 0) option.selected = true;
+                select.appendChild(option);
+            }
+        }
+
+        // Get current week number
+        function getCurrentWeek() {
+            const now = new Date();
+            const start = new Date(now.getFullYear(), 0, 1);
+            const diff = now - start;
+            const oneWeek = 1000 * 60 * 60 * 24 * 7;
+            return Math.ceil(diff / oneWeek);
+        }
+
+        // Get week number with year handling
+        function getWeekNumber(week) {
+            if (week < 1) return `${52 + week}`;
+            if (week > 52) return `${week - 52}`;
+            return week.toString().padStart(2, '0');
+        }
+
+        // Load planejamentos
+        async function loadPlanejamentos() {
+            const loadingDiv = document.getElementById('loadingPlanejamentos');
+            const listDiv = document.getElementById('planejamentosList');
+            const noDataDiv = document.getElementById('noPlanejamentos');
+
+            loadingDiv.classList.remove('hidden');
+            listDiv.classList.add('hidden');
+            noDataDiv.classList.add('hidden');
+
+            try {
+                let query = supabase
+                    .from('planejamentos')
+                    .select(`
+                        *,
+                        users (name),
+                        turmas (nome, ano, materia)
+                    `)
+                    .eq('users.school_id', currentSchoolId)
+                    .order('created_at', { ascending: false });
+
+                // Apply filters
+                const semanaFilter = document.getElementById('semanaFilter').value;
+                const statusFilter = document.getElementById('statusFilter').value;
+
+                if (semanaFilter) {
+                    query = query.eq('semana', semanaFilter);
+                }
+
+                const { data: planejamentos, error } = await query;
+
+                if (error) throw error;
+
+                // Filter by status if needed
+                let filteredPlanejamentos = planejamentos;
+                if (statusFilter) {
+                    if (statusFilter === 'sem-devolutiva') {
+                        filteredPlanejamentos = planejamentos.filter(p => !p.devolutiva_status);
+                    } else {
+                        filteredPlanejamentos = planejamentos.filter(p => p.devolutiva_status === statusFilter);
+                    }
+                }
+
+                if (filteredPlanejamentos.length === 0) {
+                    noDataDiv.classList.remove('hidden');
+                } else {
+                    renderPlanejamentos(filteredPlanejamentos);
+                    listDiv.classList.remove('hidden');
+                }
+
+                updateStats(planejamentos);
+
+            } catch (error) {
+                console.error('Erro ao carregar planejamentos:', error);
+                showToast('Erro ao carregar semanários', 'error');
+                noDataDiv.classList.remove('hidden');
+            } finally {
+                loadingDiv.classList.add('hidden');
+            }
+        }
+
+        // Render planejamentos
+        function renderPlanejamentos(planejamentos) {
+            const container = document.getElementById('planejamentosList');
+            container.innerHTML = '';
+
+            planejamentos.forEach(planejamento => {
+                const statusInfo = getStatusInfo(planejamento.devolutiva_status);
+                
+                const div = document.createElement('div');
+                div.className = 'border-b border-gray-200 p-6 hover:bg-gray-50 transition-colors';
+                div.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <div class="flex-1">
+                            <div class="flex items-center space-x-4 mb-3">
+                                <div class="flex items-center space-x-2">
+                                    <i class="fas fa-user-tie text-gray-400"></i>
+                                    <span class="font-medium text-gray-900">${planejamento.users?.name || 'Professor'}</span>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <i class="fas fa-users text-gray-400"></i>
+                                    <span class="text-gray-600">${planejamento.turmas?.nome || 'Turma'} - ${planejamento.turmas?.ano}º ano</span>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <i class="fas fa-book text-gray-400"></i>
+                                    <span class="text-gray-600">${getMateriaName(planejamento.turmas?.materia)}</span>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-center space-x-4 mb-3">
+                                <div class="flex items-center space-x-2">
+                                    <i class="fas fa-calendar text-gray-400"></i>
+                                    <span class="text-gray-600">Semana ${planejamento.semana}</span>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <i class="fas fa-lightbulb text-gray-400"></i>
+                                    <span class="text-gray-900 font-medium">${planejamento.tema}</span>
+                                </div>
+                            </div>
+
+                            ${statusInfo.html}
+                            
+                            ${planejamento.devolutiva_comentario ? `
+                                <div class="mt-3 p-3 bg-blue-50 rounded-lg">
+                                    <p class="text-sm text-blue-800">
+                                        <i class="fas fa-comment mr-2"></i>
+                                        ${planejamento.devolutiva_comentario}
+                                    </p>
+                                </div>
+                            ` : ''}
+                        </div>
+                        
+                        <div class="flex items-center space-x-3">
+                            <button 
+                                onclick="viewPlanejamento('${planejamento.id}')"
+                                class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg transition-colors"
+                            >
+                                <i class="fas fa-eye mr-2"></i>
+                                Ver
+                            </button>
+                            <button 
+                                onclick="openDevolutivaModal('${planejamento.id}')"
+                                class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors"
+                            >
+                                <i class="fas fa-comment-dots mr-2"></i>
+                                ${planejamento.devolutiva_status ? 'Editar' : 'Dar'} Devolutiva
+                            </button>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        // Get status info
+        function getStatusInfo(status) {
+            const statusMap = {
+                'realizado': {
+                    color: 'green',
+                    icon: 'check-circle',
+                    text: 'Realizado com sucesso',
+                    bgClass: 'bg-green-100 text-green-800'
+                },
+                'ressalvas': {
+                    color: 'yellow',
+                    icon: 'exclamation-triangle',
+                    text: 'Com ressalvas',
+                    bgClass: 'bg-yellow-100 text-yellow-800'
+                },
+                'completar': {
+                    color: 'red',
+                    icon: 'times-circle',
+                    text: 'Favor completar o semanário',
+                    bgClass: 'bg-red-100 text-red-800'
+                },
+                'procurar': {
+                    color: 'purple',
+                    icon: 'user-tie',
+                    text: 'Procure a coordenação',
+                    bgClass: 'bg-purple-100 text-purple-800'
+                }
+            };
+
+            if (!status) {
+                return {
+                    html: `<div class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-gray-100 text-gray-600">
+                        <i class="fas fa-clock mr-2"></i>
+                        Aguardando devolutiva
+                    </div>`
+                };
+            }
+
+            const info = statusMap[status];
+            return {
+                html: `<div class="inline-flex items-center px-3 py-1 rounded-full text-sm ${info.bgClass}">
+                    <i class="fas fa-${info.icon} mr-2"></i>
+                    ${info.text}
+                </div>`
+            };
+        }
+
+        // Get materia name
+        function getMateriaName(materia) {
+            const materias = {
+                'lingua-portuguesa': 'Língua Portuguesa',
+                'matematica': 'Matemática',
+                'ciencias': 'Ciências',
+                'historia': 'História',
+                'geografia': 'Geografia',
+                'arte': 'Arte',
+                'educacao-fisica': 'Educação Física',
+                'ensino-religioso': 'Ensino Religioso'
+            };
+            return materias[materia] || materia;
+        }
+
+        // Update stats
+        function updateStats(planejamentos) {
+            const stats = {
+                total: 0,
+                realizado: 0,
+                ressalvas: 0,
+                pendentes: 0
+            };
+
+            // Count unique professors
+            const professores = new Set();
+            planejamentos.forEach(p => {
+                if (p.users?.name) professores.add(p.users.name);
+            });
+            stats.total = professores.size;
+
+            // Count by status
+            planejamentos.forEach(p => {
+                if (p.devolutiva_status === 'realizado') stats.realizado++;
+                else if (p.devolutiva_status === 'ressalvas') stats.ressalvas++;
+                else if (!p.devolutiva_status || p.devolutiva_status === 'completar' || p.devolutiva_status === 'procurar') stats.pendentes++;
+            });
+
+            document.getElementById('totalProfessores').textContent = stats.total;
+            document.getElementById('semanarios-ok').textContent = stats.realizado;
+            document.getElementById('semanarios-ressalvas').textContent = stats.ressalvas;
+            document.getElementById('semanarios-pendentes').textContent = stats.pendentes;
+        }
+
+        // Open devolutiva modal
+        async function openDevolutivaModal(planejamentoId) {
+            try {
+                const { data: planejamento, error } = await supabase
+                    .from('planejamentos')
+                    .select(`
+                        *,
+                        users (name),
+                        turmas (nome, ano, materia)
+                    `)
+                    .eq('id', planejamentoId)
+                    .single();
+
+                if (error) throw error;
+
+                currentPlanejamento = planejamento;
+
+                // Fill modal data
+                document.getElementById('modalProfessor').textContent = planejamento.users?.name || 'Professor';
+                document.getElementById('modalTurma').textContent = `${planejamento.turmas?.nome} - ${planejamento.turmas?.ano}º ano`;
+                document.getElementById('modalSemana').textContent = `Semana ${planejamento.semana}`;
+                document.getElementById('modalTema').textContent = planejamento.tema;
+
+                // Set current status if exists
+                if (planejamento.devolutiva_status) {
+                    const radio = document.querySelector(`input[name="devolutivaStatus"][value="${planejamento.devolutiva_status}"]`);
+                    if (radio) {
+                        radio.checked = true;
+                        updateRadioSelection(radio);
+                    }
+                }
+
+                // Set comment
+                document.getElementById('devolutivaComentario').value = planejamento.devolutiva_comentario || '';
+
+                document.getElementById('devolutivaModal').classList.remove('hidden');
+
+            } catch (error) {
+                console.error('Erro ao carregar planejamento:', error);
+                showToast('Erro ao carregar dados do semanário', 'error');
+            }
+        }
+
+        // Close devolutiva modal
+        function closeDevolutivaModal() {
+            document.getElementById('devolutivaModal').classList.add('hidden');
+            document.getElementById('devolutivaComentario').value = '';
+            
+            // Reset radio buttons
+            document.querySelectorAll('input[name="devolutivaStatus"]').forEach(radio => {
+                radio.checked = false;
+                updateRadioSelection(radio);
+            });
+            
+            currentPlanejamento = null;
+        }
+
+        // Save devolutiva
+        async function salvarDevolutiva() {
+            const selectedStatus = document.querySelector('input[name="devolutivaStatus"]:checked');
+            const comentario = document.getElementById('devolutivaComentario').value.trim();
+
+            if (!selectedStatus) {
+                showToast('Por favor, selecione um status', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('salvarDevolutivaBtn');
+            const btnText = document.getElementById('salvarDevolutivaText');
+            const btnLoading = document.getElementById('salvarDevolutivaLoading');
+
+            btn.disabled = true;
+            btnText.classList.add('hidden');
+            btnLoading.classList.remove('hidden');
+
+            try {
+                const { error } = await supabase
+                    .from('planejamentos')
+                    .update({
+                        devolutiva_status: selectedStatus.value,
+                        devolutiva_comentario: comentario || null,
+                        devolutiva_data: new Date().toISOString(),
+                        devolutiva_coordenador_id: currentUser.id
+                    })
+                    .eq('id', currentPlanejamento.id);
+
+                if (error) throw error;
+
+                showToast('Devolutiva salva com sucesso!', 'success');
+                closeDevolutivaModal();
+                await loadPlanejamentos();
+
+            } catch (error) {
+                console.error('Erro ao salvar devolutiva:', error);
+                showToast('Erro ao salvar devolutiva', 'error');
+            } finally {
+                btn.disabled = false;
+                btnText.classList.remove('hidden');
+                btnLoading.classList.add('hidden');
+            }
+        }
+
+        // View planejamento (placeholder)
+        function viewPlanejamento(id) {
+            // This could open a detailed view modal
+            showToast('Funcionalidade em desenvolvimento', 'info');
         }
 
         // Setup event listeners
         function setupEventListeners() {
-            // Mobile menu
-            document.getElementById('mobileMenuBtn').addEventListener('click', () => {
-                const sidebar = document.getElementById('sidebar');
-                sidebar.classList.toggle('-translate-x-full');
+            // Filter changes
+            document.getElementById('semanaFilter').addEventListener('change', loadPlanejamentos);
+            document.getElementById('statusFilter').addEventListener('change', loadPlanejamentos);
+
+            // Radio button styling
+            document.querySelectorAll('input[name="devolutivaStatus"]').forEach(radio => {
+                radio.addEventListener('change', function() {
+                    document.querySelectorAll('input[name="devolutivaStatus"]').forEach(r => updateRadioSelection(r));
+                });
             });
 
-            // Profile form
-            document.getElementById('profileForm').addEventListener('submit', handleUpdateProfile);
-
-            // Rating stars
-            document.querySelectorAll('.rating-star').forEach(star => {
-                star.addEventListener('click', (e) => {
-                    const rating = parseInt(e.target.dataset.rating);
-                    setRating(rating);
-                });
+            // Modal close on outside click
+            document.getElementById('devolutivaModal').addEventListener('click', function(e) {
+                if (e.target.id === 'devolutivaModal') {
+                    closeDevolutivaModal();
+                }
             });
         }
 
-        // Show section
-        function showSection(section) {
-            // Hide all sections
-            document.querySelectorAll('.section-content').forEach(el => {
-                el.classList.add('hidden');
-            });
-
-            // Remove active class from all sidebar items
-            document.querySelectorAll('.sidebar-item').forEach(el => {
-                el.classList.remove('sidebar-active');
-                el.classList.add('hover:bg-gray-100');
-            });
-
-            // Show selected section
-            document.getElementById(section + 'Section').classList.remove('hidden');
+        // Update radio selection styling
+        function updateRadioSelection(radio) {
+            const label = radio.closest('label');
+            const dot = label.querySelector('.w-2.h-2');
             
-            // Add active class to selected sidebar item
-            event.target.classList.add('sidebar-active');
-            event.target.classList.remove('hover:bg-gray-100');
+            if (radio.checked) {
+                label.classList.add('border-indigo-500', 'bg-indigo-50');
+                dot.classList.remove('hidden');
+            } else {
+                label.classList.remove('border-indigo-500', 'bg-indigo-50');
+                dot.classList.add('hidden');
+            }
+        }
 
-            // Update page title
-            const titles = {
-                dashboard: { title: 'Dashboard', subtitle: 'Visão geral da coordenação pedagógica' },
-                approvals: { title: 'Aprovações', subtitle: 'Analise e aprove planos de aula' },
-                teachers: { title: 'Professores', subtitle: 'Gerencie o corpo docente' },
-                reports: { title: 'Relatórios', subtitle: 'Análises e estatísticas detalhadas' },
-                feedbacks: { title: 'Devolutivas', subtitle: 'Feedback enviado aos professores' },
-                profile: { title: 'Perfil', subtitle: 'Gerencie suas informações' }
+        // Show toast notification
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            const icon = document.getElementById('toastIcon');
+            const messageEl = document.getElementById('toastMessage');
+
+            const icons = {
+                success: '<i class="fas fa-check-circle text-green-500"></i>',
+                error: '<i class="fas fa-exclamation-circle text-red-500"></i>',
+                info: '<i class="fas fa-info-circle text-blue-500"></i>'
             };
 
-            document.getElementById('pageTitle').textContent = titles[section].title;
-            document.getElementById('pageSubtitle').textContent = titles[section].subtitle;
+            icon.innerHTML = icons[type] || icons.info;
+            messageEl.textContent = message;
 
-            currentSection = section;
-
-            // Load section data
-            switch(section) {
-                case 'dashboard':
-                    loadDashboardData();
-                    break;
-                case 'approvals':
-                    loadApprovals();
-                    break;
-                case 'teachers':
-                    loadTeachers();
-                    break;
-                case 'reports':
-                    loadReports();
-                    break;
-                case 'feedbacks':
-                    loadFeedbacks();
-                    break;
-                case 'profile':
-                    loadProfile();
-                    break;
-            }
-
-            // Close mobile menu
-            document.getElementById('sidebar').classList.add('-translate-x-full');
+            toast.classList.remove('translate-x-full');
+            setTimeout(() => {
+                toast.classList.add('translate-x-full');
+            }, 3000);
         }
 
-        // Load dashboard data
-        async function loadDashboardData() {
-            try {
-                // Load pending plans
-                const { data: pendingPlans } = await supabase
-                    .from('lesson_plans')
-                    .select('*')
-                    .eq('school_id', currentUser.school_id)
-                    .eq('status', 'submitted');
-
-                document.getElementById('pendingPlans').textContent = pendingPlans?.length || 0;
-                document.getElementById('pendingBadge').textContent = pendingPlans?.length || 0;
-                
-                if (pendingPlans?.length > 0) {
-                    document.getElementById('pendingBadge').classList.remove('hidden');
-                    document.getElementById('notificationBadge').classList.remove('hidden');
-                    document.getElementById('notificationBadge').textContent = pendingPlans.length;
-                }
-
-                // Load approved today
-                const today = new Date().toISOString().split('T')[0];
-                const { data: approvedToday } = await supabase
-                    .from('lesson_plans')
-                    .select('*')
-                    .eq('school_id', currentUser.school_id)
-                    .eq('status', 'approved')
-                    .gte('updated_at', today);
-
-                document.getElementById('approvedToday').textContent = approvedToday?.length || 0;
-
-                // Load active teachers
-                const { data: teachers } = await supabase
-                    .from('users')
-                    .select('*')
-                    .eq('school_id', currentUser.school_id)
-                    .eq('user_type', 'professor')
-                    .eq('is_active', true);
-
-                document.getElementById('activeTeachers').textContent = teachers?.length || 0;
-
-                // Load average rating
-                const { data: feedbacks } = await supabase
-                    .from('feedbacks')
-                    .select('rating')
-                    .eq('school_id', currentUser.school_id);
-
-                const avgRating = feedbacks?.length > 0 
-                    ? (feedbacks.reduce((sum, f) => sum + f.rating, 0) / feedbacks.length).toFixed(1)
-                    : '0.0';
-                document.getElementById('averageRating').textContent = avgRating;
-
-                // Load charts and activities
-                await loadDashboardCharts();
-                await loadPriorityTasks();
-                await loadRecentActivity();
-
-            } catch (error) {
-                console.error('Erro ao carregar dashboard:', error);
-            }
-        }
-
-        // Load dashboard charts
-        async function loadDashboardCharts() {
-            try {
-                const { data: plans } = await supabase
-                    .from('lesson_plans')
-                    .select('*')
-                    .eq('school_id', currentUser.school_id);
-
-                const statusCounts = {
-                    draft: plans?.filter(p => p.status === 'draft').length || 0,
-                    submitted: plans?.filter(p => p.status === 'submitted').length || 0,
-                    approved: plans?.filter(p => p.status === 'approved').length || 0,
-                    rejected: plans?.filter(p => p.status === 'rejected').length || 0
-                };
-
-                const ctx = document.getElementById('statusChart').getContext('2d');
-                new Chart(ctx, {
-                    type: 'doughnut',
-                    data: {
-                        labels: ['Rascunho', 'Pendente', 'Aprovado', 'Rejeitado'],
-                        datasets: [{
-                            data: [statusCounts.draft, statusCounts.submitted, statusCounts.approved, statusCounts.rejected],
-                            backgroundColor: ['#FCD34D', '#60A5FA', '#34D399', '#F87171']
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                position: 'bottom'
-                            }
-                        }
-                    }
-                });
-
-            } catch (error) {
-                console.error('Erro ao carregar gráficos:', error);
-            }
-        }
-
-        // Load priority tasks
-        async function loadPriorityTasks() {
-            try {
-                const { data: urgentPlans } = await supabase
-                    .from('lesson_plans')
-                    .select('*, users(name)')
-                    .eq('school_id', currentUser.school_id)
-                    .eq('status', 'submitted')
-                    .lte('date', new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString())
-                    .order('date', { ascending: true })
-                    .limit(5);
-
-                const container = document.getElementById('priorityTasks');
-                
-                if (!urgentPlans || urgentPlans.length === 0) {
-                    container.innerHTML = '<p class="text-gray-500 text-center py-4">Nenhuma tarefa prioritária</p>';
-                    return;
-                }
-
-                container.innerHTML = urgentPlans.map(plan => {
-                    const daysUntil = Math.ceil((new Date(plan.date) - new Date()) / (1000 * 60 * 60 * 24));
-                    const priority = daysUntil <= 1 ? 'high' : daysUntil <= 3 ? 'medium' : 'low';
-                    
-                    return `
-                        <div class="p-3 border rounded-lg priority-${priority} hover:bg-gray-50 cursor-pointer" onclick="reviewPlan('${plan.id}')">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <h4 class="font-medium text-gray-800">${plan.title}</h4>
-                                    <p class="text-sm text-gray-600">${plan.users.name} • ${plan.subject}</p>
-                                </div>
-                                <span class="text-xs px-2 py-1 rounded-full ${priority === 'high' ? 'bg-red-100 text-red-600' : priority === 'medium' ? 'bg-yellow-100 text-yellow-600' : 'bg-green-100 text-green-600'}">
-                                    ${daysUntil <= 0 ? 'Hoje' : `${daysUntil} dias`}
-                                </span>
-                            </div>
-                        </div>
-                    `;
-                }).join('');
-
-            } catch (error) {
-                console.error('Erro ao carregar tarefas prioritárias:', error);
-            }
-        }
-
-        // Load recent activity
-        async function loadRecentActivity() {
-            try {
-                const { data: recentPlans } = await supabase
-                    .from('lesson_plans')
-                    .select('*, users(name)')
-                    .eq('school_id', currentUser.school_id)
-                    .order('updated_at', { ascending: false })
-                    .limit(5);
-
-                const container = document.getElementById('recentActivity');
-                
-                if (!recentPlans || recentPlans.length === 0) {
-                    container.innerHTML = '<p class="text-gray-500 text-center py-4">Nenhuma atividade recente</p>';
-                    return;
-                }
-
-                container.innerHTML = recentPlans.map(plan => `
-                    <div class="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                        <div class="flex items-center">
-                            <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
-                                <i class="fas fa-book text-blue-600"></i>
-                            </div>
-                            <div>
-                                <h4 class="font-medium text-gray-800">${plan.title}</h4>
-                                <p class="text-sm text-gray-600">${plan.users.name} • ${new Date(plan.updated_at).toLocaleDateString('pt-BR')}</p>
-                            </div>
-                        </div>
-                        <span class="px-3 py-1 rounded-full text-xs font-medium status-${plan.status}">
-                            ${getStatusText(plan.status)}
-                        </span>
-                    </div>
-                `).join('');
-
-            } catch (error) {
-                console.error('Erro ao carregar atividade recente:', error);
-            }
-        }
-
-        // Load approvals
-        async function loadApprovals() {
-            try {
-                const { data: plans } = await supabase
-                    .from('lesson_plans')
-                    .select('*, users(name)')
-                    .eq('school_id', currentUser.school_id)
-                    .in('status', ['submitted', 'approved', 'rejected'])
-                    .order('date', { ascending: true });
-
-                const container = document.getElementById('approvalsList');
-                
-                if (!plans || plans.length === 0) {
-                    container.innerHTML = '<p class="text-gray-500 text-center py-8">Nenhum plano para aprovação</p>';
-                    return;
-                }
-
-                container.innerHTML = plans.map(plan => {
-                    const daysUntil = Math.ceil((new Date(plan.date) - new Date()) / (1000 * 60 * 60 * 24));
-                    const isUrgent = daysUntil <= 2 && plan.status === 'submitted';
-                    
-                    return `
-                        <div class="bg-white rounded-xl shadow-sm p-6 card-hover ${isUrgent ? 'border-l-4 border-red-500' : ''}">
-                            <div class="flex items-start justify-between mb-4">
-                                <div class="flex-1">
-                                    <div class="flex items-center mb-2">
-                                        <h3 class="text-lg font-semibold text-gray-800 mr-3">${plan.title}</h3>
-                                        ${isUrgent ? '<span class="px-2 py-1 bg-red-100 text-red-600 text-xs rounded-full font-medium">URGENTE</span>' : ''}
-                                    </div>
-                                    <div class="flex items-center space-x-4 text-sm text-gray-600 mb-3">
-                                        <span><i class="fas fa-user mr-1"></i>${plan.users.name}</span>
-                                        <span><i class="fas fa-book mr-1"></i>${plan.subject}</span>
-                                        <span><i class="fas fa-calendar mr-1"></i>${new Date(plan.date).toLocaleDateString('pt-BR')}</span>
-                                        <span><i class="fas fa-clock mr-1"></i>${plan.duration} min</span>
-                                    </div>
-                                    <p class="text-gray-600 text-sm">${plan.objectives?.substring(0, 150)}${plan.objectives?.length > 150 ? '...' : ''}</p>
-                                </div>
-                                <div class="flex items-center space-x-2 ml-4">
-                                    <span class="px-3 py-1 rounded-full text-xs font-medium status-${plan.status}">
-                                        ${getStatusText(plan.status)}
-                                    </span>
-                                    ${plan.status === 'submitted' ? `
-                                        <button onclick="reviewPlan('${plan.id}')" class="gradient-bg text-white px-4 py-2 rounded-lg text-sm font-medium hover:opacity-90 transition-all">
-                                            <i class="fas fa-eye mr-1"></i>
-                                            Revisar
-                                        </button>
-                                    ` : ''}
-                                </div>
-                            </div>
-                            <div class="flex items-center justify-between text-xs text-gray-500">
-                                <span>Enviado em ${new Date(plan.created_at).toLocaleDateString('pt-BR')}</span>
-                                ${daysUntil >= 0 ? `<span>${daysUntil === 0 ? 'Aula hoje' : `${daysUntil} dias para a aula`}</span>` : '<span class="text-red-600">Aula já passou</span>'}
-                            </div>
-                        </div>
-                    `;
-                }).join('');
-
-            } catch (error) {
-                console.error('Erro ao carregar aprovações:', error);
-            }
-        }
-
-        // Review plan
-        async function reviewPlan(planId) {
-            try {
-                const { data: plan } = await supabase
-                    .from('lesson_plans')
-                    .select('*, users(name)')
-                    .eq('id', planId)
-                    .single();
-
-                if (!plan) return;
-
-                currentPlanId = planId;
-                
-                document.getElementById('reviewContent').innerHTML = `
-                    <div class="space-y-6">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <h4 class="font-semibold text-gray-800 mb-2">Informações Básicas</h4>
-                                <div class="space-y-2 text-sm">
-                                    <p><strong>Professor:</strong> ${plan.users.name}</p>
-                                    <p><strong>Matéria:</strong> ${plan.subject}</p>
-                                    <p><strong>Data:</strong> ${new Date(plan.date).toLocaleDateString('pt-BR')}</p>
-                                    <p><strong>Duração:</strong> ${plan.duration} minutos</p>
-                                </div>
-                            </div>
-                            <div>
-                                <h4 class="font-semibold text-gray-800 mb-2">Status</h4>
-                                <span class="px-3 py-1 rounded-full text-sm font-medium status-${plan.status}">
-                                    ${getStatusText(plan.status)}
-                                </span>
-                            </div>
-                        </div>
-                        
-                        <div>
-                            <h4 class="font-semibold text-gray-800 mb-2">Objetivos</h4>
-                            <p class="text-gray-700 bg-gray-50 p-4 rounded-lg">${plan.objectives}</p>
-                        </div>
-                        
-                        <div>
-                            <h4 class="font-semibold text-gray-800 mb-2">Conteúdo</h4>
-                            <p class="text-gray-700 bg-gray-50 p-4 rounded-lg">${plan.content}</p>
-                        </div>
-                        
-                        <div>
-                            <h4 class="font-semibold text-gray-800 mb-2">Metodologia</h4>
-                            <p class="text-gray-700 bg-gray-50 p-4 rounded-lg">${plan.methodology}</p>
-                        </div>
-                        
-                        ${plan.resources ? `
-                            <div>
-                                <h4 class="font-semibold text-gray-800 mb-2">Recursos</h4>
-                                <p class="text-gray-700 bg-gray-50 p-4 rounded-lg">${plan.resources}</p>
-                            </div>
-                        ` : ''}
-                        
-                        ${plan.evaluation ? `
-                            <div>
-                                <h4 class="font-semibold text-gray-800 mb-2">Avaliação</h4>
-                                <p class="text-gray-700 bg-gray-50 p-4 rounded-lg">${plan.evaluation}</p>
-                            </div>
-                        ` : ''}
-                        
-                        ${plan.observations ? `
-                            <div>
-                                <h4 class="font-semibold text-gray-800 mb-2">Observações</h4>
-                                <p class="text-gray-700 bg-gray-50 p-4 rounded-lg">${plan.observations}</p>
-                            </div>
-                        ` : ''}
-                    </div>
-                `;
-
-                document.getElementById('reviewModal').classList.remove('hidden');
-                document.getElementById('reviewModal').classList.add('flex');
-
-            } catch (error) {
-                console.error('Erro ao carregar plano:', error);
-            }
-        }
-
-        // Approve plan
-        async function approvePlan() {
-            if (!currentPlanId) return;
-            
-            const feedbackText = document.getElementById('feedbackText').value;
-            
-            try {
-                // Update plan status
-                const { error: planError } = await supabase
-                    .from('lesson_plans')
-                    .update({ status: 'approved' })
-                    .eq('id', currentPlanId);
-
-                if (planError) throw planError;
-
-                // Add feedback if provided
-                if (feedbackText.trim() || currentRating > 0) {
-                    const { error: feedbackError } = await supabase
-                        .from('feedbacks')
-                        .insert([{
-                            lesson_plan_id: currentPlanId,
-                            reviewer_id: currentUser.id,
-                            school_id: currentUser.school_id,
-                            feedback_text: feedbackText || 'Plano aprovado',
-                            rating: currentRating || 5
-                        }]);
-
-                    if (feedbackError) throw feedbackError;
-                }
-
-                alert('Plano aprovado com sucesso!');
-                hideReviewModal();
-                loadApprovals();
-                loadDashboardData();
-
-            } catch (error) {
-                console.error('Erro ao aprovar plano:', error);
-                alert('Erro ao aprovar plano. Tente novamente.');
-            }
-        }
-
-        // Reject plan
-        async function rejectPlan() {
-            if (!currentPlanId) return;
-            
-            const feedbackText = document.getElementById('feedbackText').value;
-            
-            if (!feedbackText.trim()) {
-                alert('Por favor, forneça um motivo para a rejeição.');
-                return;
-            }
-            
-            try {
-                // Update plan status
-                const { error: planError } = await supabase
-                    .from('lesson_plans')
-                    .update({ status: 'rejected' })
-                    .eq('id', currentPlanId);
-
-                if (planError) throw planError;
-
-                // Add feedback
-                const { error: feedbackError } = await supabase
-                    .from('feedbacks')
-                    .insert([{
-                        lesson_plan_id: currentPlanId,
-                        reviewer_id: currentUser.id,
-                        school_id: currentUser.school_id,
-                        feedback_text: feedbackText,
-                        rating: currentRating || 1
-                    }]);
-
-                if (feedbackError) throw feedbackError;
-
-                alert('Plano rejeitado. Feedback enviado ao professor.');
-                hideReviewModal();
-                loadApprovals();
-                loadDashboardData();
-
-            } catch (error) {
-                console.error('Erro ao rejeitar plano:', error);
-                alert('Erro ao rejeitar plano. Tente novamente.');
-            }
-        }
-
-        // Set rating
-        function setRating(rating) {
-            currentRating = rating;
-            
-            document.querySelectorAll('.rating-star').forEach((star, index) => {
-                if (index < rating) {
-                    star.classList.remove('text-gray-300');
-                    star.classList.add('text-yellow-400');
-                } else {
-                    star.classList.remove('text-yellow-400');
-                    star.classList.add('text-gray-300');
-                }
-            });
-            
-            const ratingTexts = ['', 'Muito Ruim', 'Ruim', 'Regular', 'Bom', 'Excelente'];
-            document.getElementById('ratingText').textContent = ratingTexts[rating];
-        }
-
-        // Load teachers
-        async function loadTeachers() {
-            try {
-                const { data: teachers } = await supabase
-                    .from('users')
-                    .select(`
-                        *,
-                        lesson_plans(id, status)
-                    `)
-                    .eq('school_id', currentUser.school_id)
-                    .eq('user_type', 'professor');
-
-                const container = document.getElementById('teachersGrid');
-                
-                if (!teachers || teachers.length === 0) {
-                    container.innerHTML = '<p class="text-gray-500 text-center py-8 col-span-full">Nenhum professor encontrado</p>';
-                    return;
-                }
-
-                container.innerHTML = teachers.map(teacher => {
-                    const totalPlans = teacher.lesson_plans?.length || 0;
-                    const approvedPlans = teacher.lesson_plans?.filter(p => p.status === 'approved').length || 0;
-                    const pendingPlans = teacher.lesson_plans?.filter(p => p.status === 'submitted').length || 0;
-                    
-                    return `
-                        <div class="bg-white rounded-xl shadow-sm p-6 card-hover">
-                            <div class="flex items-center mb-4">
-                                <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mr-4">
-                                    <i class="fas fa-user text-blue-600 text-xl"></i>
-                                </div>
-                                <div>
-                                    <h3 class="font-semibold text-gray-800">${teacher.name}</h3>
-                                    <p class="text-sm text-gray-600">${teacher.subject || 'Matéria não informada'}</p>
-                                </div>
-                            </div>
-                            
-                            <div class="space-y-2 mb-4">
-                                <div class="flex justify-between text-sm">
-                                    <span class="text-gray-600">Total de Planos:</span>
-                                    <span class="font-medium">${totalPlans}</span>
-                                </div>
-                                <div class="flex justify-between text-sm">
-                                    <span class="text-gray-600">Aprovados:</span>
-                                    <span class="font-medium text-green-600">${approvedPlans}</span>
-                                </div>
-                                <div class="flex justify-between text-sm">
-                                    <span class="text-gray-600">Pendentes:</span>
-                                    <span class="font-medium text-yellow-600">${pendingPlans}</span>
-                                </div>
-                            </div>
-                            
-                            <div class="flex items-center justify-between">
-                                <span class="px-2 py-1 rounded-full text-xs font-medium ${teacher.is_active ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}">
-                                    ${teacher.is_active ? 'Ativo' : 'Inativo'}
-                                </span>
-                                <div class="flex space-x-2">
-                                    <button onclick="viewTeacherDetails('${teacher.id}')" class="text-blue-600 hover:text-blue-800 text-sm">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                    <button onclick="editTeacher('${teacher.id}')" class="text-gray-600 hover:text-gray-800 text-sm">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                }).join('');
-
-            } catch (error) {
-                console.error('Erro ao carregar professores:', error);
-            }
-        }
-
-        // Load reports
-        async function loadReports() {
-            try {
-                // Load data for charts
-                const { data: plans } = await supabase
-                    .from('lesson_plans')
-                    .select('*, users(name)')
-                    .eq('school_id', currentUser.school_id);
-
-                // Teacher chart
-                const teacherData = {};
-                plans?.forEach(plan => {
-                    const teacherName = plan.users.name;
-                    teacherData[teacherName] = (teacherData[teacherName] || 0) + 1;
-                });
-
-                const teacherCtx = document.getElementById('teacherChart').getContext('2d');
-                new Chart(teacherCtx, {
-                    type: 'bar',
-                    data: {
-                        labels: Object.keys(teacherData),
-                        datasets: [{
-                            label: 'Planos',
-                            data: Object.values(teacherData),
-                            backgroundColor: '#667eea'
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                display: false
-                            }
-                        }
-                    }
-                });
-
-                // Monthly chart
-                const monthlyData = {};
-                plans?.forEach(plan => {
-                    const month = new Date(plan.date).toLocaleDateString('pt-BR', { month: 'short' });
-                    monthlyData[month] = (monthlyData[month] || 0) + 1;
-                });
-
-                const monthlyCtx = document.getElementById('monthlyChart').getContext('2d');
-                new Chart(monthlyCtx, {
-                    type: 'line',
-                    data: {
-                        labels: Object.keys(monthlyData),
-                        datasets: [{
-                            label: 'Aprovações',
-                            data: Object.values(monthlyData),
-                            borderColor: '#f5576c',
-                            backgroundColor: 'rgba(245, 87, 108, 0.1)',
-                            fill: true
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                display: false
-                            }
-                        }
-                    }
-                });
-
-                // Detailed stats
-                const totalPlans = plans?.length || 0;
-                const approvedPlans = plans?.filter(p => p.status === 'approved').length || 0;
-                const rejectedPlans = plans?.filter(p => p.status === 'rejected').length || 0;
-                const approvalRate = totalPlans > 0 ? ((approvedPlans / totalPlans) * 100).toFixed(1) : 0;
-
-                document.getElementById('detailedStats').innerHTML = `
-                    <div class="text-center">
-                        <div class="text-3xl font-bold text-gray-800">${totalPlans}</div>
-                        <div class="text-sm text-gray-600">Total de Planos</div>
-                    </div>
-                    <div class="text-center">
-                        <div class="text-3xl font-bold text-green-600">${approvalRate}%</div>
-                        <div class="text-sm text-gray-600">Taxa de Aprovação</div>
-                    </div>
-                    <div class="text-center">
-                        <div class="text-3xl font-bold text-red-600">${rejectedPlans}</div>
-                        <div class="text-sm text-gray-600">Planos Rejeitados</div>
-                    </div>
-                `;
-
-            } catch (error) {
-                console.error('Erro ao carregar relatórios:', error);
-            }
-        }
-
-        // Load feedbacks
-        async function loadFeedbacks() {
-            try {
-                const { data: feedbacks } = await supabase
-                    .from('feedbacks')
-                    .select(`
-                        *,
-                        lesson_plans(title, subject, date),
-                        users!feedbacks_reviewer_id_fkey(name)
-                    `)
-                    .eq('school_id', currentUser.school_id)
-                    .order('created_at', { ascending: false });
-
-                const container = document.getElementById('feedbacksList');
-                
-                if (!feedbacks || feedbacks.length === 0) {
-                    container.innerHTML = '<p class="text-gray-500 text-center py-8">Nenhuma devolutiva encontrada</p>';
-                    return;
-                }
-
-                container.innerHTML = feedbacks.map(feedback => `
-                    <div class="bg-white rounded-xl shadow-sm p-6">
-                        <div class="flex items-start justify-between mb-4">
-                            <div>
-                                <h4 class="font-semibold text-gray-800">${feedback.lesson_plans.title}</h4>
-                                <p class="text-sm text-gray-600">${feedback.lesson_plans.subject} • ${new Date(feedback.lesson_plans.date).toLocaleDateString('pt-BR')}</p>
-                            </div>
-                            <div class="flex items-center">
-                                ${Array.from({length: 5}, (_, i) => 
-                                    `<i class="fas fa-star ${i < feedback.rating ? 'text-yellow-400' : 'text-gray-300'}"></i>`
-                                ).join('')}
-                            </div>
-                        </div>
-                        <p class="text-gray-700 mb-4">${feedback.feedback_text}</p>
-                        <div class="flex items-center justify-between text-xs text-gray-500">
-                            <span>Enviado em ${new Date(feedback.created_at).toLocaleDateString('pt-BR')}</span>
-                            <span class="px-2 py-1 rounded-full ${feedback.status === 'read' ? 'bg-green-100 text-green-600' : 'bg-yellow-100 text-yellow-600'}">
-                                ${feedback.status === 'read' ? 'Lida' : 'Não lida'}
-                            </span>
-                        </div>
-                    </div>
-                `).join('');
-
-            } catch (error) {
-                console.error('Erro ao carregar devolutivas:', error);
-            }
-        }
-
-        // Load profile
-        function loadProfile() {
-            document.getElementById('profileName').value = currentUser.name || '';
-            document.getElementById('profileEmail').value = currentUser.email || '';
-            document.getElementById('profilePhone').value = currentUser.phone || '';
-            document.getElementById('profileSubject').value = currentUser.subject || '';
-        }
-
-        // Handle update profile
-        async function handleUpdateProfile(e) {
-            e.preventDefault();
-            
-            const updateData = {
-                name: document.getElementById('profileName').value,
-                phone: document.getElementById('profilePhone').value,
-                subject: document.getElementById('profileSubject').value
-            };
-
-            try {
-                const { error } = await supabase
-                    .from('users')
-                    .update(updateData)
-                    .eq('id', currentUser.id);
-
-                if (error) throw error;
-
-                alert('Perfil atualizado com sucesso!');
-                currentUser = { ...currentUser, ...updateData };
-                document.getElementById('userName').textContent = currentUser.name;
-
-            } catch (error) {
-                console.error('Erro ao atualizar perfil:', error);
-                alert('Erro ao atualizar perfil. Tente novamente.');
-            }
-        }
-
-        // Modal functions
-        function hideReviewModal() {
-            document.getElementById('reviewModal').classList.add('hidden');
-            document.getElementById('reviewModal').classList.remove('flex');
-            document.getElementById('feedbackText').value = '';
-            setRating(0);
-            currentPlanId = null;
-        }
-
-        // Filter functions
-        function filterApprovals(filter) {
-            // Update active filter button
-            document.querySelectorAll('.filter-btn').forEach(btn => {
-                btn.classList.remove('active', 'gradient-bg', 'text-white');
-                btn.classList.add('text-gray-600', 'hover:bg-gray-100');
-            });
-            
-            event.target.classList.add('active', 'gradient-bg', 'text-white');
-            event.target.classList.remove('text-gray-600', 'hover:bg-gray-100');
-            
-            // Apply filter logic here
-            loadApprovals();
-        }
-
-        // Utility functions
-        function getStatusText(status) {
-            const statusMap = {
-                draft: 'Rascunho',
-                submitted: 'Pendente',
-                approved: 'Aprovado',
-                rejected: 'Rejeitado'
-            };
-            return statusMap[status] || status;
-        }
-
-        function viewTeacherDetails(teacherId) {
-            alert('Funcionalidade de detalhes do professor será implementada');
-        }
-
-        function editTeacher(teacherId) {
-            alert('Funcionalidade de edição de professor será implementada');
-        }
-
-        function showAddTeacherModal() {
-            alert('Funcionalidade de adicionar professor será implementada');
-        }
-
+        // Logout
         async function logout() {
-            try {
-                await supabase.auth.signOut();
-                window.location.href = './index.html';
-            } catch (error) {
-                console.error('Erro ao fazer logout:', error);
-            }
+            await supabase.auth.signOut();
+            window.location.href = './index.html';
         }
-
-        // Mobile menu toggle
-        document.getElementById('mobileMenuBtn').addEventListener('click', () => {
-            document.getElementById('sidebar').classList.toggle('-translate-x-full');
-        });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'980d137c57c423ac',t:'MTc1ODE1OTAwNi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'981195a506caf1e6',t:'MTc1ODIwNjI4MC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
+
