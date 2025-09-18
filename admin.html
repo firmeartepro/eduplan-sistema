@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Admin - Sistema Semanário</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -15,12 +14,11 @@
         .card-hover:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
         .fade-in { animation: fadeIn 0.6s ease-in; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        .loading { display: none; }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
     <!-- Loading Screen -->
-    <div id="loadingScreen" class="loading fixed inset-0 bg-white z-50 flex items-center justify-center">
+    <div id="loadingScreen" class="fixed inset-0 bg-white z-50 flex items-center justify-center">
         <div class="text-center">
             <div class="w-16 h-16 border-4 border-red-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
             <p class="text-gray-600">Verificando acesso...</p>
@@ -195,78 +193,101 @@
     </div>
 
     <script>
-        // Configuração do Supabase
-        const SUPABASE_URL = 'https://srqqheacsglhyyhvfchg.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNycXFoZWFjc2dsaHl5aHZmY2hnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgxNTMxMDMsImV4cCI6MjA3MzcyOTEwM30.ZOKVDK1FEyDM-lcPrw4-0xbVDxYLftek3NHYcmjc_7w';
+        console.log('=== ADMIN PAGE LOADED ===');
         
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
         // Prevent multiple redirects
         let isRedirecting = false;
+        let authChecked = false;
 
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
+            console.log('DOM loaded - iniciando verificação');
             showLoading();
+            
+            // Verificação mais direta
             setTimeout(() => {
-                checkAuth();
-            }, 500);
+                if (!authChecked) {
+                    checkAuth();
+                }
+            }, 1000);
         });
 
         // Show loading screen
         function showLoading() {
-            document.getElementById('loadingScreen').style.display = 'flex';
-            document.getElementById('mainContent').style.display = 'none';
+            console.log('Mostrando tela de loading');
+            const loading = document.getElementById('loadingScreen');
+            const main = document.getElementById('mainContent');
+            
+            if (loading) loading.style.display = 'flex';
+            if (main) main.style.display = 'none';
         }
 
         // Hide loading screen
         function hideLoading() {
-            document.getElementById('loadingScreen').style.display = 'none';
-            document.getElementById('mainContent').style.display = 'block';
+            console.log('Escondendo tela de loading');
+            const loading = document.getElementById('loadingScreen');
+            const main = document.getElementById('mainContent');
+            
+            if (loading) loading.style.display = 'none';
+            if (main) main.style.display = 'block';
         }
 
         // Check authentication
         function checkAuth() {
-            if (isRedirecting) return;
+            console.log('=== INICIANDO CHECK AUTH ===');
+            
+            if (isRedirecting || authChecked) {
+                console.log('Já verificado ou redirecionando');
+                return;
+            }
+            
+            authChecked = true;
 
             try {
                 const userSession = sessionStorage.getItem('currentUser');
-                console.log('Verificando sessão:', userSession);
+                console.log('Sessão encontrada:', userSession);
 
                 if (!userSession) {
-                    console.log('Nenhuma sessão encontrada');
+                    console.log('❌ Nenhuma sessão - redirecionando');
                     redirectToLogin();
                     return;
                 }
 
                 const currentUser = JSON.parse(userSession);
-                console.log('Usuário encontrado:', currentUser);
+                console.log('👤 Dados do usuário:', currentUser);
+                console.log('🔑 Tipo de usuário:', currentUser.user_type);
                 
                 // Verify user type
                 if (currentUser.user_type !== 'admin') {
-                    console.log('Usuário não é admin:', currentUser.user_type);
+                    console.log('❌ Não é admin - redirecionando');
                     alert('Acesso negado. Esta área é apenas para administradores.');
                     redirectToLogin();
                     return;
                 }
 
-                console.log('Admin autorizado - mostrando página');
+                console.log('✅ Admin autorizado - mostrando página');
                 hideLoading();
                 
             } catch (error) {
-                console.error('Erro na verificação:', error);
+                console.error('💥 Erro na verificação:', error);
                 redirectToLogin();
             }
         }
 
         // Redirect to login (prevent multiple calls)
         function redirectToLogin() {
-            if (isRedirecting) return;
-            isRedirecting = true;
+            if (isRedirecting) {
+                console.log('Já está redirecionando...');
+                return;
+            }
             
-            console.log('Redirecionando para login...');
+            isRedirecting = true;
+            console.log('🔄 Iniciando redirecionamento para login...');
+            
             setTimeout(() => {
+                console.log('➡️ Redirecionando agora...');
                 window.location.href = 'index.html';
-            }, 1000);
+            }, 2000);
         }
 
         // Access functions - Create temporary sessions for each user type
@@ -368,7 +389,8 @@
             }, 4000);
         }
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98125cede2ab8e5a',t:'MTc1ODIxNDQ0My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98126aadd5eba67d',t:'MTc1ODIxNTAwNi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
+
 
 
