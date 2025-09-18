@@ -56,7 +56,7 @@
                 <i class="fas fa-crown text-red-600 text-3xl"></i>
             </div>
             <h2 class="text-3xl font-bold text-gray-900 mb-4">Painel Administrativo</h2>
-            <p class="text-xl text-gray-600 mb-8">Acesse as diferentes áreas do sistema ou gerencie usuários e escolas</p>
+            <p class="text-xl text-gray-600 mb-8">Gerencie o sistema e acesse as diferentes áreas</p>
         </div>
 
         <!-- Access Cards -->
@@ -68,7 +68,7 @@
                         <i class="fas fa-chalkboard-teacher text-green-600 text-2xl"></i>
                     </div>
                     <h3 class="text-xl font-bold text-gray-900 mb-3">Área do Professor</h3>
-                    <p class="text-gray-600 mb-6">Acesse como professor para testar funcionalidades de criação de semanários e gestão de turmas</p>
+                    <p class="text-gray-600 mb-6">Funcionalidades para criação de semanários e gestão de turmas</p>
                     <button onclick="accessProfessor()" class="w-full bg-green-600 hover:bg-green-700 text-white py-3 px-6 rounded-lg font-medium transition-colors">
                         <i class="fas fa-sign-in-alt mr-2"></i>
                         Entrar como Professor
@@ -83,7 +83,7 @@
                         <i class="fas fa-user-graduate text-blue-600 text-2xl"></i>
                     </div>
                     <h3 class="text-xl font-bold text-gray-900 mb-3">Área da Coordenação</h3>
-                    <p class="text-gray-600 mb-6">Acesse como coordenador para gerenciar professores e acompanhar o desempenho pedagógico</p>
+                    <p class="text-gray-600 mb-6">Gestão de professores e acompanhamento pedagógico</p>
                     <button onclick="accessCoordenador()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-lg font-medium transition-colors">
                         <i class="fas fa-sign-in-alt mr-2"></i>
                         Entrar como Coordenador
@@ -98,7 +98,7 @@
                         <i class="fas fa-user-tie text-purple-600 text-2xl"></i>
                     </div>
                     <h3 class="text-xl font-bold text-gray-900 mb-3">Área da Direção</h3>
-                    <p class="text-gray-600 mb-6">Acesse como diretor para visão geral da escola e envio de recados para administração</p>
+                    <p class="text-gray-600 mb-6">Visão geral da escola e comunicação com administração</p>
                     <button onclick="accessDiretor()" class="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 px-6 rounded-lg font-medium transition-colors">
                         <i class="fas fa-sign-in-alt mr-2"></i>
                         Entrar como Diretor
@@ -164,8 +164,8 @@
                 <div>
                     <h4 class="text-lg font-semibold text-blue-900 mb-2">Sistema em Desenvolvimento</h4>
                     <p class="text-blue-800">
-                        Este é o painel administrativo do Sistema Semanário. Use os botões acima para acessar as diferentes áreas 
-                        e testar as funcionalidades. As ferramentas administrativas completas serão implementadas nas próximas versões.
+                        Este é o painel administrativo do Sistema Semanário. As diferentes áreas (Professor, Coordenação, Direção) 
+                        e as ferramentas administrativas completas serão implementadas nas próximas versões.
                     </p>
                 </div>
             </div>
@@ -225,7 +225,10 @@
             };
             
             sessionStorage.setItem('currentUser', JSON.stringify(tempUser));
-            window.location.href = 'professor.html';
+            showToast('Acessando como Professor...', 'info');
+            setTimeout(() => {
+                window.location.href = 'dashboard.html';
+            }, 1000);
         }
 
         function accessCoordenador() {
@@ -240,7 +243,10 @@
             };
             
             sessionStorage.setItem('currentUser', JSON.stringify(tempUser));
-            window.location.href = 'coordenador.html';
+            showToast('Acessando como Coordenador...', 'info');
+            setTimeout(() => {
+                window.location.href = 'coordenacao.html';
+            }, 1000);
         }
 
         function accessDiretor() {
@@ -255,7 +261,10 @@
             };
             
             sessionStorage.setItem('currentUser', JSON.stringify(tempUser));
-            window.location.href = 'diretor.html';
+            showToast('Acessando como Diretor...', 'info');
+            setTimeout(() => {
+                window.location.href = 'direcao.html';
+            }, 1000);
         }
 
         // Logout
@@ -290,6 +299,7 @@
             }, 4000);
         }
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'981216066372f1cd',t:'MTc1ODIxMTUzOS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'981252d41663f223',t:'MTc1ODIxNDAyOS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
+
 
