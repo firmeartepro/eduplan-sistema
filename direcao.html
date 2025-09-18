@@ -1,0 +1,1431 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduPlan - Dashboard Direção</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .gradient-purple { background: linear-gradient(135deg, #a855f7 0%, #3b82f6 100%); }
+        .card-hover { transition: all 0.3s ease; }
+        .card-hover:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        .fade-in { animation: fadeIn 0.5s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .sidebar-active { background: linear-gradient(135deg, #a855f7 0%, #3b82f6 100%); color: white; }
+        .metric-card { background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); }
+        .performance-high { color: #059669; }
+        .performance-medium { color: #d97706; }
+        .performance-low { color: #dc2626; }
+        .notification-dot { animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .executive-card { background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); border: 1px solid #e2e8f0; }
+        .trend-up { color: #10b981; }
+        .trend-down { color: #ef4444; }
+        .trend-stable { color: #6b7280; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Sidebar -->
+    <div id="sidebar" class="fixed left-0 top-0 h-full w-64 bg-white shadow-lg transform -translate-x-full lg:translate-x-0 transition-transform duration-300 z-50">
+        <div class="p-6 border-b">
+            <div class="flex items-center">
+                <div class="w-10 h-10 gradient-purple rounded-lg flex items-center justify-center mr-3">
+                    <i class="fas fa-school text-white"></i>
+                </div>
+                <div>
+                    <h2 class="font-bold text-gray-800">EduPlan</h2>
+                    <p class="text-sm text-gray-600">Direção</p>
+                </div>
+            </div>
+        </div>
+        
+        <nav class="p-4">
+            <ul class="space-y-2">
+                <li>
+                    <a href="#" onclick="showSection('dashboard')" class="sidebar-item sidebar-active flex items-center p-3 rounded-lg transition-colors">
+                        <i class="fas fa-chart-line mr-3"></i>
+                        Dashboard Executivo
+                    </a>
+                </li>
+                <li>
+                    <a href="#" onclick="showSection('analytics')" class="sidebar-item flex items-center p-3 rounded-lg hover:bg-gray-100 transition-colors">
+                        <i class="fas fa-analytics mr-3"></i>
+                        Analytics Avançado
+                    </a>
+                </li>
+                <li>
+                    <a href="#" onclick="showSection('management')" class="sidebar-item flex items-center p-3 rounded-lg hover:bg-gray-100 transition-colors">
+                        <i class="fas fa-users-cog mr-3"></i>
+                        Gestão de Equipe
+                    </a>
+                </li>
+                <li>
+                    <a href="#" onclick="showSection('performance')" class="sidebar-item flex items-center p-3 rounded-lg hover:bg-gray-100 transition-colors">
+                        <i class="fas fa-trophy mr-3"></i>
+                        Performance
+                    </a>
+                </li>
+                <li>
+                    <a href="#" onclick="showSection('reports')" class="sidebar-item flex items-center p-3 rounded-lg hover:bg-gray-100 transition-colors">
+                        <i class="fas fa-file-chart-line mr-3"></i>
+                        Relatórios Executivos
+                    </a>
+                </li>
+                <li>
+                    <a href="#" onclick="showSection('settings')" class="sidebar-item flex items-center p-3 rounded-lg hover:bg-gray-100 transition-colors">
+                        <i class="fas fa-cog mr-3"></i>
+                        Configurações
+                    </a>
+                </li>
+                <li>
+                    <a href="#" onclick="showSection('profile')" class="sidebar-item flex items-center p-3 rounded-lg hover:bg-gray-100 transition-colors">
+                        <i class="fas fa-user-tie mr-3"></i>
+                        Perfil
+                    </a>
+                </li>
+            </ul>
+        </nav>
+        
+        <div class="absolute bottom-4 left-4 right-4">
+            <button onclick="logout()" class="w-full flex items-center justify-center p-3 text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                <i class="fas fa-sign-out-alt mr-2"></i>
+                Sair
+            </button>
+        </div>
+    </div>
+
+    <!-- Mobile Menu Button -->
+    <button id="mobileMenuBtn" class="lg:hidden fixed top-4 left-4 z-50 p-2 bg-white rounded-lg shadow-lg">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- Main Content -->
+    <div class="lg:ml-64 min-h-screen">
+        <!-- Header -->
+        <header class="bg-white shadow-sm border-b p-4 lg:p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-800" id="pageTitle">Dashboard Executivo</h1>
+                    <p class="text-gray-600" id="pageSubtitle">Visão estratégica da instituição</p>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="relative">
+                        <button class="p-2 text-gray-600 hover:text-gray-800 relative">
+                            <i class="fas fa-bell text-xl"></i>
+                            <span id="notificationBadge" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center notification-dot hidden">0</span>
+                        </button>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 gradient-purple rounded-full flex items-center justify-center mr-2">
+                            <i class="fas fa-user-tie text-white text-sm"></i>
+                        </div>
+                        <span class="text-sm font-medium text-gray-700" id="userName">Carregando...</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Dashboard Executive Section -->
+        <div id="dashboardSection" class="section-content p-4 lg:p-6">
+            <!-- Executive KPIs -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div class="executive-card rounded-xl shadow-sm p-6 card-hover">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-graduation-cap text-blue-600 text-xl"></i>
+                        </div>
+                        <span class="text-xs px-2 py-1 bg-green-100 text-green-600 rounded-full font-medium">+12%</span>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-600 mb-1">Qualidade Pedagógica</p>
+                        <p class="text-2xl font-bold text-gray-800" id="pedagogicalQuality">0%</p>
+                        <p class="text-xs text-gray-500">vs. mês anterior</p>
+                    </div>
+                </div>
+                
+                <div class="executive-card rounded-xl shadow-sm p-6 card-hover">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-chalkboard-teacher text-green-600 text-xl"></i>
+                        </div>
+                        <span class="text-xs px-2 py-1 bg-blue-100 text-blue-600 rounded-full font-medium">+5%</span>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-600 mb-1">Produtividade Docente</p>
+                        <p class="text-2xl font-bold text-gray-800" id="teacherProductivity">0%</p>
+                        <p class="text-xs text-gray-500">eficiência média</p>
+                    </div>
+                </div>
+                
+                <div class="executive-card rounded-xl shadow-sm p-6 card-hover">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-chart-line text-purple-600 text-xl"></i>
+                        </div>
+                        <span class="text-xs px-2 py-1 bg-green-100 text-green-600 rounded-full font-medium">+8%</span>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-600 mb-1">Aprovação de Planos</p>
+                        <p class="text-2xl font-bold text-gray-800" id="approvalRate">0%</p>
+                        <p class="text-xs text-gray-500">taxa de aprovação</p>
+                    </div>
+                </div>
+                
+                <div class="executive-card rounded-xl shadow-sm p-6 card-hover">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-clock text-orange-600 text-xl"></i>
+                        </div>
+                        <span class="text-xs px-2 py-1 bg-yellow-100 text-yellow-600 rounded-full font-medium">-2h</span>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-600 mb-1">Tempo Médio Aprovação</p>
+                        <p class="text-2xl font-bold text-gray-800" id="avgApprovalTime">0h</p>
+                        <p class="text-xs text-gray-500">tempo médio</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Strategic Overview -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                <div class="lg:col-span-2 bg-white rounded-xl shadow-sm p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-lg font-semibold text-gray-800">Visão Estratégica - Últimos 6 Meses</h3>
+                        <div class="flex space-x-2">
+                            <button class="text-xs px-3 py-1 bg-blue-100 text-blue-600 rounded-full">Planos</button>
+                            <button class="text-xs px-3 py-1 bg-gray-100 text-gray-600 rounded-full">Aprovações</button>
+                            <button class="text-xs px-3 py-1 bg-gray-100 text-gray-600 rounded-full">Qualidade</button>
+                        </div>
+                    </div>
+                    <canvas id="strategicChart" width="400" height="200"></canvas>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow-sm p-6">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-6">Alertas Executivos</h3>
+                    <div id="executiveAlerts" class="space-y-4">
+                        <!-- Executive alerts will be loaded here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Department Performance -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                <div class="bg-white rounded-xl shadow-sm p-6">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-6">Performance por Departamento</h3>
+                    <canvas id="departmentChart" width="400" height="200"></canvas>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow-sm p-6">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-6">Métricas de Qualidade</h3>
+                    <div id="qualityMetrics" class="space-y-4">
+                        <!-- Quality metrics will be loaded here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Executive Actions -->
+            <div class="bg-white rounded-xl shadow-sm p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-lg font-semibold text-gray-800">Ações Executivas Recentes</h3>
+                    <button onclick="showSection('reports')" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                        Ver relatório completo
+                    </button>
+                </div>
+                <div id="executiveActions" class="space-y-4">
+                    <!-- Executive actions will be loaded here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics Section -->
+        <div id="analyticsSection" class="section-content hidden p-4 lg:p-6">
+            <div class="mb-6">
+                <h2 class="text-2xl font-bold text-gray-800">Analytics Avançado</h2>
+                <p class="text-gray-600">Análises detalhadas e insights estratégicos</p>
+            </div>
+
+            <!-- Advanced Analytics Cards -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                <div class="bg-white rounded-xl shadow-sm p-6">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Tendências de Produtividade</h3>
+                    <canvas id="productivityTrendChart" width="400" height="200"></canvas>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow-sm p-6">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Análise de Qualidade por Período</h3>
+                    <canvas id="qualityAnalysisChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+
+            <!-- Predictive Analytics -->
+            <div class="bg-white rounded-xl shadow-sm p-6 mb-8">
+                <h3 class="text-lg font-semibold text-gray-800 mb-6">Analytics Preditivo</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="text-center p-4 bg-blue-50 rounded-lg">
+                        <div class="text-2xl font-bold text-blue-600 mb-2">+15%</div>
+                        <div class="text-sm text-gray-600">Crescimento Previsto</div>
+                        <div class="text-xs text-gray-500 mt-1">Próximos 3 meses</div>
+                    </div>
+                    <div class="text-center p-4 bg-green-50 rounded-lg">
+                        <div class="text-2xl font-bold text-green-600 mb-2">92%</div>
+                        <div class="text-sm text-gray-600">Satisfação Projetada</div>
+                        <div class="text-xs text-gray-500 mt-1">Baseado em tendências</div>
+                    </div>
+                    <div class="text-center p-4 bg-purple-50 rounded-lg">
+                        <div class="text-2xl font-bold text-purple-600 mb-2">-8h</div>
+                        <div class="text-sm text-gray-600">Otimização de Tempo</div>
+                        <div class="text-xs text-gray-500 mt-1">Potencial de melhoria</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detailed Analytics Table -->
+            <div class="bg-white rounded-xl shadow-sm p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-6">Análise Detalhada por Professor</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="border-b">
+                                <th class="text-left py-3 px-4">Professor</th>
+                                <th class="text-left py-3 px-4">Planos</th>
+                                <th class="text-left py-3 px-4">Taxa Aprovação</th>
+                                <th class="text-left py-3 px-4">Qualidade Média</th>
+                                <th class="text-left py-3 px-4">Tendência</th>
+                                <th class="text-left py-3 px-4">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="analyticsTable">
+                            <!-- Analytics data will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Management Section -->
+        <div id="managementSection" class="section-content hidden p-4 lg:p-6">
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-800">Gestão de Equipe</h2>
+                    <p class="text-gray-600">Gerencie coordenadores e professores</p>
+                </div>
+                <button onclick="showAddUserModal()" class="gradient-purple text-white px-6 py-3 rounded-lg font-semibold hover:opacity-90 transition-all">
+                    <i class="fas fa-plus mr-2"></i>
+                    Adicionar Usuário
+                </button>
+            </div>
+
+            <!-- Team Overview -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="bg-white rounded-xl shadow-sm p-6 text-center">
+                    <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-users-cog text-blue-600 text-2xl"></i>
+                    </div>
+                    <div class="text-2xl font-bold text-gray-800" id="totalCoordinators">0</div>
+                    <div class="text-sm text-gray-600">Coordenadores</div>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow-sm p-6 text-center">
+                    <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-chalkboard-teacher text-green-600 text-2xl"></i>
+                    </div>
+                    <div class="text-2xl font-bold text-gray-800" id="totalTeachers">0</div>
+                    <div class="text-sm text-gray-600">Professores</div>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow-sm p-6 text-center">
+                    <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-user-check text-purple-600 text-2xl"></i>
+                    </div>
+                    <div class="text-2xl font-bold text-gray-800" id="activeUsers">0</div>
+                    <div class="text-sm text-gray-600">Usuários Ativos</div>
+                </div>
+            </div>
+
+            <!-- Team Management Table -->
+            <div class="bg-white rounded-xl shadow-sm p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-lg font-semibold text-gray-800">Equipe Completa</h3>
+                    <div class="flex space-x-2">
+                        <button onclick="filterUsers('all')" class="user-filter-btn active px-4 py-2 rounded-lg text-sm font-medium">Todos</button>
+                        <button onclick="filterUsers('coordenacao')" class="user-filter-btn px-4 py-2 rounded-lg text-sm font-medium">Coordenadores</button>
+                        <button onclick="filterUsers('professor')" class="user-filter-btn px-4 py-2 rounded-lg text-sm font-medium">Professores</button>
+                    </div>
+                </div>
+                
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="border-b">
+                                <th class="text-left py-3 px-4">Nome</th>
+                                <th class="text-left py-3 px-4">Tipo</th>
+                                <th class="text-left py-3 px-4">Email</th>
+                                <th class="text-left py-3 px-4">Status</th>
+                                <th class="text-left py-3 px-4">Último Acesso</th>
+                                <th class="text-left py-3 px-4">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersTable">
+                            <!-- Users data will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Performance Section -->
+        <div id="performanceSection" class="section-content hidden p-4 lg:p-6">
+            <div class="mb-6">
+                <h2 class="text-2xl font-bold text-gray-800">Performance Institucional</h2>
+                <p class="text-gray-600">Indicadores de desempenho e metas</p>
+            </div>
+
+            <!-- Performance KPIs -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div class="bg-white rounded-xl shadow-sm p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h4 class="font-semibold text-gray-800">Eficiência Geral</h4>
+                        <i class="fas fa-arrow-up text-green-500"></i>
+                    </div>
+                    <div class="text-3xl font-bold text-gray-800 mb-2" id="overallEfficiency">0%</div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div class="bg-green-500 h-2 rounded-full" style="width: 0%" id="efficiencyBar"></div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow-sm p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h4 class="font-semibold text-gray-800">Meta Mensal</h4>
+                        <i class="fas fa-target text-blue-500"></i>
+                    </div>
+                    <div class="text-3xl font-bold text-gray-800 mb-2" id="monthlyGoal">0%</div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div class="bg-blue-500 h-2 rounded-full" style="width: 0%" id="goalBar"></div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow-sm p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h4 class="font-semibold text-gray-800">Satisfação</h4>
+                        <i class="fas fa-heart text-red-500"></i>
+                    </div>
+                    <div class="text-3xl font-bold text-gray-800 mb-2" id="satisfaction">0%</div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div class="bg-red-500 h-2 rounded-full" style="width: 0%" id="satisfactionBar"></div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow-sm p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h4 class="font-semibold text-gray-800">Crescimento</h4>
+                        <i class="fas fa-chart-line text-purple-500"></i>
+                    </div>
+                    <div class="text-3xl font-bold text-gray-800 mb-2" id="growth">0%</div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div class="bg-purple-500 h-2 rounded-full" style="width: 0%" id="growthBar"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Performance Charts -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                <div class="bg-white rounded-xl shadow-sm p-6">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Performance Histórica</h3>
+                    <canvas id="performanceHistoryChart" width="400" height="200"></canvas>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow-sm p-6">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Comparativo de Metas</h3>
+                    <canvas id="goalsComparisonChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+
+            <!-- Performance Rankings -->
+            <div class="bg-white rounded-xl shadow-sm p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-6">Ranking de Performance</h3>
+                <div id="performanceRanking" class="space-y-4">
+                    <!-- Performance ranking will be loaded here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Reports Section -->
+        <div id="reportsSection" class="section-content hidden p-4 lg:p-6">
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-800">Relatórios Executivos</h2>
+                    <p class="text-gray-600">Relatórios detalhados para tomada de decisão</p>
+                </div>
+                <button onclick="generateExecutiveReport()" class="gradient-purple text-white px-6 py-3 rounded-lg font-semibold hover:opacity-90 transition-all">
+                    <i class="fas fa-file-pdf mr-2"></i>
+                    Gerar Relatório
+                </button>
+            </div>
+
+            <!-- Report Categories -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                <div class="bg-white rounded-xl shadow-sm p-6 card-hover cursor-pointer" onclick="showReport('pedagogical')">
+                    <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
+                        <i class="fas fa-graduation-cap text-blue-600 text-xl"></i>
+                    </div>
+                    <h3 class="font-semibold text-gray-800 mb-2">Relatório Pedagógico</h3>
+                    <p class="text-sm text-gray-600">Análise completa da qualidade pedagógica</p>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow-sm p-6 card-hover cursor-pointer" onclick="showReport('operational')">
+                    <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
+                        <i class="fas fa-cogs text-green-600 text-xl"></i>
+                    </div>
+                    <h3 class="font-semibold text-gray-800 mb-2">Relatório Operacional</h3>
+                    <p class="text-sm text-gray-600">Eficiência operacional e processos</p>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow-sm p-6 card-hover cursor-pointer" onclick="showReport('strategic')">
+                    <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4">
+                        <i class="fas fa-chess text-purple-600 text-xl"></i>
+                    </div>
+                    <h3 class="font-semibold text-gray-800 mb-2">Relatório Estratégico</h3>
+                    <p class="text-sm text-gray-600">Visão estratégica e planejamento</p>
+                </div>
+            </div>
+
+            <!-- Recent Reports -->
+            <div class="bg-white rounded-xl shadow-sm p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-6">Relatórios Recentes</h3>
+                <div id="recentReports" class="space-y-4">
+                    <!-- Recent reports will be loaded here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Section -->
+        <div id="settingsSection" class="section-content hidden p-4 lg:p-6">
+            <div class="mb-6">
+                <h2 class="text-2xl font-bold text-gray-800">Configurações da Escola</h2>
+                <p class="text-gray-600">Gerencie configurações institucionais</p>
+            </div>
+
+            <!-- Settings Cards -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="bg-white rounded-xl shadow-sm p-6">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-6">Informações da Escola</h3>
+                    <form id="schoolForm" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Nome da Escola</label>
+                            <input type="text" id="schoolName" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Endereço</label>
+                            <input type="text" id="schoolAddress" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Telefone</label>
+                                <input type="tel" id="schoolPhone" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                                <input type="email" id="schoolEmail" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                            </div>
+                        </div>
+                        <button type="submit" class="gradient-purple text-white px-6 py-3 rounded-lg font-semibold hover:opacity-90 transition-all">
+                            <i class="fas fa-save mr-2"></i>
+                            Salvar Alterações
+                        </button>
+                    </form>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow-sm p-6">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-6">Configurações do Sistema</h3>
+                    <div class="space-y-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h4 class="font-medium text-gray-800">Aprovação Automática</h4>
+                                <p class="text-sm text-gray-600">Aprovar planos automaticamente após 24h</p>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" class="sr-only peer" id="autoApproval">
+                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                            </label>
+                        </div>
+                        
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h4 class="font-medium text-gray-800">Notificações por Email</h4>
+                                <p class="text-sm text-gray-600">Enviar notificações por email</p>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" class="sr-only peer" id="emailNotifications" checked>
+                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                            </label>
+                        </div>
+                        
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h4 class="font-medium text-gray-800">Backup Automático</h4>
+                                <p class="text-sm text-gray-600">Backup diário dos dados</p>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" class="sr-only peer" id="autoBackup" checked>
+                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Profile Section -->
+        <div id="profileSection" class="section-content hidden p-4 lg:p-6">
+            <div class="bg-white rounded-xl shadow-sm p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-6">Meu Perfil</h3>
+                <form id="profileForm" class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Nome</label>
+                            <input type="text" id="profileName" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                            <input type="email" id="profileEmail" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" readonly>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Telefone</label>
+                            <input type="tel" id="profilePhone" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Cargo</label>
+                            <input type="text" id="profilePosition" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                        </div>
+                    </div>
+                    <button type="submit" class="gradient-purple text-white px-6 py-3 rounded-lg font-semibold hover:opacity-90 transition-all">
+                        <i class="fas fa-save mr-2"></i>
+                        Salvar Alterações
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add User Modal -->
+    <div id="addUserModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md">
+            <div class="p-6 border-b">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-xl font-bold text-gray-800">Adicionar Usuário</h3>
+                    <button onclick="hideAddUserModal()" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <form id="addUserForm" class="p-6 space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Nome</label>
+                    <input type="text" id="newUserName" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                    <input type="email" id="newUserEmail" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Tipo de Usuário</label>
+                    <select id="newUserType" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" required>
+                        <option value="">Selecione...</option>
+                        <option value="coordenacao">Coordenador</option>
+                        <option value="professor">Professor</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Senha Temporária</label>
+                    <input type="password" id="newUserPassword" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" required>
+                </div>
+                <div class="flex items-center justify-end space-x-4 pt-4">
+                    <button type="button" onclick="hideAddUserModal()" class="px-6 py-3 border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 transition-colors">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="gradient-purple text-white px-6 py-3 rounded-lg font-semibold hover:opacity-90 transition-all">
+                        <i class="fas fa-plus mr-2"></i>
+                        Adicionar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Configuração do Supabase
+        const SUPABASE_URL = 'https://srqqheacsglhyyhvfchg.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNycXFoZWFjc2dsaHl5aHZmY2hnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgxNTMxMDMsImV4cCI6MjA3MzcyOTEwM30.ZOKVDK1FEyDM-lcPrw4-0xbVDxYLftek3NHYcmjc_7w';
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        let currentUser = null;
+        let currentSection = 'dashboard';
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            await checkAuth();
+            setupEventListeners();
+            await loadDashboardData();
+        });
+
+        // Check authentication
+        async function checkAuth() {
+            try {
+                const { data: { session } } = await supabase.auth.getSession();
+                if (!session) {
+                    window.location.href = './index.html';
+                    return;
+                }
+
+                const { data: userProfile } = await supabase
+                    .from('users')
+                    .select('*, schools(name)')
+                    .eq('email', session.user.email)
+                    .single();
+
+                if (!userProfile || userProfile.user_type !== 'direcao') {
+                    alert('Acesso negado. Esta área é apenas para direção.');
+                    window.location.href = './index.html';
+                    return;
+                }
+
+                currentUser = userProfile;
+                document.getElementById('userName').textContent = userProfile.name;
+            } catch (error) {
+                console.error('Erro na autenticação:', error);
+                window.location.href = './index.html';
+            }
+        }
+
+        // Setup event listeners
+        function setupEventListeners() {
+            // Mobile menu
+            document.getElementById('mobileMenuBtn').addEventListener('click', () => {
+                const sidebar = document.getElementById('sidebar');
+                sidebar.classList.toggle('-translate-x-full');
+            });
+
+            // Forms
+            document.getElementById('profileForm').addEventListener('submit', handleUpdateProfile);
+            document.getElementById('schoolForm').addEventListener('submit', handleUpdateSchool);
+            document.getElementById('addUserForm').addEventListener('submit', handleAddUser);
+        }
+
+        // Show section
+        function showSection(section) {
+            // Hide all sections
+            document.querySelectorAll('.section-content').forEach(el => {
+                el.classList.add('hidden');
+            });
+
+            // Remove active class from all sidebar items
+            document.querySelectorAll('.sidebar-item').forEach(el => {
+                el.classList.remove('sidebar-active');
+                el.classList.add('hover:bg-gray-100');
+            });
+
+            // Show selected section
+            document.getElementById(section + 'Section').classList.remove('hidden');
+            
+            // Add active class to selected sidebar item
+            event.target.classList.add('sidebar-active');
+            event.target.classList.remove('hover:bg-gray-100');
+
+            // Update page title
+            const titles = {
+                dashboard: { title: 'Dashboard Executivo', subtitle: 'Visão estratégica da instituição' },
+                analytics: { title: 'Analytics Avançado', subtitle: 'Análises detalhadas e insights estratégicos' },
+                management: { title: 'Gestão de Equipe', subtitle: 'Gerencie coordenadores e professores' },
+                performance: { title: 'Performance Institucional', subtitle: 'Indicadores de desempenho e metas' },
+                reports: { title: 'Relatórios Executivos', subtitle: 'Relatórios detalhados para tomada de decisão' },
+                settings: { title: 'Configurações da Escola', subtitle: 'Gerencie configurações institucionais' },
+                profile: { title: 'Perfil', subtitle: 'Gerencie suas informações' }
+            };
+
+            document.getElementById('pageTitle').textContent = titles[section].title;
+            document.getElementById('pageSubtitle').textContent = titles[section].subtitle;
+
+            currentSection = section;
+
+            // Load section data
+            switch(section) {
+                case 'dashboard':
+                    loadDashboardData();
+                    break;
+                case 'analytics':
+                    loadAnalytics();
+                    break;
+                case 'management':
+                    loadManagement();
+                    break;
+                case 'performance':
+                    loadPerformance();
+                    break;
+                case 'reports':
+                    loadReports();
+                    break;
+                case 'settings':
+                    loadSettings();
+                    break;
+                case 'profile':
+                    loadProfile();
+                    break;
+            }
+
+            // Close mobile menu
+            document.getElementById('sidebar').classList.add('-translate-x-full');
+        }
+
+        // Load dashboard data
+        async function loadDashboardData() {
+            try {
+                // Load all plans for the school
+                const { data: plans } = await supabase
+                    .from('lesson_plans')
+                    .select('*')
+                    .eq('school_id', currentUser.school_id);
+
+                // Load all users
+                const { data: users } = await supabase
+                    .from('users')
+                    .select('*')
+                    .eq('school_id', currentUser.school_id);
+
+                // Load feedbacks
+                const { data: feedbacks } = await supabase
+                    .from('feedbacks')
+                    .select('*')
+                    .eq('school_id', currentUser.school_id);
+
+                // Calculate KPIs
+                const totalPlans = plans?.length || 0;
+                const approvedPlans = plans?.filter(p => p.status === 'approved').length || 0;
+                const avgRating = feedbacks?.length > 0 
+                    ? (feedbacks.reduce((sum, f) => sum + f.rating, 0) / feedbacks.length)
+                    : 0;
+
+                // Update KPI displays
+                document.getElementById('pedagogicalQuality').textContent = `${Math.round(avgRating * 20)}%`;
+                document.getElementById('teacherProductivity').textContent = `${Math.round((approvedPlans / Math.max(totalPlans, 1)) * 100)}%`;
+                document.getElementById('approvalRate').textContent = `${Math.round((approvedPlans / Math.max(totalPlans, 1)) * 100)}%`;
+                document.getElementById('avgApprovalTime').textContent = '12h';
+
+                // Load charts and other components
+                await loadExecutiveCharts();
+                await loadExecutiveAlerts();
+                await loadQualityMetrics();
+                await loadExecutiveActions();
+
+            } catch (error) {
+                console.error('Erro ao carregar dashboard:', error);
+            }
+        }
+
+        // Load executive charts
+        async function loadExecutiveCharts() {
+            try {
+                // Strategic chart
+                const ctx = document.getElementById('strategicChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun'],
+                        datasets: [{
+                            label: 'Planos Criados',
+                            data: [65, 78, 90, 81, 95, 102],
+                            borderColor: '#667eea',
+                            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                            fill: true
+                        }, {
+                            label: 'Taxa de Aprovação',
+                            data: [85, 88, 92, 89, 94, 96],
+                            borderColor: '#f093fb',
+                            backgroundColor: 'rgba(240, 147, 251, 0.1)',
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom'
+                            }
+                        }
+                    }
+                });
+
+                // Department chart
+                const deptCtx = document.getElementById('departmentChart').getContext('2d');
+                new Chart(deptCtx, {
+                    type: 'radar',
+                    data: {
+                        labels: ['Matemática', 'Português', 'Ciências', 'História', 'Geografia', 'Inglês'],
+                        datasets: [{
+                            label: 'Performance',
+                            data: [85, 92, 78, 88, 82, 90],
+                            backgroundColor: 'rgba(168, 85, 247, 0.2)',
+                            borderColor: '#a855f7',
+                            pointBackgroundColor: '#a855f7'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        }
+                    }
+                });
+
+            } catch (error) {
+                console.error('Erro ao carregar gráficos:', error);
+            }
+        }
+
+        // Load executive alerts
+        async function loadExecutiveAlerts() {
+            const alerts = [
+                { type: 'warning', message: '3 professores com baixa taxa de aprovação', priority: 'high' },
+                { type: 'info', message: 'Meta mensal atingida em 85%', priority: 'medium' },
+                { type: 'success', message: 'Qualidade pedagógica aumentou 12%', priority: 'low' }
+            ];
+
+            const container = document.getElementById('executiveAlerts');
+            container.innerHTML = alerts.map(alert => `
+                <div class="p-3 rounded-lg border-l-4 ${alert.type === 'warning' ? 'border-yellow-500 bg-yellow-50' : alert.type === 'info' ? 'border-blue-500 bg-blue-50' : 'border-green-500 bg-green-50'}">
+                    <div class="flex items-center">
+                        <i class="fas ${alert.type === 'warning' ? 'fa-exclamation-triangle text-yellow-600' : alert.type === 'info' ? 'fa-info-circle text-blue-600' : 'fa-check-circle text-green-600'} mr-2"></i>
+                        <span class="text-sm font-medium">${alert.message}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Load quality metrics
+        async function loadQualityMetrics() {
+            const metrics = [
+                { name: 'Planos Aprovados', value: 94, trend: 'up' },
+                { name: 'Tempo Médio Aprovação', value: 12, unit: 'h', trend: 'down' },
+                { name: 'Satisfação Geral', value: 4.8, unit: '/5', trend: 'up' },
+                { name: 'Produtividade', value: 87, trend: 'stable' }
+            ];
+
+            const container = document.getElementById('qualityMetrics');
+            container.innerHTML = metrics.map(metric => `
+                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div>
+                        <div class="font-medium text-gray-800">${metric.name}</div>
+                        <div class="text-2xl font-bold text-gray-900">${metric.value}${metric.unit || '%'}</div>
+                    </div>
+                    <i class="fas ${metric.trend === 'up' ? 'fa-arrow-up trend-up' : metric.trend === 'down' ? 'fa-arrow-down trend-down' : 'fa-minus trend-stable'}"></i>
+                </div>
+            `).join('');
+        }
+
+        // Load executive actions
+        async function loadExecutiveActions() {
+            const actions = [
+                { action: 'Aprovação de novo coordenador', user: 'Sistema', time: '2 horas atrás' },
+                { action: 'Relatório mensal gerado', user: 'Ana Silva', time: '1 dia atrás' },
+                { action: 'Configuração de backup atualizada', user: 'Sistema', time: '2 dias atrás' },
+                { action: 'Meta trimestral definida', user: 'Carlos Santos', time: '3 dias atrás' }
+            ];
+
+            const container = document.getElementById('executiveActions');
+            container.innerHTML = actions.map(action => `
+                <div class="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center mr-3">
+                            <i class="fas fa-cog text-purple-600"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-medium text-gray-800">${action.action}</h4>
+                            <p class="text-sm text-gray-600">${action.user} • ${action.time}</p>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Load analytics
+        async function loadAnalytics() {
+            try {
+                // Load productivity trend chart
+                const prodCtx = document.getElementById('productivityTrendChart').getContext('2d');
+                new Chart(prodCtx, {
+                    type: 'line',
+                    data: {
+                        labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun'],
+                        datasets: [{
+                            label: 'Produtividade',
+                            data: [75, 82, 78, 85, 88, 92],
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false
+                    }
+                });
+
+                // Load quality analysis chart
+                const qualCtx = document.getElementById('qualityAnalysisChart').getContext('2d');
+                new Chart(qualCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Excelente', 'Bom', 'Regular', 'Ruim'],
+                        datasets: [{
+                            label: 'Quantidade',
+                            data: [45, 32, 15, 8],
+                            backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#ef4444']
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false
+                    }
+                });
+
+                // Load analytics table
+                await loadAnalyticsTable();
+
+            } catch (error) {
+                console.error('Erro ao carregar analytics:', error);
+            }
+        }
+
+        // Load analytics table
+        async function loadAnalyticsTable() {
+            try {
+                const { data: users } = await supabase
+                    .from('users')
+                    .select(`
+                        *,
+                        lesson_plans(id, status),
+                        feedbacks(rating)
+                    `)
+                    .eq('school_id', currentUser.school_id)
+                    .eq('user_type', 'professor');
+
+                const container = document.getElementById('analyticsTable');
+                
+                if (!users || users.length === 0) {
+                    container.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-gray-500">Nenhum dado encontrado</td></tr>';
+                    return;
+                }
+
+                container.innerHTML = users.map(user => {
+                    const totalPlans = user.lesson_plans?.length || 0;
+                    const approvedPlans = user.lesson_plans?.filter(p => p.status === 'approved').length || 0;
+                    const approvalRate = totalPlans > 0 ? Math.round((approvedPlans / totalPlans) * 100) : 0;
+                    const avgQuality = user.feedbacks?.length > 0 
+                        ? (user.feedbacks.reduce((sum, f) => sum + f.rating, 0) / user.feedbacks.length).toFixed(1)
+                        : '0.0';
+                    
+                    return `
+                        <tr class="border-b hover:bg-gray-50">
+                            <td class="py-3 px-4">${user.name}</td>
+                            <td class="py-3 px-4">${totalPlans}</td>
+                            <td class="py-3 px-4">${approvalRate}%</td>
+                            <td class="py-3 px-4">${avgQuality}/5</td>
+                            <td class="py-3 px-4">
+                                <i class="fas fa-arrow-up text-green-500"></i>
+                            </td>
+                            <td class="py-3 px-4">
+                                <span class="px-2 py-1 rounded-full text-xs font-medium ${user.is_active ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}">
+                                    ${user.is_active ? 'Ativo' : 'Inativo'}
+                                </span>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+
+            } catch (error) {
+                console.error('Erro ao carregar tabela de analytics:', error);
+            }
+        }
+
+        // Load management
+        async function loadManagement() {
+            try {
+                const { data: users } = await supabase
+                    .from('users')
+                    .select('*')
+                    .eq('school_id', currentUser.school_id)
+                    .neq('user_type', 'direcao');
+
+                const coordinators = users?.filter(u => u.user_type === 'coordenacao').length || 0;
+                const teachers = users?.filter(u => u.user_type === 'professor').length || 0;
+                const activeUsers = users?.filter(u => u.is_active).length || 0;
+
+                document.getElementById('totalCoordinators').textContent = coordinators;
+                document.getElementById('totalTeachers').textContent = teachers;
+                document.getElementById('activeUsers').textContent = activeUsers;
+
+                // Load users table
+                await loadUsersTable(users);
+
+            } catch (error) {
+                console.error('Erro ao carregar gestão:', error);
+            }
+        }
+
+        // Load users table
+        async function loadUsersTable(users) {
+            const container = document.getElementById('usersTable');
+            
+            if (!users || users.length === 0) {
+                container.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-gray-500">Nenhum usuário encontrado</td></tr>';
+                return;
+            }
+
+            container.innerHTML = users.map(user => `
+                <tr class="border-b hover:bg-gray-50">
+                    <td class="py-3 px-4">${user.name}</td>
+                    <td class="py-3 px-4">
+                        <span class="px-2 py-1 rounded-full text-xs font-medium ${user.user_type === 'coordenacao' ? 'bg-blue-100 text-blue-600' : 'bg-green-100 text-green-600'}">
+                            ${user.user_type === 'coordenacao' ? 'Coordenador' : 'Professor'}
+                        </span>
+                    </td>
+                    <td class="py-3 px-4">${user.email}</td>
+                    <td class="py-3 px-4">
+                        <span class="px-2 py-1 rounded-full text-xs font-medium ${user.is_active ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}">
+                            ${user.is_active ? 'Ativo' : 'Inativo'}
+                        </span>
+                    </td>
+                    <td class="py-3 px-4">${user.last_login ? new Date(user.last_login).toLocaleDateString('pt-BR') : 'Nunca'}</td>
+                    <td class="py-3 px-4">
+                        <div class="flex space-x-2">
+                            <button onclick="editUser('${user.id}')" class="text-blue-600 hover:text-blue-800">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button onclick="toggleUserStatus('${user.id}', ${!user.is_active})" class="text-gray-600 hover:text-gray-800">
+                                <i class="fas ${user.is_active ? 'fa-user-slash' : 'fa-user-check'}"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Load performance
+        async function loadPerformance() {
+            // Update performance metrics
+            document.getElementById('overallEfficiency').textContent = '87%';
+            document.getElementById('efficiencyBar').style.width = '87%';
+            
+            document.getElementById('monthlyGoal').textContent = '92%';
+            document.getElementById('goalBar').style.width = '92%';
+            
+            document.getElementById('satisfaction').textContent = '94%';
+            document.getElementById('satisfactionBar').style.width = '94%';
+            
+            document.getElementById('growth').textContent = '15%';
+            document.getElementById('growthBar').style.width = '75%';
+
+            // Load performance charts
+            const historyCtx = document.getElementById('performanceHistoryChart').getContext('2d');
+            new Chart(historyCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun'],
+                    datasets: [{
+                        label: 'Performance',
+                        data: [78, 82, 85, 88, 91, 87],
+                        borderColor: '#8b5cf6',
+                        backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+
+            const goalsCtx = document.getElementById('goalsComparisonChart').getContext('2d');
+            new Chart(goalsCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Q1', 'Q2', 'Q3', 'Q4'],
+                    datasets: [{
+                        label: 'Meta',
+                        data: [85, 88, 90, 92],
+                        backgroundColor: '#e5e7eb'
+                    }, {
+                        label: 'Realizado',
+                        data: [87, 91, 89, 94],
+                        backgroundColor: '#8b5cf6'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+
+            // Load performance ranking
+            loadPerformanceRanking();
+        }
+
+        // Load performance ranking
+        async function loadPerformanceRanking() {
+            const ranking = [
+                { name: 'Maria Silva', department: 'Matemática', score: 95, trend: 'up' },
+                { name: 'João Santos', department: 'Português', score: 92, trend: 'up' },
+                { name: 'Ana Costa', department: 'Ciências', score: 88, trend: 'stable' },
+                { name: 'Carlos Lima', department: 'História', score: 85, trend: 'down' }
+            ];
+
+            const container = document.getElementById('performanceRanking');
+            container.innerHTML = ranking.map((item, index) => `
+                <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center mr-3 text-sm font-bold text-purple-600">
+                            ${index + 1}
+                        </div>
+                        <div>
+                            <div class="font-medium text-gray-800">${item.name}</div>
+                            <div class="text-sm text-gray-600">${item.department}</div>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <div class="text-lg font-bold text-gray-800">${item.score}%</div>
+                        <i class="fas ${item.trend === 'up' ? 'fa-arrow-up text-green-500' : item.trend === 'down' ? 'fa-arrow-down text-red-500' : 'fa-minus text-gray-500'}"></i>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Load reports
+        async function loadReports() {
+            const reports = [
+                { name: 'Relatório Pedagógico - Junho 2024', type: 'Pedagógico', date: '2024-06-30', size: '2.3 MB' },
+                { name: 'Análise Operacional - Q2 2024', type: 'Operacional', date: '2024-06-28', size: '1.8 MB' },
+                { name: 'Relatório Estratégico - Semestre 1', type: 'Estratégico', date: '2024-06-25', size: '3.1 MB' }
+            ];
+
+            const container = document.getElementById('recentReports');
+            container.innerHTML = reports.map(report => `
+                <div class="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-file-pdf text-blue-600"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-medium text-gray-800">${report.name}</h4>
+                            <p class="text-sm text-gray-600">${report.type} • ${new Date(report.date).toLocaleDateString('pt-BR')} • ${report.size}</p>
+                        </div>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button class="text-blue-600 hover:text-blue-800 text-sm">
+                            <i class="fas fa-download"></i>
+                        </button>
+                        <button class="text-gray-600 hover:text-gray-800 text-sm">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Load settings
+        async function loadSettings() {
+            try {
+                const { data: school } = await supabase
+                    .from('schools')
+                    .select('*')
+                    .eq('id', currentUser.school_id)
+                    .single();
+
+                if (school) {
+                    document.getElementById('schoolName').value = school.name || '';
+                    document.getElementById('schoolAddress').value = school.address || '';
+                    document.getElementById('schoolPhone').value = school.phone || '';
+                    document.getElementById('schoolEmail').value = school.email || '';
+                }
+
+            } catch (error) {
+                console.error('Erro ao carregar configurações:', error);
+            }
+        }
+
+        // Load profile
+        function loadProfile() {
+            document.getElementById('profileName').value = currentUser.name || '';
+            document.getElementById('profileEmail').value = currentUser.email || '';
+            document.getElementById('profilePhone').value = currentUser.phone || '';
+            document.getElementById('profilePosition').value = currentUser.position || 'Diretor(a)';
+        }
+
+        // Handle functions
+        async function handleUpdateProfile(e) {
+            e.preventDefault();
+            
+            const updateData = {
+                name: document.getElementById('profileName').value,
+                phone: document.getElementById('profilePhone').value,
+                position: document.getElementById('profilePosition').value
+            };
+
+            try {
+                const { error } = await supabase
+                    .from('users')
+                    .update(updateData)
+                    .eq('id', currentUser.id);
+
+                if (error) throw error;
+
+                alert('Perfil atualizado com sucesso!');
+                currentUser = { ...currentUser, ...updateData };
+                document.getElementById('userName').textContent = currentUser.name;
+
+            } catch (error) {
+                console.error('Erro ao atualizar perfil:', error);
+                alert('Erro ao atualizar perfil. Tente novamente.');
+            }
+        }
+
+        async function handleUpdateSchool(e) {
+            e.preventDefault();
+            
+            const updateData = {
+                name: document.getElementById('schoolName').value,
+                address: document.getElementById('schoolAddress').value,
+                phone: document.getElementById('schoolPhone').value,
+                email: document.getElementById('schoolEmail').value
+            };
+
+            try {
+                const { error } = await supabase
+                    .from('schools')
+                    .update(updateData)
+                    .eq('id', currentUser.school_id);
+
+                if (error) throw error;
+
+                alert('Configurações da escola atualizadas com sucesso!');
+
+            } catch (error) {
+                console.error('Erro ao atualizar escola:', error);
+                alert('Erro ao atualizar configurações. Tente novamente.');
+            }
+        }
+
+        async function handleAddUser(e) {
+            e.preventDefault();
+            
+            const userData = {
+                name: document.getElementById('newUserName').value,
+                email: document.getElementById('newUserEmail').value,
+                user_type: document.getElementById('newUserType').value,
+                school_id: currentUser.school_id,
+                is_active: true
+            };
+
+            try {
+                // Create user in auth
+                const { data: authUser, error: authError } = await supabase.auth.signUp({
+                    email: userData.email,
+                    password: document.getElementById('newUserPassword').value
+                });
+
+                if (authError) throw authError;
+
+                // Create user profile
+                const { error: profileError } = await supabase
+                    .from('users')
+                    .insert([userData]);
+
+                if (profileError) throw profileError;
+
+                alert('Usuário adicionado com sucesso!');
+                hideAddUserModal();
+                loadManagement();
+
+            } catch (error) {
+                console.error('Erro ao adicionar usuário:', error);
+                alert('Erro ao adicionar usuário. Tente novamente.');
+            }
+        }
+
+        // Modal functions
+        function showAddUserModal() {
+            document.getElementById('addUserModal').classList.remove('hidden');
+            document.getElementById('addUserModal').classList.add('flex');
+        }
+
+        function hideAddUserModal() {
+            document.getElementById('addUserModal').classList.add('hidden');
+            document.getElementById('addUserModal').classList.remove('flex');
+            document.getElementById('addUserForm').reset();
+        }
+
+        // Utility functions
+        function filterUsers(type) {
+            // Update active filter button
+            document.querySelectorAll('.user-filter-btn').forEach(btn => {
+                btn.classList.remove('active', 'gradient-purple', 'text-white');
+                btn.classList.add('text-gray-600', 'hover:bg-gray-100');
+            });
+            
+            event.target.classList.add('active', 'gradient-purple', 'text-white');
+            event.target.classList.remove('text-gray-600', 'hover:bg-gray-100');
+            
+            loadManagement();
+        }
+
+        function editUser(userId) {
+            alert('Funcionalidade de edição será implementada');
+        }
+
+        async function toggleUserStatus(userId, newStatus) {
+            try {
+                const { error } = await supabase
+                    .from('users')
+                    .update({ is_active: newStatus })
+                    .eq('id', userId);
+
+                if (error) throw error;
+
+                alert(`Usuário ${newStatus ? 'ativado' : 'desativado'} com sucesso!`);
+                loadManagement();
+
+            } catch (error) {
+                console.error('Erro ao alterar status:', error);
+                alert('Erro ao alterar status do usuário.');
+            }
+        }
+
+        function showReport(type) {
+            alert(`Relatório ${type} será implementado`);
+        }
+
+        function generateExecutiveReport() {
+            alert('Geração de relatório executivo será implementada');
+        }
+
+        async function logout() {
+            try {
+                await supabase.auth.signOut();
+                window.location.href = './index.html';
+            } catch (error) {
+                console.error('Erro ao fazer logout:', error);
+            }
+        }
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'980d19b994508e5a',t:'MTc1ODE1OTI2MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
