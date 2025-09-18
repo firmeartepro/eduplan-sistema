@@ -27,6 +27,9 @@
         .payment-success { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
         .payment-error { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
         .debug-panel { position: fixed; top: 10px; right: 10px; background: #000; color: #0f0; padding: 10px; border-radius: 5px; font-family: monospace; font-size: 12px; max-width: 300px; z-index: 9999; }
+        .profile-card { transition: all 0.3s ease; position: relative; }
+        .profile-card.selected { border-color: #fbbf24 !important; background: rgba(251, 191, 36, 0.3) !important; transform: scale(1.05); }
+        .profile-indicator { position: absolute; top: -8px; right: -8px; background: #10b981; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 12px; }
     </style>
 </head>
 <body class="bg-gray-50">
@@ -73,6 +76,47 @@
             <div class="hero-bg rounded-2xl p-8 text-white mb-8">
                 <h2 class="text-4xl font-bold mb-4">Transforme sua Gestão Pedagógica</h2>
                 <p class="text-xl opacity-90 mb-6">Planos de aula inteligentes, feedback colaborativo e analytics educacional</p>
+                
+                <!-- Profile Selector -->
+                <div class="bg-white/10 backdrop-blur-sm rounded-xl p-6 mb-6">
+                    <h3 class="text-xl font-semibold mb-4">Escolha seu Perfil de Acesso</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <!-- Professor Profile -->
+                        <div class="profile-card bg-white/20 backdrop-blur-sm rounded-lg p-4 cursor-pointer hover:bg-white/30 transition-all border-2 border-transparent hover:border-white/50" onclick="selectProfile('professor')">
+                            <div class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                                <i class="fas fa-chalkboard-teacher text-white text-2xl"></i>
+                            </div>
+                            <h4 class="font-bold text-white mb-2">Professor</h4>
+                            <p class="text-white/80 text-sm">Criar planos de aula e receber feedback</p>
+                        </div>
+                        
+                        <!-- Coordination Profile -->
+                        <div class="profile-card bg-white/20 backdrop-blur-sm rounded-lg p-4 cursor-pointer hover:bg-white/30 transition-all border-2 border-transparent hover:border-white/50" onclick="selectProfile('coordenacao')">
+                            <div class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                                <i class="fas fa-users text-white text-2xl"></i>
+                            </div>
+                            <h4 class="font-bold text-white mb-2">Coordenação</h4>
+                            <p class="text-white/80 text-sm">Acompanhar e dar feedback aos professores</p>
+                        </div>
+                        
+                        <!-- Direction Profile -->
+                        <div class="profile-card bg-white/20 backdrop-blur-sm rounded-lg p-4 cursor-pointer hover:bg-white/30 transition-all border-2 border-transparent hover:border-white/50" onclick="selectProfile('direcao')">
+                            <div class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                                <i class="fas fa-building text-white text-2xl"></i>
+                            </div>
+                            <h4 class="font-bold text-white mb-2">Direção</h4>
+                            <p class="text-white/80 text-sm">Visão geral e relatórios executivos</p>
+                        </div>
+                    </div>
+                    
+                    <div id="profileSelected" class="hidden mt-4 p-3 bg-green-500/20 rounded-lg border border-green-400/30">
+                        <div class="flex items-center justify-center">
+                            <i class="fas fa-check-circle text-green-300 mr-2"></i>
+                            <span class="text-green-100 font-medium" id="selectedProfileText">Perfil selecionado</span>
+                        </div>
+                    </div>
+                </div>
+                
                 <div class="flex flex-col sm:flex-row gap-4 justify-center">
                     <button onclick="showRegister()" class="bg-white text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-all">
                         <i class="fas fa-rocket mr-2"></i>
@@ -91,6 +135,14 @@
             <div class="text-center mb-8">
                 <h2 class="text-3xl font-bold text-gray-800 mb-2">Bem-vindo de volta!</h2>
                 <p class="text-gray-600">Entre na sua conta para continuar</p>
+                
+                <!-- Selected Profile Display -->
+                <div id="loginProfileDisplay" class="hidden mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                    <div class="flex items-center justify-center">
+                        <i class="fas fa-user-circle text-blue-600 mr-2"></i>
+                        <span class="text-blue-800 font-medium">Entrando como: <span id="loginProfileText"></span></span>
+                    </div>
+                </div>
             </div>
             
             <form id="loginFormElement" class="space-y-6">
@@ -113,6 +165,10 @@
             <div class="text-center mt-6">
                 <button onclick="showRegister()" class="text-blue-600 hover:text-blue-800 font-medium">
                     Não tem uma conta? Cadastre-se
+                </button>
+                <br>
+                <button onclick="showHero()" class="text-gray-500 hover:text-gray-700 font-medium mt-2">
+                    ← Voltar para seleção de perfil
                 </button>
             </div>
         </div>
@@ -377,6 +433,7 @@
         let selectedPlan = null;
         let bricksBuilder = null;
         let debugMode = false;
+        let selectedProfile = null;
 
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
@@ -386,6 +443,7 @@
             
             setupEventListeners();
             checkExistingSession();
+            loadSelectedProfile();
         });
 
         // Debug functions
@@ -417,6 +475,64 @@
             debugLog('✅ Event listeners configurados');
         }
 
+        // Load selected profile from localStorage
+        function loadSelectedProfile() {
+            const savedProfile = localStorage.getItem('selectedProfile');
+            if (savedProfile) {
+                selectedProfile = savedProfile;
+                debugLog('📱 Perfil carregado do localStorage: ' + savedProfile);
+                
+                // Update UI to show selected profile
+                document.querySelectorAll('.profile-card').forEach(card => {
+                    card.classList.remove('selected');
+                });
+                
+                const profileCard = document.querySelector(`[onclick="selectProfile('${savedProfile}')"]`);
+                if (profileCard) {
+                    profileCard.classList.add('selected');
+                    showProfileSelected(savedProfile);
+                }
+            }
+        }
+
+        // Profile selection
+        function selectProfile(profileType) {
+            debugLog('👤 Perfil selecionado: ' + profileType);
+            
+            // Remove selection from all profiles
+            document.querySelectorAll('.profile-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+
+            // Add selection to clicked profile
+            event.currentTarget.classList.add('selected');
+            
+            selectedProfile = profileType;
+            
+            // Store in localStorage for login
+            localStorage.setItem('selectedProfile', profileType);
+            
+            // Show selected profile indicator
+            showProfileSelected(profileType);
+            
+            debugLog('✅ Perfil armazenado: ' + profileType);
+        }
+
+        // Show profile selected indicator
+        function showProfileSelected(profileType) {
+            const profileSelected = document.getElementById('profileSelected');
+            const selectedProfileText = document.getElementById('selectedProfileText');
+            
+            const profileNames = {
+                'professor': 'Professor',
+                'coordenacao': 'Coordenação',
+                'direcao': 'Direção'
+            };
+            
+            selectedProfileText.textContent = `Perfil selecionado: ${profileNames[profileType]}`;
+            profileSelected.classList.remove('hidden');
+        }
+
         // Check existing session
         async function checkExistingSession() {
             debugLog('🔍 Verificando sessão existente...');
@@ -424,7 +540,16 @@
                 const { data: { session } } = await supabase.auth.getSession();
                 if (session) {
                     debugLog('✅ Sessão encontrada: ' + session.user.email);
-                    redirectToDashboard();
+                    
+                    // If user is logged in but no profile selected, show hero
+                    if (!selectedProfile) {
+                        debugLog('⚠️ Usuário logado mas sem perfil selecionado');
+                        showHero();
+                        return;
+                    }
+                    
+                    // Check profile access and redirect
+                    await checkProfileAccess(session.user.id, selectedProfile);
                 } else {
                     debugLog('ℹ️ Nenhuma sessão ativa');
                 }
@@ -437,8 +562,27 @@
         // Show/Hide sections
         function showLogin() {
             debugLog('📱 Mostrando tela de login');
+            
+            if (!selectedProfile) {
+                alert('Por favor, selecione um perfil antes de fazer login.');
+                return;
+            }
+            
             hideAllSections();
             document.getElementById('loginForm').classList.remove('hidden');
+            
+            // Show selected profile in login form
+            const loginProfileDisplay = document.getElementById('loginProfileDisplay');
+            const loginProfileText = document.getElementById('loginProfileText');
+            
+            const profileNames = {
+                'professor': 'Professor',
+                'coordenacao': 'Coordenação',
+                'direcao': 'Direção'
+            };
+            
+            loginProfileText.textContent = profileNames[selectedProfile];
+            loginProfileDisplay.classList.remove('hidden');
         }
 
         function showRegister() {
@@ -466,11 +610,125 @@
             document.getElementById('loadingScreen').classList.remove('hidden');
         }
 
+        function showHero() {
+            debugLog('🏠 Mostrando tela inicial');
+            hideAllSections();
+            document.getElementById('heroSection').classList.remove('hidden');
+        }
+
         function hideAllSections() {
             const sections = ['heroSection', 'loginForm', 'registerForm', 'paymentSuccess', 'paymentError', 'loadingScreen'];
             sections.forEach(section => {
                 document.getElementById(section).classList.add('hidden');
             });
+        }
+
+        // Check profile access
+        async function checkProfileAccess(userId, requestedProfile) {
+            debugLog('🔍 Verificando acesso ao perfil: ' + requestedProfile);
+            
+            try {
+                // Special access for owner (your email)
+                const { data: { user } } = await supabase.auth.getUser();
+                
+                if (user.email === 'artebr.firme@gmail.com') {
+                    debugLog('👑 Acesso de proprietário - liberado para todos os perfis');
+                    redirectToProfileDashboard(requestedProfile);
+                    return;
+                }
+                
+                // For other users, check if they have access to this profile
+                const { data, error } = await supabase
+                    .from('users')
+                    .select('user_type')
+                    .eq('id', userId)
+                    .eq('user_type', requestedProfile)
+                    .single();
+
+                if (error || !data) {
+                    debugLog('❌ Usuário não tem acesso a este perfil');
+                    alert('Você não tem permissão para acessar este perfil.');
+                    return;
+                }
+
+                debugLog('✅ Acesso autorizado ao perfil: ' + requestedProfile);
+                redirectToProfileDashboard(requestedProfile);
+
+            } catch (error) {
+                debugLog('❌ Erro ao verificar acesso: ' + error.message);
+                console.error('Erro ao verificar acesso:', error);
+                alert('Erro ao verificar permissões.');
+            }
+        }
+
+        // Redirect to profile dashboard
+        function redirectToProfileDashboard(profileType) {
+            debugLog('🚀 Redirecionando para dashboard: ' + profileType);
+            
+            switch (profileType) {
+                case 'professor':
+                    debugLog('👨‍🏫 Redirecionando para dashboard de professor');
+                    window.location.href = './dashboard-professor.html';
+                    break;
+                case 'coordenacao':
+                    debugLog('📋 Redirecionando para dashboard de coordenação');
+                    window.location.href = './dashboard-coordenacao.html';
+                    break;
+                case 'direcao':
+                    debugLog('🏢 Redirecionando para dashboard de direção');
+                    window.location.href = './dashboard-direcao.html';
+                    break;
+                default:
+                    debugLog('🔄 Perfil não reconhecido, usando dashboard padrão');
+                    window.location.href = './dashboard-professor.html';
+            }
+        }
+
+        // Handle login
+        async function handleLogin(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            const profile = selectedProfile;
+
+            debugLog('🔐 Tentativa de login');
+            debugLog('📧 Email: ' + email);
+            debugLog('🔑 Senha: ' + password.length + ' caracteres');
+            debugLog('👤 Perfil selecionado: ' + profile);
+
+            if (!profile) {
+                alert('Por favor, selecione um perfil antes de fazer login.');
+                showHero();
+                return;
+            }
+
+            try {
+                debugLog('📡 Enviando requisição para Supabase...');
+                
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email,
+                    password
+                });
+
+                debugLog('📊 Resposta do Supabase recebida');
+
+                if (error) {
+                    debugLog('❌ Erro do Supabase: ' + error.message);
+                    throw error;
+                }
+
+                debugLog('✅ Login bem-sucedido!');
+                debugLog('👤 User ID: ' + data.user.id);
+                
+                // Check if user has access to selected profile
+                await checkProfileAccess(data.user.id, profile);
+
+            } catch (error) {
+                debugLog('💥 Erro completo no login: ' + error.message);
+                console.error('Erro no login:', error);
+                alert('Erro no login: ' + error.message);
+            }
         }
 
         // Plan selection
@@ -624,44 +882,6 @@
             }
         }
 
-        // Handle login
-        async function handleLogin(e) {
-            e.preventDefault();
-            
-            const email = document.getElementById('loginEmail').value;
-            const password = document.getElementById('loginPassword').value;
-
-            debugLog('🔐 Tentativa de login');
-            debugLog('📧 Email: ' + email);
-            debugLog('🔑 Senha: ' + password.length + ' caracteres');
-
-            try {
-                debugLog('📡 Enviando requisição para Supabase...');
-                
-                const { data, error } = await supabase.auth.signInWithPassword({
-                    email,
-                    password
-                });
-
-                debugLog('📊 Resposta do Supabase recebida');
-
-                if (error) {
-                    debugLog('❌ Erro do Supabase: ' + error.message);
-                    throw error;
-                }
-
-                debugLog('✅ Login bem-sucedido!');
-                debugLog('👤 User ID: ' + data.user.id);
-                
-                redirectToDashboard();
-
-            } catch (error) {
-                debugLog('💥 Erro completo no login: ' + error.message);
-                console.error('Erro no login:', error);
-                alert('Erro no login: ' + error.message);
-            }
-        }
-
         // Handle register
         async function handleRegister(e) {
             e.preventDefault();
@@ -788,7 +1008,7 @@
             }
         }
 
-        // Redirect to dashboard
+        // Redirect to dashboard (legacy function - keeping for compatibility)
         function redirectToDashboard() {
             debugLog('🚀 Redirecionando para dashboard...');
             
@@ -796,6 +1016,13 @@
             supabase.auth.getUser().then(({ data: { user } }) => {
                 if (user) {
                     debugLog('👤 Usuário logado: ' + user.email);
+                    
+                    // If it's the owner, use selected profile
+                    if (user.email === 'artebr.firme@gmail.com' && selectedProfile) {
+                        debugLog('👑 Proprietário - usando perfil selecionado: ' + selectedProfile);
+                        redirectToProfileDashboard(selectedProfile);
+                        return;
+                    }
                     
                     supabase
                         .from('users')
@@ -805,24 +1032,7 @@
                         .then(({ data }) => {
                             if (data) {
                                 debugLog('👥 Tipo de usuário: ' + data.user_type);
-                                
-                                switch (data.user_type) {
-                                    case 'direcao':
-                                        debugLog('🏢 Redirecionando para dashboard de direção');
-                                        window.location.href = './dashboard-direcao.html';
-                                        break;
-                                    case 'coordenacao':
-                                        debugLog('📋 Redirecionando para dashboard de coordenação');
-                                        window.location.href = './dashboard-coordenacao.html';
-                                        break;
-                                    case 'professor':
-                                        debugLog('👨‍🏫 Redirecionando para dashboard de professor');
-                                        window.location.href = './dashboard-professor.html';
-                                        break;
-                                    default:
-                                        debugLog('🔄 Tipo não reconhecido, usando dashboard padrão');
-                                        window.location.href = './dashboard-professor.html';
-                                }
+                                redirectToProfileDashboard(data.user_type);
                             } else {
                                 debugLog('❌ Dados do usuário não encontrados');
                             }
@@ -836,7 +1046,8 @@
             });
         }
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9810d196a022f198',t:'MTc1ODE5ODI1MC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9810fd6a10866ea4',t:'MTc1ODIwMDA0NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
+
 
 
