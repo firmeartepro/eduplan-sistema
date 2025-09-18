@@ -3,857 +3,74 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EduPlan - Dashboard Direção</title>
+    <title>Dashboard Direção - Sistema Semanário</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
         body { font-family: 'Inter', sans-serif; }
-        .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-        .gradient-purple { background: linear-gradient(135deg, #a855f7 0%, #3b82f6 100%); }
+        .gradient-bg { background: linear-gradient(135deg, #1e40af 0%, #3730a3 100%); }
         .card-hover { transition: all 0.3s ease; }
         .card-hover:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
-        .fade-in { animation: fadeIn 0.5s ease-in; }
+        .fade-in { animation: fadeIn 0.6s ease-in; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        .sidebar-active { background: linear-gradient(135deg, #a855f7 0%, #3b82f6 100%); color: white; }
-        .metric-card { background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); }
-        .performance-high { color: #059669; }
-        .performance-medium { color: #d97706; }
-        .performance-low { color: #dc2626; }
-        .notification-dot { animation: pulse 2s infinite; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-        .executive-card { background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); border: 1px solid #e2e8f0; }
-        .trend-up { color: #10b981; }
-        .trend-down { color: #ef4444; }
-        .trend-stable { color: #6b7280; }
-        .plan-expired { background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%); border: 2px solid #fca5a5; }
-        .plan-warning { background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border: 2px solid #fbbf24; }
-        .plan-active { background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border: 2px solid #4ade80; }
-    </style>
-</head>
-<body class="bg-gray-50">
-    <!-- Sidebar -->
-    <div id="sidebar" class="fixed left-0 top-0 h-full w-64 bg-white shadow-lg transform -translate-x-full lg:translate-x-0 transition-transform duration-300 z-50">
-        <div class="p-6 border-b">
-            <div class="flex items-center">
-                <div class="w-10 h-10 gradient-purple rounded-lg flex items-center justify-center mr-3">
-                    <i class="fas fa-school text-white"></i>
-                </div>
-                <div>
-                    <h2 class="font-bold text-gray-800">EduPlan</h2>
-                    <p class="text-sm text-gray-600">Direção</p>
-                </div>
-            </div>
-        </div>
-        
-        <nav class="p-4">
-            <ul class="space-y-2">
-                <li>
-                    <a href="#" onclick="showSection('dashboard')" class="sidebar-item sidebar-active flex items-center p-3 rounded-lg transition-colors">
-                        <i class="fas fa-chart-line mr-3"></i>
-                        Dashboard Executivo
-                    </a>
-                </li>
-                <li>
-                    <a href="#" onclick="showSection('analytics')" class="sidebar-item flex items-center p-3 rounded-lg hover:bg-gray-100 transition-colors">
-                        <i class="fas fa-analytics mr-3"></i>
-                        Analytics Avançado
-                    </a>
-                </li>
-                <li>
-                    <a href="#" onclick="showSection('team')" class="sidebar-item flex items-center p-3 rounded-lg hover:bg-gray-100 transition-colors">
-                        <i class="fas fa-users mr-3"></i>
-                        Visão da Equipe
-                    </a>
-                </li>
-                <li>
-                    <a href="#" onclick="showSection('performance')" class="sidebar-item flex items-center p-3 rounded-lg hover:bg-gray-100 transition-colors">
-                        <i class="fas fa-trophy mr-3"></i>
-                        Performance
-                    </a>
-                </li>
-                <li>
-                    <a href="#" onclick="showSection('reports')" class="sidebar-item flex items-center p-3 rounded-lg hover:bg-gray-100 transition-colors">
-                        <i class="fas fa-file-chart-line mr-3"></i>
-                        Relatórios Executivos
-                    </a>
-                </li>
-                <li>
-                    <a href="#" onclick="showSection('billing')" class="sidebar-item flex items-center p-3 rounded-lg hover:bg-gray-100 transition-colors">
-                        <i class="fas fa-credit-card mr-3"></i>
-                        Plano & Pagamento
-                    </a>
-                </li>
-                <li>
-                    <a href="#" onclick="showSection('settings')" class="sidebar-item flex items-center p-3 rounded-lg hover:bg-gray-100 transition-colors">
-                        <i class="fas fa-cog mr-3"></i>
-                        Configurações
-                    </a>
-                </li>
-                <li>
-                    <a href="#" onclick="showSection('profile')" class="sidebar-item flex items-center p-3 rounded-lg hover:bg-gray-100 transition-colors">
-                        <i class="fas fa-user-tie mr-3"></i>
-                        Perfil
-                    </a>
-                </li>
-            </ul>
-        </nav>
-        
-        <div class="absolute bottom-4 left-4 right-4">
-            <button onclick="logout()" class="w-full flex items-center justify-center p-3 text-red-600 hover:bg-red-50 rounded-lg transition-colors">
-                <i class="fas fa-sign-out-alt mr-2"></i>
-                Sair
-            </button>
-        </div>
-    </div>
-
-    <!-- Mobile Menu Button -->
-    <button id="mobileMenuBtn" class="lg:hidden fixed top-4 left-4 z-50 p-2 bg-white rounded-lg shadow-lg">
-        <i class="fas fa-bars"></i>
-    </button>
-
-    <!-- Main Content -->
-    <div class="lg:ml-64 min-h-screen">
-        <!-- Header -->
-        <header class="bg-white shadow-sm border-b p-4 lg:p-6">
-            <div class="flex items-center justify-between">
-                <div>
-                    <h1 class="text-2xl font-bold text-gray-800" id="pageTitle">Dashboard Executivo</h1>
-                    <p class="text-gray-600" id="pageSubtitle">Visão estratégica da instituição</p>
-                </div>
-                <div class="flex items-center space-x-4">
-                    <!-- Plan Status Alert -->
-                    <div id="planAlert" class="hidden px-4 py-2 rounded-lg text-sm font-medium">
-                        <i class="fas fa-exclamation-triangle mr-2"></i>
-                        <span id="planAlertText"></span>
-                    </div>
-                    
-                    <div class="relative">
-                        <button class="p-2 text-gray-600 hover:text-gray-800 relative">
-                            <i class="fas fa-bell text-xl"></i>
-                            <span id="notificationBadge" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center notification-dot hidden">0</span>
-                        </button>
-                    </div>
-                    <div class="flex items-center">
-                        <div class="w-8 h-8 gradient-purple rounded-full flex items-center justify-center mr-2">
-                            <i class="fas fa-user-tie text-white text-sm"></i>
-                        </div>
-                        <span class="text-sm font-medium text-gray-700" id="userName">Carregando...</span>
-                    </div>
-                </div>
-            </div>
-        </header>
-
-        <!-- Dashboard Executive Section -->
-        <div id="dashboardSection" class="section-content p-4 lg:p-6">
-            <!-- Plan Status Card -->
-            <div id="planStatusCard" class="mb-8 rounded-xl shadow-sm p-6 card-hover">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center">
-                        <div class="w-12 h-12 rounded-lg flex items-center justify-center mr-4" id="planIcon">
-                            <i class="fas fa-crown text-2xl" id="planIconClass"></i>
-                        </div>
-                        <div>
-                            <h3 class="text-lg font-semibold" id="planName">Carregando...</h3>
-                            <p class="text-sm" id="planDescription">Verificando status do plano...</p>
-                        </div>
-                    </div>
-                    <div class="text-right">
-                        <div class="text-xl font-bold" id="planPrice">R$ 0,00</div>
-                        <div class="text-xs" id="planBilling">por mês</div>
-                    </div>
-                </div>
-                <div class="mt-4 flex items-center justify-between">
-                    <div class="text-sm">
-                        <span class="text-gray-600">Próximo vencimento: </span>
-                        <span class="font-medium" id="nextBilling">--/--/----</span>
-                    </div>
-                    <button onclick="showSection('billing')" class="gradient-purple text-white px-4 py-2 rounded-lg text-sm font-medium hover:opacity-90 transition-all">
-                        <i class="fas fa-credit-card mr-2"></i>
-                        Gerenciar Plano
-                    </button>
-                </div>
-            </div>
-
-            <!-- Executive KPIs -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                <div class="executive-card rounded-xl shadow-sm p-6 card-hover">
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-graduation-cap text-blue-600 text-xl"></i>
-                        </div>
-                        <span class="text-xs px-2 py-1 bg-green-100 text-green-600 rounded-full font-medium">+12%</span>
-                    </div>
-                    <div>
-                        <p class="text-sm text-gray-600 mb-1">Qualidade Pedagógica</p>
-                        <p class="text-2xl font-bold text-gray-800" id="pedagogicalQuality">0%</p>
-                        <p class="text-xs text-gray-500">vs. mês anterior</p>
-                    </div>
-                </div>
-                
-                <div class="executive-card rounded-xl shadow-sm p-6 card-hover">
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-chalkboard-teacher text-green-600 text-xl"></i>
-                        </div>
-                        <span class="text-xs px-2 py-1 bg-blue-100 text-blue-600 rounded-full font-medium">+5%</span>
-                    </div>
-                    <div>
-                        <p class="text-sm text-gray-600 mb-1">Produtividade Docente</p>
-                        <p class="text-2xl font-bold text-gray-800" id="teacherProductivity">0%</p>
-                        <p class="text-xs text-gray-500">eficiência média</p>
-                    </div>
-                </div>
-                
-                <div class="executive-card rounded-xl shadow-sm p-6 card-hover">
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-chart-line text-purple-600 text-xl"></i>
-                        </div>
-                        <span class="text-xs px-2 py-1 bg-green-100 text-green-600 rounded-full font-medium">+8%</span>
-                    </div>
-                    <div>
-                        <p class="text-sm text-gray-600 mb-1">Aprovação de Planos</p>
-                        <p class="text-2xl font-bold text-gray-800" id="approvalRate">0%</p>
-                        <p class="text-xs text-gray-500">taxa de aprovação</p>
-                    </div>
-                </div>
-                
-                <div class="executive-card rounded-xl shadow-sm p-6 card-hover">
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-clock text-orange-600 text-xl"></i>
-                        </div>
-                        <span class="text-xs px-2 py-1 bg-yellow-100 text-yellow-600 rounded-full font-medium">-2h</span>
-                    </div>
-                    <div>
-                        <p class="text-sm text-gray-600 mb-1">Tempo Médio Aprovação</p>
-                        <p class="text-2xl font-bold text-gray-800" id="avgApprovalTime">0h</p>
-                        <p class="text-xs text-gray-500">tempo médio</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Strategic Overview -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-                <div class="lg:col-span-2 bg-white rounded-xl shadow-sm p-6">
-                    <div class="flex items-center justify-between mb-6">
-                        <h3 class="text-lg font-semibold text-gray-800">Visão Estratégica - Últimos 6 Meses</h3>
-                        <div class="flex space-x-2">
-                            <button class="text-xs px-3 py-1 bg-blue-100 text-blue-600 rounded-full">Planos</button>
-                            <button class="text-xs px-3 py-1 bg-gray-100 text-gray-600 rounded-full">Aprovações</button>
-                            <button class="text-xs px-3 py-1 bg-gray-100 text-gray-600 rounded-full">Qualidade</button>
-                        </div>
-                    </div>
-                    <canvas id="strategicChart" width="400" height="200"></canvas>
-                </div>
-                
-                <div class="bg-white rounded-xl shadow-sm p-6">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-6">Alertas Executivos</h3>
-                    <div id="executiveAlerts" class="space-y-4">
-                        <!-- Executive alerts will be loaded here -->
-                    </div>
-                </div>
-            </div>
-
-            <!-- Department Performance -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                <div class="bg-white rounded-xl shadow-sm p-6">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-6">Performance por Departamento</h3>
-                    <canvas id="departmentChart" width="400" height="200"></canvas>
-                </div>
-                
-                <div class="bg-white rounded-xl shadow-sm p-6">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-6">Métricas de Qualidade</h3>
-                    <div id="qualityMetrics" class="space-y-4">
-                        <!-- Quality metrics will be loaded here -->
-                    </div>
-                </div>
-            </div>
-
-            <!-- Recent Executive Actions -->
-            <div class="bg-white rounded-xl shadow-sm p-6">
-                <div class="flex items-center justify-between mb-6">
-                    <h3 class="text-lg font-semibold text-gray-800">Ações Executivas Recentes</h3>
-                    <button onclick="showSection('reports')" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
-                        Ver relatório completo
-                    </button>
-                </div>
-                <div id="executiveActions" class="space-y-4">
-                    <!-- Executive actions will be loaded here -->
-                </div>
-            </div>
-        </div>
-
-        <!-- Billing Section -->
-        <div id="billingSection" class="section-content hidden p-4 lg:p-6">
-            <div class="mb-6">
-                <h2 class="text-2xl font-bold text-gray-800">Plano & Pagamento</h2>
-                <p class="text-gray-600">Gerencie seu plano e histórico de pagamentos</p>
-            </div>
-
-            <!-- Current Plan -->
-            <div class="bg-white rounded-xl shadow-sm p-6 mb-8">
-                <h3 class="text-lg font-semibold text-gray-800 mb-6">Plano Atual</h3>
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div id="currentPlanCard" class="border-2 rounded-xl p-6">
-                        <div class="flex items-center justify-between mb-4">
-                            <div class="flex items-center">
-                                <div class="w-12 h-12 rounded-lg flex items-center justify-center mr-4" id="currentPlanIcon">
-                                    <i class="fas fa-crown text-2xl"></i>
-                                </div>
-                                <div>
-                                    <h4 class="font-bold text-gray-800" id="currentPlanName">Carregando...</h4>
-                                    <p class="text-sm text-gray-600" id="currentPlanDesc">Verificando plano...</p>
-                                </div>
-                            </div>
-                            <div class="text-right">
-                                <div class="text-2xl font-bold" id="currentPlanPrice">R$ 0,00</div>
-                                <div class="text-sm text-gray-500">/mês</div>
-                            </div>
-                        </div>
-                        
-                        <div class="space-y-3 mb-6">
-                            <div class="flex items-center justify-between text-sm">
-                                <span class="text-gray-600">Status:</span>
-                                <span class="font-medium" id="planStatus">Ativo</span>
-                            </div>
-                            <div class="flex items-center justify-between text-sm">
-                                <span class="text-gray-600">Próximo vencimento:</span>
-                                <span class="font-medium" id="nextBillingDate">--/--/----</span>
-                            </div>
-                            <div class="flex items-center justify-between text-sm">
-                                <span class="text-gray-600">Usuários:</span>
-                                <span class="font-medium" id="userCount">0</span>
-                            </div>
-                        </div>
-                        
-                        <div class="flex space-x-3">
-                            <button onclick="upgradePlan()" class="flex-1 gradient-purple text-white py-2 px-4 rounded-lg font-medium hover:opacity-90 transition-all">
-                                <i class="fas fa-arrow-up mr-2"></i>
-                                Upgrade
-                            </button>
-                            <button onclick="manageBilling()" class="flex-1 border border-gray-300 text-gray-700 py-2 px-4 rounded-lg font-medium hover:bg-gray-50 transition-all">
-                                <i class="fas fa-cog mr-2"></i>
-                                Gerenciar
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <!-- Plan Comparison -->
-                    <div class="space-y-4">
-                        <h4 class="font-semibold text-gray-800">Comparar Planos</h4>
-                        
-                        <div class="border border-gray-200 rounded-lg p-4 hover:border-blue-500 transition-colors cursor-pointer" onclick="selectNewPlan('individual')">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <h5 class="font-medium text-gray-800">Plano Individual</h5>
-                                    <p class="text-sm text-gray-600">Por professor</p>
-                                </div>
-                                <div class="text-right">
-                                    <div class="text-lg font-bold text-blue-600">R$ 19,90</div>
-                                    <div class="text-xs text-gray-500">/mês</div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="border border-gray-200 rounded-lg p-4 hover:border-green-500 transition-colors cursor-pointer" onclick="selectNewPlan('school')">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <h5 class="font-medium text-gray-800">Plano Escola</h5>
-                                    <p class="text-sm text-gray-600">Usuários ilimitados</p>
-                                </div>
-                                <div class="text-right">
-                                    <div class="text-lg font-bold text-green-600">R$ 199,00</div>
-                                    <div class="text-xs text-gray-500">/mês</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Payment History -->
-            <div class="bg-white rounded-xl shadow-sm p-6">
-                <h3 class="text-lg font-semibold text-gray-800 mb-6">Histórico de Pagamentos</h3>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-sm">
-                        <thead>
-                            <tr class="border-b">
-                                <th class="text-left py-3 px-4">Data</th>
-                                <th class="text-left py-3 px-4">Descrição</th>
-                                <th class="text-left py-3 px-4">Valor</th>
-                                <th class="text-left py-3 px-4">Status</th>
-                                <th class="text-left py-3 px-4">Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody id="paymentHistory">
-                            <!-- Payment history will be loaded here -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <!-- Other sections remain the same... -->
-        <!-- Analytics, Team, Performance, Reports, Settings, Profile sections -->
-        
-    </div>
-
-    <script>
-        // Configuração do Supabase
-        const SUPABASE_URL = 'https://srqqheacsglhyyhvfchg.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNycXFoZWFjc2dsaHl5aHZmY2hnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgxNTMxMDMsImV4cCI6MjA3MzcyOTEwM30.ZOKVDK1FEyDM-lcPrw4-0xbVDxYLftek3NHYcmjc_7w';
-        
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        
-        let currentUser = null;
-        let currentSchool = null;
-        let currentSection = 'dashboard';
-
-        // Initialize
-        document.addEventListener('DOMContentLoaded', async () => {
-            await checkAuth();
-            setupEventListeners();
-            await loadDashboardData();
-            await checkPlanStatus();
-        });
-
-        // Check authentication
-        async function checkAuth() {
-            try {
-                const { data: { session } } = await supabase.auth.getSession();
-                if (!session) {
-                    window.location.href = './index.html';
-                    return;
-                }
-
-                const { data: userProfile } = await supabase
-                    .from('users')
-                    .select('*, schools(*)')
-                    .eq('email', session.user.email)
-                    .single();
-
-                if (!userProfile || userProfile.user_type !== 'direcao') {
-                    alert('Acesso negado. Esta área é apenas para direção.');
-                    window.location.href = './index.html';
-                    return;
-                }
-
-                currentUser = userProfile;
-                currentSchool = userProfile.schools;
-                document.getElementById('userName').textContent = userProfile.name;
-            } catch (error) {
-                console.error('Erro na autenticação:', error);
-                window.location.href = './index.html';
-            }
-        }
-
-        // Check plan status
-        async function checkPlanStatus() {
-            if (!currentSchool) return;
-
-            const now = new Date();
-            const nextBilling = new Date(currentSchool.next_billing_date);
-            const daysUntilExpiry = Math.ceil((nextBilling - now) / (1000 * 60 * 60 * 24));
-
-            // Update plan status card
-            updatePlanStatusCard();
-
-            // Show alerts if needed
-            if (currentSchool.plan_status === 'expired') {
-                showPlanAlert('Plano expirado! Renove para continuar usando o sistema.', 'error');
-            } else if (daysUntilExpiry <= 3) {
-                showPlanAlert(`Seu plano vence em ${daysUntilExpiry} dias. Renove agora!`, 'warning');
-            }
-        }
-
-        // Update plan status card
-        function updatePlanStatusCard() {
-            const card = document.getElementById('planStatusCard');
-            const icon = document.getElementById('planIcon');
-            const iconClass = document.getElementById('planIconClass');
-            const name = document.getElementById('planName');
-            const description = document.getElementById('planDescription');
-            const price = document.getElementById('planPrice');
-            const nextBilling = document.getElementById('nextBilling');
-
-            if (currentSchool.plan_type === 'individual') {
-                card.className = 'mb-8 rounded-xl shadow-sm p-6 card-hover plan-active';
-                icon.className = 'w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mr-4';
-                iconClass.className = 'fas fa-user text-blue-600 text-2xl';
-                name.textContent = 'Plano Individual';
-                description.textContent = 'Plano por professor ativo';
-                price.textContent = 'R$ 19,90';
-            } else if (currentSchool.plan_type === 'school') {
-                card.className = 'mb-8 rounded-xl shadow-sm p-6 card-hover plan-active';
-                icon.className = 'w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mr-4';
-                iconClass.className = 'fas fa-school text-green-600 text-2xl';
-                name.textContent = 'Plano Escola';
-                description.textContent = 'Usuários ilimitados ativo';
-                price.textContent = 'R$ 199,00';
-            }
-
-            if (currentSchool.plan_status === 'expired') {
-                card.className = 'mb-8 rounded-xl shadow-sm p-6 card-hover plan-expired';
-                description.textContent = 'Plano expirado - Renove agora!';
-            }
-
-            nextBilling.textContent = new Date(currentSchool.next_billing_date).toLocaleDateString('pt-BR');
-        }
-
-        // Show plan alert
-        function showPlanAlert(message, type) {
-            const alert = document.getElementById('planAlert');
-            const alertText = document.getElementById('planAlertText');
-            
-            alert.className = `px-4 py-2 rounded-lg text-sm font-medium ${type === 'error' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'}`;
-            alertText.textContent = message;
-            alert.classList.remove('hidden');
-        }
-
-        // Setup event listeners
-        function setupEventListeners() {
-            // Mobile menu
-            document.getElementById('mobileMenuBtn').addEventListener('click', () => {
-                const sidebar = document.getElementById('sidebar');
-                sidebar.classList.toggle('-translate-x-full');
-            });
-        }
-
-        // Show section
-        function showSection(section) {
-            // Hide all sections
-            document.querySelectorAll('.section-content').forEach(el => {
-                el.classList.add('hidden');
-            });
-
-            // Remove active class from all sidebar items
-            document.querySelectorAll('.sidebar-item').forEach(el => {
-                el.classList.remove('sidebar-active');
-                el.classList.add('hover:bg-gray-100');
-            });
-
-            // Show selected section
-            document.getElementById(section + 'Section').classList.remove('hidden');
-            
-            // Add active class to selected sidebar item
-            event.target.classList.add('sidebar-active');
-            event.target.classList.remove('hover:bg-gray-100');
-
-            // Update page title
-            const titles = {
-                dashboard: { title: 'Dashboard Executivo', subtitle: 'Visão estratégica da instituição' },
-                analytics: { title: 'Analytics Avançado', subtitle: 'Análises detalhadas e insights estratégicos' },
-                team: { title: 'Visão da Equipe', subtitle: 'Acompanhe o desempenho da equipe' },
-                performance: { title: 'Performance Institucional', subtitle: 'Indicadores de desempenho e metas' },
-                reports: { title: 'Relatórios Executivos', subtitle: 'Relatórios detalhados para tomada de decisão' },
-                billing: { title: 'Plano & Pagamento', subtitle: 'Gerencie seu plano e histórico de pagamentos' },
-                settings: { title: 'Configurações da Escola', subtitle: 'Gerencie configurações institucionais' },
-                profile: { title: 'Perfil', subtitle: 'Gerencie suas informações' }
-            };
-
-            document.getElementById('pageTitle').textContent = titles[section].title;
-            document.getElementById('pageSubtitle').textContent = titles[section].subtitle;
-
-            currentSection = section;
-
-            // Load section data
-            switch(section) {
-                case 'dashboard':
-                    loadDashboardData();
-                    break;
-                case 'billing':
-                    loadBillingData();
-                    break;
-                // Add other cases...
-            }
-
-            // Close mobile menu
-            document.getElementById('sidebar').classList.add('-translate-x-full');
-        }
-
-        // Load dashboard data
-        async function loadDashboardData() {
-            try {
-                // Load all plans for the school
-                const { data: plans } = await supabase
-                    .from('lesson_plans')
-                    .select('*')
-                    .eq('school_id', currentUser.school_id);
-
-                // Load all users
-                const { data: users } = await supabase
-                    .from('users')
-                    .select('*')
-                    .eq('school_id', currentUser.school_id);
-
-                // Load feedbacks
-                const { data: feedbacks } = await supabase
-                    .from('feedbacks')
-                    .select('*')
-                    .eq('school_id', currentUser.school_id);
-
-                // Calculate KPIs
-                const totalPlans = plans?.length || 0;
-                const approvedPlans = plans?.filter(p => p.status === 'approved').length || 0;
-                const avgRating = feedbacks?.length > 0 
-                    ? (feedbacks.reduce((sum, f) => sum + f.rating, 0) / feedbacks.length)
-                    : 0;
-
-                // Update KPI displays
-                document.getElementById('pedagogicalQuality').textContent = `${Math.round(avgRating * 20)}%`;
-                document.getElementById('teacherProductivity').textContent = `${Math.round((approvedPlans / Math.max(totalPlans, 1)) * 100)}%`;
-                document.getElementById('approvalRate').textContent = `${Math.round((approvedPlans / Math.max(totalPlans, 1)) * 100)}%`;
-                document.getElementById('avgApprovalTime').textContent = '12h';
-
-                // Load charts and other components
-                await loadExecutiveCharts();
-                await loadExecutiveAlerts();
-                await loadQualityMetrics();
-                await loadExecutiveActions();
-
-            } catch (error) {
-                console.error('Erro ao carregar dashboard:', error);
-            }
-        }
-
-        // Load billing data
-        async function loadBillingData() {
-            try {
-                // Update current plan card
-                const currentPlanCard = document.getElementById('currentPlanCard');
-                const currentPlanIcon = document.getElementById('currentPlanIcon');
-                const currentPlanName = document.getElementById('currentPlanName');
-                const currentPlanDesc = document.getElementById('currentPlanDesc');
-                const currentPlanPrice = document.getElementById('currentPlanPrice');
-                const planStatus = document.getElementById('planStatus');
-                const nextBillingDate = document.getElementById('nextBillingDate');
-                const userCount = document.getElementById('userCount');
-
-                if (currentSchool.plan_type === 'individual') {
-                    currentPlanCard.className = 'border-2 border-blue-500 rounded-xl p-6 plan-active';
-                    currentPlanIcon.innerHTML = '<i class="fas fa-user text-blue-600 text-2xl"></i>';
-                    currentPlanName.textContent = 'Plano Individual';
-                    currentPlanDesc.textContent = 'Por professor';
-                    currentPlanPrice.textContent = 'R$ 19,90';
-                } else {
-                    currentPlanCard.className = 'border-2 border-green-500 rounded-xl p-6 plan-active';
-                    currentPlanIcon.innerHTML = '<i class="fas fa-school text-green-600 text-2xl"></i>';
-                    currentPlanName.textContent = 'Plano Escola';
-                    currentPlanDesc.textContent = 'Usuários ilimitados';
-                    currentPlanPrice.textContent = 'R$ 199,00';
-                }
-
-                planStatus.textContent = currentSchool.plan_status === 'active' ? 'Ativo' : 'Expirado';
-                nextBillingDate.textContent = new Date(currentSchool.next_billing_date).toLocaleDateString('pt-BR');
-
-                // Count users
-                const { data: users } = await supabase
-                    .from('users')
-                    .select('id')
-                    .eq('school_id', currentUser.school_id);
-                
-                userCount.textContent = users?.length || 0;
-
-                // Load payment history
-                await loadPaymentHistory();
-
-            } catch (error) {
-                console.error('Erro ao carregar dados de cobrança:', error);
-            }
-        }
-
-        // Load payment history
-        async function loadPaymentHistory() {
-            // Simulate payment history (in production, this would come from your backend)
-            const payments = [
-                { date: '2024-06-15', description: 'Plano Escola - Junho 2024', amount: 'R$ 199,00', status: 'Pago' },
-                { date: '2024-05-15', description: 'Plano Escola - Maio 2024', amount: 'R$ 199,00', status: 'Pago' },
-                { date: '2024-04-15', description: 'Plano Escola - Abril 2024', amount: 'R$ 199,00', status: 'Pago' }
-            ];
-
-            const container = document.getElementById('paymentHistory');
-            container.innerHTML = payments.map(payment => `
-                <tr class="border-b hover:bg-gray-50">
-                    <td class="py-3 px-4">${payment.date}</td>
-                    <td class="py-3 px-4">${payment.description}</td>
-                    <td class="py-3 px-4">${payment.amount}</td>
-                    <td class="py-3 px-4">
-                        <span class="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-600">
-                            ${payment.status}
-                        </span>
-                    </td>
-                    <td class="py-3 px-4">
-                        <button class="text-blue-600 hover:text-blue-800 text-sm">
-                            <i class="fas fa-download"></i>
-                        </button>
-                    </td>
-                </tr>
-            `).join('');
-        }
-
-        // Plan management functions
-        function upgradePlan() {
-            alert('Funcionalidade de upgrade será implementada');
-        }
-
-        function manageBilling() {
-            alert('Gerenciamento de cobrança será implementado');
-        }
-
-        function selectNewPlan(planType) {
-            alert(`Seleção do plano ${planType} será implementada`);
-        }
-
-        // Load executive charts (simplified)
-        async function loadExecutiveCharts() {
-            try {
-                const ctx = document.getElementById('strategicChart').getContext('2d');
-                new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun'],
-                        datasets: [{
-                            label: 'Planos Criados',
-                            data: [65, 78, 90, 81, 95, 102],
-                            borderColor: '#667eea',
-                            backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                            fill: true
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false
-                    }
-                });
-            } catch (error) {
-                console.error('Erro ao carregar gráficos:', error);
-            }
-        }
-
-        // Load other components (simplified)
-        async function loadExecutiveAlerts() {
-            const alerts = [
-                { type: 'warning', message: '3 professores com baixa taxa de aprovação', priority: 'high' },
-                { type: 'info', message: 'Meta mensal atingida em 85%', priority: 'medium' }
-            ];
-
-            const container = document.getElementById('executiveAlerts');
-            container.innerHTML = alerts.map(alert => `
-                <div class="p-3 rounded-lg border-l-4 ${alert.type === 'warning' ? 'border-yellow-500 bg-yellow-50' : 'border-blue-500 bg-blue-50'}">
-                    <div class="flex items-center">
-                        <i class="fas ${alert.type === 'warning' ? 'fa-exclamation-triangle text-yellow-600' : 'fa-info-circle text-blue-600'} mr-2"></i>
-                        <span class="text-sm font-medium">${alert.message}</span>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        async function loadQualityMetrics() {
-            const metrics = [
-                { name: 'Planos Aprovados', value: 94, trend: 'up' },
-                { name: 'Satisfação Geral', value: 4.8, unit: '/5', trend: 'up' }
-            ];
-
-            const container = document.getElementById('qualityMetrics');
-            container.innerHTML = metrics.map(metric => `
-                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div>
-                        <div class="font-medium text-gray-800">${metric.name}</div>
-                        <div class="text-2xl font-bold text-gray-900">${metric.value}${metric.unit || '%'}</div>
-                    </div>
-                    <i class="fas fa-arrow-up trend-up"></i>
-                </div>
-            `).join('');
-        }
-
-        async function loadExecutiveActions() {
-            const actions = [
-                { action: 'Aprovação de novo coordenador', user: 'Sistema', time: '2 horas atrás' },
-                { action: 'Relatório mensal gerado', user: 'Ana Silva', time: '1 dia atrás' }
-            ];
-
-            const container = document.getElementById('executiveActions');
-            container.innerHTML = actions.map(action => `
-                <div class="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                    <div class="flex items-center">
-                        <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center mr-3">
-                            <i class="fas fa-cog text-purple-600"></i>
-                        </div>
-                        <div>
-                            <h4 class="font-medium text-gray-800">${action.action}</h4>
-                            <p class="text-sm text-gray-600">${action.user} • ${action.time}</p>
-                        </div>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        async function logout() {
-            try {
-                await supabase.auth.signOut();
-                window.location.href = './index.html';
-            } catch (error) {
-                console.error('Erro ao fazer logout:', error);
-            }
-        }
-    </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'980d4042d63588b4',t:'MTc1ODE2MDg0MC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
-</html><!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EduPlan - Sistema de Gestão Pedagógica</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <!-- Mercado Pago SDK -->
-    <script src="https://sdk.mercadopago.com/js/v2"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-        body { font-family: 'Inter', sans-serif; }
-        .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-        .hero-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-        .card-hover { transition: all 0.3s ease; }
-        .card-hover:hover { transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
-        .fade-in { animation: fadeIn 0.8s ease-in; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
-        .plan-card { transition: all 0.3s ease; }
-        .plan-card.selected { border-color: #3b82f6; background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); }
-        .plan-card.selected.school { border-color: #10b981; background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); }
-        .plan-card.selected.trial { border-color: #8b5cf6; background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%); }
         .loading-spinner { animation: spin 1s linear infinite; }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        .payment-success { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
-        .payment-error { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
+        .pulse-notification { animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .status-realizado { background: linear-gradient(135deg, #10b981, #059669); }
+        .status-ressalvas { background: linear-gradient(135deg, #f59e0b, #d97706); }
+        .status-completar { background: linear-gradient(135deg, #ef4444, #dc2626); }
+        .status-procurar { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+        .priority-alta { border-left: 4px solid #ef4444; }
+        .priority-media { border-left: 4px solid #f59e0b; }
+        .priority-baixa { border-left: 4px solid #10b981; }
     </style>
 </head>
-<body class="bg-gray-50">
+<body class="bg-gray-50 min-h-screen">
     <!-- Header -->
-    <header class="bg-white shadow-sm">
+    <header class="gradient-bg shadow-lg">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center py-4">
-                <div class="flex items-center">
-                    <div class="w-10 h-10 gradient-bg rounded-lg flex items-center justify-center mr-3">
-                        <i class="fas fa-graduation-cap text-white"></i>
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
+                            <i class="fas fa-user-tie text-blue-600 text-xl"></i>
+                        </div>
+                        <div>
+                            <h1 class="text-xl font-bold text-white">Dashboard Direção</h1>
+                            <p class="text-blue-100 text-sm" id="schoolName">Carregando...</p>
+                        </div>
                     </div>
-                    <h1 class="text-2xl font-bold text-gray-800">EduPlan</h1>
                 </div>
-                <nav class="hidden md:flex space-x-8">
-                    <a href="#features" class="text-gray-600 hover:text-gray-800 transition-colors">Recursos</a>
-                    <a href="#pricing" class="text-gray-600 hover:text-gray-800 transition-colors">Preços</a>
-                    <a href="#contact" class="text-gray-600 hover:text-gray-800 transition-colors">Contato</a>
-                </nav>
-                <div class="flex space-x-4">
-                    <button onclick="showLogin()" class="text-gray-600 hover:text-gray-800 font-medium">
-                        Entrar
-                    </button>
-                    <button onclick="showRegister()" class="gradient-bg text-white px-6 py-2 rounded-lg font-semibold hover:opacity-90 transition-all">
-                        Começar Agora
+                
+                <div class="flex items-center space-x-4">
+                    <!-- Notification Bell -->
+                    <div class="relative">
+                        <button id="notificationBtn" onclick="toggleNotifications()" class="bg-white bg-opacity-20 hover:bg-opacity-30 text-white p-2 rounded-lg transition-all duration-200 relative">
+                            <i class="fas fa-bell text-lg"></i>
+                            <span id="notificationBadge" class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center pulse-notification">0</span>
+                        </button>
+                        
+                        <!-- Notifications Dropdown -->
+                        <div id="notificationsDropdown" class="hidden absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl z-50 border border-gray-200">
+                            <div class="p-4 border-b border-gray-200">
+                                <h3 class="font-semibold text-gray-900">Notificações Recentes</h3>
+                            </div>
+                            <div id="notificationsList" class="max-h-64 overflow-y-auto">
+                                <!-- Notifications will be loaded here -->
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="text-right">
+                        <p class="text-white font-medium" id="userName">Carregando...</p>
+                        <p class="text-blue-100 text-sm">Direção</p>
+                    </div>
+                    <button onclick="logout()" class="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-4 py-2 rounded-lg transition-all duration-200">
+                        <i class="fas fa-sign-out-alt mr-2"></i>
+                        Sair
                     </button>
                 </div>
             </div>
@@ -861,302 +78,446 @@
     </header>
 
     <!-- Main Content -->
-    <main class="max-w-md mx-auto mt-8 p-6">
-        <!-- Hero Section -->
-        <div id="heroSection" class="text-center mb-12 fade-in">
-            <div class="hero-bg rounded-2xl p-8 text-white mb-8">
-                <h2 class="text-4xl font-bold mb-4">Transforme sua Gestão Pedagógica</h2>
-                <p class="text-xl opacity-90 mb-6">Planos de aula inteligentes, feedback colaborativo e analytics educacional</p>
-                <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                    <button onclick="showRegister()" class="bg-white text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-all">
-                        <i class="fas fa-rocket mr-2"></i>
-                        Começar Grátis
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white rounded-xl shadow-sm p-6 card-hover fade-in">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-blue-100">
+                        <i class="fas fa-chalkboard-teacher text-blue-600 text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Total Professores</p>
+                        <p class="text-2xl font-bold text-gray-900" id="totalProfessores">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm p-6 card-hover fade-in">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-green-100">
+                        <i class="fas fa-calendar-week text-green-600 text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Semanários Esta Semana</p>
+                        <p class="text-2xl font-bold text-gray-900" id="semanariosSemana">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm p-6 card-hover fade-in">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-yellow-100">
+                        <i class="fas fa-exclamation-triangle text-yellow-600 text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Pendentes Análise</p>
+                        <p class="text-2xl font-bold text-gray-900" id="pendentesAnalise">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm p-6 card-hover fade-in">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-purple-100">
+                        <i class="fas fa-envelope text-purple-600 text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Recados Enviados</p>
+                        <p class="text-2xl font-bold text-gray-900" id="recadosEnviados">0</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="bg-white rounded-xl shadow-sm p-6 mb-8 fade-in">
+            <div class="flex flex-col sm:flex-row gap-4 items-center justify-between">
+                <div>
+                    <h2 class="text-lg font-semibold text-gray-900 mb-1">Ações Rápidas</h2>
+                    <p class="text-gray-600">Gerencie a escola e comunique-se com a equipe</p>
+                </div>
+                <div class="flex flex-wrap gap-3">
+                    <button onclick="openRecadoProfessorModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+                        <i class="fas fa-paper-plane mr-2"></i>
+                        Recado para Professor
                     </button>
-                    <button onclick="showLogin()" class="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-blue-600 transition-all">
-                        <i class="fas fa-sign-in-alt mr-2"></i>
-                        Fazer Login
+                    <button onclick="openRecadoAdminModal()" class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+                        <i class="fas fa-cog mr-2"></i>
+                        Contatar Admin
+                    </button>
+                    <button onclick="loadSemanarios()" class="border border-gray-300 text-gray-700 px-6 py-3 rounded-lg font-medium hover:bg-gray-50 transition-colors">
+                        <i class="fas fa-sync-alt mr-2"></i>
+                        Atualizar
                     </button>
                 </div>
             </div>
         </div>
 
-        <!-- Login Form -->
-        <div id="loginForm" class="hidden bg-white rounded-2xl shadow-xl p-8 fade-in">
-            <div class="text-center mb-8">
-                <h2 class="text-3xl font-bold text-gray-800 mb-2">Bem-vindo de volta!</h2>
-                <p class="text-gray-600">Entre na sua conta para continuar</p>
+        <!-- Tabs -->
+        <div class="bg-white rounded-xl shadow-sm mb-8 fade-in">
+            <div class="border-b border-gray-200">
+                <nav class="flex space-x-8 px-6">
+                    <button onclick="switchTab('semanarios')" id="tab-semanarios" class="py-4 px-1 border-b-2 border-blue-500 font-medium text-sm text-blue-600">
+                        <i class="fas fa-calendar-week mr-2"></i>
+                        Semanários
+                    </button>
+                    <button onclick="switchTab('professores')" id="tab-professores" class="py-4 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                        <i class="fas fa-chalkboard-teacher mr-2"></i>
+                        Professores
+                    </button>
+                    <button onclick="switchTab('recados')" id="tab-recados" class="py-4 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                        <i class="fas fa-envelope mr-2"></i>
+                        Recados
+                    </button>
+                    <button onclick="switchTab('relatorios')" id="tab-relatorios" class="py-4 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                        <i class="fas fa-chart-bar mr-2"></i>
+                        Relatórios
+                    </button>
+                </nav>
             </div>
-            
-            <form id="loginFormElement" class="space-y-6">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                    <input type="email" id="loginEmail" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
-                </div>
-                
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Senha</label>
-                    <input type="password" id="loginPassword" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
-                </div>
-                
-                <button type="submit" class="w-full gradient-bg text-white py-3 px-6 rounded-lg font-semibold hover:opacity-90 transition-all">
-                    <i class="fas fa-sign-in-alt mr-2"></i>
-                    Entrar
-                </button>
-            </form>
-            
-            <div class="text-center mt-6">
-                <button onclick="showRegister()" class="text-blue-600 hover:text-blue-800 font-medium">
-                    Não tem uma conta? Cadastre-se
-                </button>
-            </div>
-        </div>
 
-        <!-- Registration Form -->
-        <div id="registerForm" class="hidden bg-white rounded-2xl shadow-xl p-8 fade-in">
-            <div class="text-center mb-8">
-                <h2 class="text-3xl font-bold text-gray-800 mb-2">Criar Conta</h2>
-                <p class="text-gray-600">Escolha seu plano e comece agora</p>
-            </div>
-            
-            <!-- Plan Selection -->
-            <div id="planSelection" class="mb-8">
-                <h3 class="text-lg font-semibold text-gray-800 mb-4 text-center">Escolha seu Plano</h3>
-                <div class="grid grid-cols-1 gap-4 mb-6">
-                    <!-- Individual Plan -->
-                    <div class="plan-card border-2 border-gray-200 rounded-xl p-4 cursor-pointer hover:border-blue-500 transition-all" onclick="selectPlan('individual')">
-                        <div class="flex items-center">
-                            <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mr-4">
-                                <i class="fas fa-user text-blue-600"></i>
+            <!-- Tab Content -->
+            <div class="p-6">
+                <!-- Semanários Tab -->
+                <div id="content-semanarios" class="tab-content">
+                    <!-- Filters -->
+                    <div class="flex flex-col sm:flex-row gap-4 mb-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Professor</label>
+                            <select id="professorFilter" class="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <option value="">Todos os professores</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                            <select id="statusFilter" class="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <option value="">Todos os status</option>
+                                <option value="sem-devolutiva">Sem devolutiva</option>
+                                <option value="realizado">Aprovado</option>
+                                <option value="ressalvas">Com ressalvas</option>
+                                <option value="completar">Para completar</option>
+                                <option value="procurar">Procurar coordenação</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Semana</label>
+                            <select id="semanaFilter" class="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <option value="">Todas as semanas</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Semanários List -->
+                    <div id="loadingSemanarios" class="flex items-center justify-center py-12">
+                        <div class="text-center">
+                            <i class="fas fa-spinner loading-spinner text-3xl text-blue-600 mb-4"></i>
+                            <p class="text-gray-600">Carregando semanários...</p>
+                        </div>
+                    </div>
+
+                    <div id="semanariosList" class="hidden space-y-4">
+                        <!-- Semanários will be loaded here -->
+                    </div>
+
+                    <div id="noSemanarios" class="hidden text-center py-12">
+                        <i class="fas fa-calendar-times text-4xl text-gray-400 mb-4"></i>
+                        <h3 class="text-lg font-medium text-gray-900 mb-2">Nenhum semanário encontrado</h3>
+                        <p class="text-gray-600">Não há semanários com os filtros selecionados.</p>
+                    </div>
+                </div>
+
+                <!-- Professores Tab -->
+                <div id="content-professores" class="tab-content hidden">
+                    <div id="loadingProfessores" class="flex items-center justify-center py-12">
+                        <div class="text-center">
+                            <i class="fas fa-spinner loading-spinner text-3xl text-blue-600 mb-4"></i>
+                            <p class="text-gray-600">Carregando professores...</p>
+                        </div>
+                    </div>
+
+                    <div id="professoresList" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <!-- Professores will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Recados Tab -->
+                <div id="content-recados" class="tab-content hidden">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-lg font-semibold text-gray-900">Histórico de Recados</h3>
+                        <div class="flex space-x-3">
+                            <button onclick="openRecadoProfessorModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm">
+                                <i class="fas fa-paper-plane mr-2"></i>
+                                Novo Recado Professor
+                            </button>
+                            <button onclick="openRecadoAdminModal()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm">
+                                <i class="fas fa-cog mr-2"></i>
+                                Contatar Admin
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="loadingRecados" class="flex items-center justify-center py-12">
+                        <div class="text-center">
+                            <i class="fas fa-spinner loading-spinner text-3xl text-blue-600 mb-4"></i>
+                            <p class="text-gray-600">Carregando recados...</p>
+                        </div>
+                    </div>
+
+                    <div id="recadosList" class="hidden space-y-4">
+                        <!-- Recados will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Relatórios Tab -->
+                <div id="content-relatorios" class="tab-content hidden">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- Performance Chart -->
+                        <div class="bg-gray-50 rounded-lg p-6">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                                <i class="fas fa-chart-line mr-2 text-blue-600"></i>
+                                Performance dos Professores
+                            </h3>
+                            <div id="performanceChart" class="h-64 flex items-center justify-center text-gray-500">
+                                <div class="text-center">
+                                    <i class="fas fa-chart-bar text-4xl mb-2"></i>
+                                    <p>Gráfico de performance em desenvolvimento</p>
+                                </div>
                             </div>
-                            <div class="flex-1">
-                                <h4 class="font-bold text-gray-800">Plano Individual</h4>
-                                <p class="text-sm text-gray-600">Por professor</p>
-                            </div>
-                            <div class="text-right">
-                                <div class="text-xl font-bold text-blue-600">R$ 19,90</div>
-                                <div class="text-xs text-gray-500">/mês</div>
+                        </div>
+
+                        <!-- Status Distribution -->
+                        <div class="bg-gray-50 rounded-lg p-6">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                                <i class="fas fa-pie-chart mr-2 text-green-600"></i>
+                                Distribuição de Status
+                            </h3>
+                            <div id="statusChart" class="space-y-3">
+                                <!-- Status distribution will be loaded here -->
                             </div>
                         </div>
                     </div>
-                    
-                    <!-- School Plan -->
-                    <div class="plan-card border-2 border-gray-200 rounded-xl p-4 cursor-pointer hover:border-green-500 transition-all" onclick="selectPlan('school')">
-                        <div class="flex items-center">
-                            <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-4">
-                                <i class="fas fa-school text-green-600"></i>
-                            </div>
-                            <div class="flex-1">
-                                <h4 class="font-bold text-gray-800">Plano Escola</h4>
-                                <p class="text-sm text-gray-600">Usuários ilimitados</p>
-                            </div>
-                            <div class="text-right">
-                                <div class="text-xl font-bold text-green-600">R$ 199,00</div>
-                                <div class="text-xs text-gray-500">/mês</div>
-                            </div>
+
+                    <!-- Weekly Summary -->
+                    <div class="mt-6 bg-gray-50 rounded-lg p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                            <i class="fas fa-calendar-week mr-2 text-purple-600"></i>
+                            Resumo Semanal
+                        </h3>
+                        <div id="weeklySummary" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <!-- Weekly summary will be loaded here -->
                         </div>
                     </div>
-                    
-
                 </div>
             </div>
-            
-            <form id="registerFormElement" class="space-y-4">
-                <input type="hidden" id="selectedPlan" value="">
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Nome</label>
-                        <input type="text" id="registerName" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                        <input type="email" id="registerEmail" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
-                    </div>
-                </div>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Senha</label>
-                        <input type="password" id="registerPassword" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Confirmar Senha</label>
-                        <input type="password" id="confirmPassword" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
-                    </div>
-                </div>
-                
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Nome da Escola</label>
-                    <input type="text" id="schoolName" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
-                </div>
-                
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Tipo de Usuário</label>
-                    <select id="userType" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
-                        <option value="">Selecione...</option>
-                        <option value="direcao">Direção</option>
-                        <option value="coordenacao">Coordenação</option>
-                        <option value="professor">Professor</option>
-                    </select>
-                </div>
-                
-                <div id="paymentSection" class="hidden">
-                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <i class="fas fa-info-circle text-blue-600 mr-2"></i>
-                                <span class="text-sm text-blue-800" id="planSummary"></span>
-                            </div>
-                            <div class="text-lg font-bold text-blue-800" id="planPrice"></div>
-                        </div>
-                    </div>
-                    
-                    <!-- Mercado Pago Payment -->
-                    <div id="mercadoPagoContainer" class="hidden">
-                        <div id="cardPaymentBrick_container"></div>
-                    </div>
-                </div>
-                
-                <button type="submit" class="w-full gradient-bg text-white py-3 px-6 rounded-lg font-semibold hover:opacity-90 transition-all">
-                    <i class="fas fa-user-plus mr-2"></i>
-                    <span id="submitButtonText">Criar Conta</span>
-                </button>
-            </form>
-            
-            <div class="text-center mt-6">
-                <button onclick="showLogin()" class="text-blue-600 hover:text-blue-800 font-medium">
-                    Já tem uma conta? Faça login
-                </button>
-            </div>
-        </div>
-
-        <!-- Payment Success -->
-        <div id="paymentSuccess" class="hidden bg-white rounded-2xl shadow-xl p-8 text-center fade-in">
-            <div class="w-16 h-16 payment-success rounded-full flex items-center justify-center mx-auto mb-6">
-                <i class="fas fa-check text-white text-2xl"></i>
-            </div>
-            <h2 class="text-2xl font-bold text-gray-800 mb-4">Pagamento Confirmado!</h2>
-            <p class="text-gray-600 mb-6">Sua conta foi criada com sucesso. Você já pode começar a usar o EduPlan!</p>
-            <button onclick="redirectToDashboard()" class="gradient-bg text-white px-8 py-3 rounded-lg font-semibold hover:opacity-90 transition-all">
-                <i class="fas fa-arrow-right mr-2"></i>
-                Acessar Dashboard
-            </button>
-        </div>
-
-        <!-- Payment Error -->
-        <div id="paymentError" class="hidden bg-white rounded-2xl shadow-xl p-8 text-center fade-in">
-            <div class="w-16 h-16 payment-error rounded-full flex items-center justify-center mx-auto mb-6">
-                <i class="fas fa-times text-white text-2xl"></i>
-            </div>
-            <h2 class="text-2xl font-bold text-gray-800 mb-4">Erro no Pagamento</h2>
-            <p class="text-gray-600 mb-6" id="errorMessage">Ocorreu um erro ao processar seu pagamento. Tente novamente.</p>
-            <button onclick="showRegister()" class="gradient-bg text-white px-8 py-3 rounded-lg font-semibold hover:opacity-90 transition-all">
-                <i class="fas fa-arrow-left mr-2"></i>
-                Tentar Novamente
-            </button>
-        </div>
-
-        <!-- Loading -->
-        <div id="loadingScreen" class="hidden bg-white rounded-2xl shadow-xl p-8 text-center fade-in">
-            <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                <i class="fas fa-spinner loading-spinner text-blue-600 text-2xl"></i>
-            </div>
-            <h2 class="text-2xl font-bold text-gray-800 mb-4">Processando...</h2>
-            <p class="text-gray-600">Aguarde enquanto processamos seu pagamento</p>
         </div>
     </main>
 
-    <!-- Features Section -->
-    <section id="features" class="py-20 bg-white">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center mb-16">
-                <h2 class="text-4xl font-bold text-gray-800 mb-4">Recursos Poderosos</h2>
-                <p class="text-xl text-gray-600">Tudo que você precisa para uma gestão pedagógica eficiente</p>
+    <!-- Recado Professor Modal -->
+    <div id="recadoProfessorModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xl font-bold text-gray-900">
+                        <i class="fas fa-paper-plane mr-2 text-blue-600"></i>
+                        Enviar Recado para Professor
+                    </h3>
+                    <button onclick="closeRecadoProfessorModal()" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
             </div>
             
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                <div class="text-center p-6 card-hover">
-                    <div class="w-16 h-16 gradient-bg rounded-full flex items-center justify-center mx-auto mb-4">
-                        <i class="fas fa-file-alt text-white text-2xl"></i>
+            <form id="recadoProfessorForm" class="p-6 space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="professorDestino" class="block text-sm font-medium text-gray-700 mb-2">Professor Destinatário *</label>
+                        <select id="professorDestino" name="professorDestino" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <option value="">Selecione um professor</option>
+                        </select>
                     </div>
-                    <h3 class="text-xl font-semibold text-gray-800 mb-2">Planos de Aula</h3>
-                    <p class="text-gray-600">Crie e gerencie planos de aula de forma intuitiva e colaborativa</p>
-                </div>
-                
-                <div class="text-center p-6 card-hover">
-                    <div class="w-16 h-16 gradient-bg rounded-full flex items-center justify-center mx-auto mb-4">
-                        <i class="fas fa-comments text-white text-2xl"></i>
+                    
+                    <div>
+                        <label for="prioridadeRecado" class="block text-sm font-medium text-gray-700 mb-2">Prioridade *</label>
+                        <select id="prioridadeRecado" name="prioridadeRecado" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <option value="baixa">Baixa</option>
+                            <option value="media" selected>Média</option>
+                            <option value="alta">Alta</option>
+                        </select>
                     </div>
-                    <h3 class="text-xl font-semibold text-gray-800 mb-2">Feedback Colaborativo</h3>
-                    <p class="text-gray-600">Sistema de feedback entre professores e coordenação</p>
                 </div>
-                
-                <div class="text-center p-6 card-hover">
-                    <div class="w-16 h-16 gradient-bg rounded-full flex items-center justify-center mx-auto mb-4">
-                        <i class="fas fa-chart-bar text-white text-2xl"></i>
-                    </div>
-                    <h3 class="text-xl font-semibold text-gray-800 mb-2">Analytics</h3>
-                    <p class="text-gray-600">Relatórios e métricas para tomada de decisão</p>
-                </div>
-            </div>
-        </div>
-    </section>
 
-    <!-- Pricing Section -->
-    <section id="pricing" class="py-20 bg-gray-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center mb-16">
-                <h2 class="text-4xl font-bold text-gray-800 mb-4">Planos Flexíveis</h2>
-                <p class="text-xl text-gray-600">Escolha o plano ideal para sua necessidade</p>
+                <div>
+                    <label for="assuntoRecado" class="block text-sm font-medium text-gray-700 mb-2">Assunto *</label>
+                    <input type="text" id="assuntoRecado" name="assuntoRecado" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Ex: Reunião pedagógica, Ajustes no semanário...">
+                </div>
+
+                <div>
+                    <label for="mensagemRecado" class="block text-sm font-medium text-gray-700 mb-2">Mensagem *</label>
+                    <textarea id="mensagemRecado" name="mensagemRecado" required rows="6" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Digite sua mensagem aqui..."></textarea>
+                </div>
+
+                <div class="flex space-x-3 pt-4">
+                    <button type="button" onclick="closeRecadoProfessorModal()" class="flex-1 border border-gray-300 text-gray-700 py-3 px-4 rounded-lg hover:bg-gray-50 transition-colors">
+                        Cancelar
+                    </button>
+                    <button type="submit" id="enviarRecadoBtn" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-lg transition-colors">
+                        <span id="enviarRecadoText">Enviar Recado</span>
+                        <span id="enviarRecadoLoading" class="hidden">
+                            <i class="fas fa-spinner loading-spinner mr-2"></i>
+                            Enviando...
+                        </span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Recado Admin Modal -->
+    <div id="recadoAdminModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xl font-bold text-gray-900">
+                        <i class="fas fa-cog mr-2 text-purple-600"></i>
+                        Contatar Administração
+                    </h3>
+                    <button onclick="closeRecadoAdminModal()" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
             </div>
             
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-                <div class="bg-white rounded-2xl shadow-xl p-8 card-hover">
-                    <div class="text-center">
-                        <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <i class="fas fa-user text-blue-600 text-2xl"></i>
-                        </div>
-                        <h3 class="text-2xl font-bold text-gray-800 mb-2">Individual</h3>
-                        <div class="text-4xl font-bold text-blue-600 mb-4">R$ 19,90</div>
-                        <p class="text-gray-600 mb-6">por professor/mês</p>
-                        <ul class="text-left space-y-3 mb-8">
-                            <li class="flex items-center"><i class="fas fa-check text-green-500 mr-3"></i>Planos de aula ilimitados</li>
-                            <li class="flex items-center"><i class="fas fa-check text-green-500 mr-3"></i>Feedback da coordenação</li>
-                            <li class="flex items-center"><i class="fas fa-check text-green-500 mr-3"></i>Relatórios básicos</li>
-                            <li class="flex items-center"><i class="fas fa-check text-green-500 mr-3"></i>Suporte por email</li>
-                        </ul>
-                        <button onclick="showRegister()" class="w-full gradient-bg text-white py-3 px-6 rounded-lg font-semibold hover:opacity-90 transition-all">
-                            Começar Agora
-                        </button>
+            <form id="recadoAdminForm" class="p-6 space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="tipoSolicitacao" class="block text-sm font-medium text-gray-700 mb-2">Tipo de Solicitação *</label>
+                        <select id="tipoSolicitacao" name="tipoSolicitacao" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                            <option value="">Selecione o tipo</option>
+                            <option value="correcao">Correção de Bug</option>
+                            <option value="atualizacao">Atualização de Funcionalidade</option>
+                            <option value="renovacao">Renovação de Plano</option>
+                            <option value="suporte">Suporte Técnico</option>
+                            <option value="outro">Outro</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label for="urgenciaAdmin" class="block text-sm font-medium text-gray-700 mb-2">Urgência *</label>
+                        <select id="urgenciaAdmin" name="urgenciaAdmin" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                            <option value="baixa">Baixa</option>
+                            <option value="media" selected>Média</option>
+                            <option value="alta">Alta</option>
+                            <option value="critica">Crítica</option>
+                        </select>
                     </div>
                 </div>
-                
-                <div class="bg-white rounded-2xl shadow-xl p-8 card-hover border-2 border-green-500 relative">
-                    <div class="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                        <span class="bg-green-500 text-white px-4 py-1 rounded-full text-sm font-medium">Mais Popular</span>
-                    </div>
-                    <div class="text-center">
-                        <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <i class="fas fa-school text-green-600 text-2xl"></i>
+
+                <div>
+                    <label for="assuntoAdmin" class="block text-sm font-medium text-gray-700 mb-2">Assunto *</label>
+                    <input type="text" id="assuntoAdmin" name="assuntoAdmin" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent" placeholder="Descreva brevemente o assunto...">
+                </div>
+
+                <div>
+                    <label for="descricaoAdmin" class="block text-sm font-medium text-gray-700 mb-2">Descrição Detalhada *</label>
+                    <textarea id="descricaoAdmin" name="descricaoAdmin" required rows="6" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent" placeholder="Descreva detalhadamente sua solicitação, incluindo passos para reproduzir problemas, se aplicável..."></textarea>
+                </div>
+
+                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                    <div class="flex">
+                        <i class="fas fa-info-circle text-yellow-600 mt-1 mr-3"></i>
+                        <div>
+                            <h4 class="text-sm font-medium text-yellow-800">Informação Importante</h4>
+                            <p class="text-sm text-yellow-700 mt-1">
+                                Solicitações de renovação de plano e suporte técnico são priorizadas. 
+                                Para problemas críticos, entre em contato também por telefone.
+                            </p>
                         </div>
-                        <h3 class="text-2xl font-bold text-gray-800 mb-2">Escola</h3>
-                        <div class="text-4xl font-bold text-green-600 mb-4">R$ 199,00</div>
-                        <p class="text-gray-600 mb-6">por escola/mês</p>
-                        <ul class="text-left space-y-3 mb-8">
-                            <li class="flex items-center"><i class="fas fa-check text-green-500 mr-3"></i>Usuários ilimitados</li>
-                            <li class="flex items-center"><i class="fas fa-check text-green-500 mr-3"></i>Dashboard executivo</li>
-                            <li class="flex items-center"><i class="fas fa-check text-green-500 mr-3"></i>Relatórios avançados</li>
-                            <li class="flex items-center"><i class="fas fa-check text-green-500 mr-3"></i>Analytics completo</li>
-                            <li class="flex items-center"><i class="fas fa-check text-green-500 mr-3"></i>Suporte prioritário</li>
-                        </ul>
-                        <button onclick="showRegister()" class="w-full bg-green-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-green-700 transition-all">
-                            Começar Agora
-                        </button>
                     </div>
+                </div>
+
+                <div class="flex space-x-3 pt-4">
+                    <button type="button" onclick="closeRecadoAdminModal()" class="flex-1 border border-gray-300 text-gray-700 py-3 px-4 rounded-lg hover:bg-gray-50 transition-colors">
+                        Cancelar
+                    </button>
+                    <button type="submit" id="enviarAdminBtn" class="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-3 px-4 rounded-lg transition-colors">
+                        <span id="enviarAdminText">Enviar Solicitação</span>
+                        <span id="enviarAdminLoading" class="hidden">
+                            <i class="fas fa-spinner loading-spinner mr-2"></i>
+                            Enviando...
+                        </span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Semanário Detail Modal -->
+    <div id="semanarioModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xl font-bold text-gray-900">Detalhes do Semanário</h3>
+                    <button onclick="closeSemanarioModal()" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="p-6">
+                <!-- Semanário content will be loaded here -->
+                <div id="semanarioContent">
+                    <!-- Content will be filled dynamically -->
+                </div>
+
+                <!-- Devolutiva Section -->
+                <div class="mt-8 border-t border-gray-200 pt-6">
+                    <h4 class="text-lg font-semibold text-gray-900 mb-4">Dar Devolutiva</h4>
+                    
+                    <form id="devolutivaForm" class="space-y-4">
+                        <div>
+                            <label for="statusDevolutiva" class="block text-sm font-medium text-gray-700 mb-2">Status *</label>
+                            <select id="statusDevolutiva" name="statusDevolutiva" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <option value="">Selecione o status</option>
+                                <option value="realizado">Realizado com sucesso</option>
+                                <option value="ressalvas">Com ressalvas</option>
+                                <option value="completar">Favor completar o semanário</option>
+                                <option value="procurar">Procure a coordenação</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="comentarioDevolutiva" class="block text-sm font-medium text-gray-700 mb-2">Comentários</label>
+                            <textarea id="comentarioDevolutiva" name="comentarioDevolutiva" rows="4" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Adicione comentários sobre o semanário..."></textarea>
+                        </div>
+
+                        <div class="flex space-x-3">
+                            <button type="button" onclick="closeSemanarioModal()" class="flex-1 border border-gray-300 text-gray-700 py-3 px-4 rounded-lg hover:bg-gray-50 transition-colors">
+                                Cancelar
+                            </button>
+                            <button type="submit" id="salvarDevolutivaBtn" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-lg transition-colors">
+                                <span id="salvarDevolutivaText">Salvar Devolutiva</span>
+                                <span id="salvarDevolutivaLoading" class="hidden">
+                                    <i class="fas fa-spinner loading-spinner mr-2"></i>
+                                    Salvando...
+                                </span>
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
-    </section>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed top-4 right-4 bg-white border border-gray-200 rounded-lg shadow-lg p-4 transform translate-x-full transition-transform duration-300 z-50">
+        <div class="flex items-center">
+            <div id="toastIcon" class="mr-3"></div>
+            <div>
+                <p id="toastMessage" class="font-medium text-gray-900"></p>
+            </div>
+        </div>
+    </div>
 
     <script>
         // Configuração do Supabase
@@ -1164,414 +525,1047 @@
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNycXFoZWFjc2dsaHl5aHZmY2hnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgxNTMxMDMsImV4cCI6MjA3MzcyOTEwM30.ZOKVDK1FEyDM-lcPrw4-0xbVDxYLftek3NHYcmjc_7w';
         
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        
-        // Configuração do Mercado Pago
-        const MP_PUBLIC_KEY = 'TEST-4ff5b89e-8e8e-4e8e-8e8e-8e8e8e8e8e8e'; // Substitua pela sua chave pública
-        const mp = new MercadoPago(MP_PUBLIC_KEY);
-        
-        let selectedPlan = null;
-        let bricksBuilder = null;
+
+        let currentUser = null;
+        let currentSchoolId = null;
+        let currentSemanario = null;
+        let activeTab = 'semanarios';
 
         // Initialize
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
+            await checkAuth();
+            await loadUserData();
+            await loadInitialData();
             setupEventListeners();
-            checkExistingSession();
+            
+            // Auto-refresh every 30 seconds
+            setInterval(loadNotifications, 30000);
         });
 
-        // Setup event listeners
-        function setupEventListeners() {
-            document.getElementById('loginFormElement').addEventListener('submit', handleLogin);
-            document.getElementById('registerFormElement').addEventListener('submit', handleRegister);
-        }
-
-        // Check existing session
-        async function checkExistingSession() {
-            try {
-                const { data: { session } } = await supabase.auth.getSession();
-                if (session) {
-                    redirectToDashboard();
-                }
-            } catch (error) {
-                console.error('Erro ao verificar sessão:', error);
+        // Check authentication
+        async function checkAuth() {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) {
+                window.location.href = './index.html';
+                return;
             }
+            currentUser = session.user;
         }
 
-        // Show/Hide sections
-        function showLogin() {
-            hideAllSections();
-            document.getElementById('loginForm').classList.remove('hidden');
-        }
-
-        function showRegister() {
-            hideAllSections();
-            document.getElementById('registerForm').classList.remove('hidden');
-        }
-
-        function showPaymentSuccess() {
-            hideAllSections();
-            document.getElementById('paymentSuccess').classList.remove('hidden');
-        }
-
-        function showPaymentError(message = 'Ocorreu um erro ao processar seu pagamento. Tente novamente.') {
-            hideAllSections();
-            document.getElementById('errorMessage').textContent = message;
-            document.getElementById('paymentError').classList.remove('hidden');
-        }
-
-        function showLoading() {
-            hideAllSections();
-            document.getElementById('loadingScreen').classList.remove('hidden');
-        }
-
-        function hideAllSections() {
-            const sections = ['heroSection', 'loginForm', 'registerForm', 'paymentSuccess', 'paymentError', 'loadingScreen'];
-            sections.forEach(section => {
-                document.getElementById(section).classList.add('hidden');
-            });
-        }
-
-        // Plan selection
-        function selectPlan(planType) {
-            // Remove selection from all plans
-            document.querySelectorAll('.plan-card').forEach(card => {
-                card.classList.remove('selected', 'school', 'trial');
-            });
-
-            // Add selection to clicked plan
-            event.currentTarget.classList.add('selected', planType);
-            
-            selectedPlan = planType;
-            document.getElementById('selectedPlan').value = planType;
-
-            // Update payment section
-            updatePaymentSection(planType);
-        }
-
-        // Update payment section
-        function updatePaymentSection(planType) {
-            const paymentSection = document.getElementById('paymentSection');
-            const planSummary = document.getElementById('planSummary');
-            const planPrice = document.getElementById('planPrice');
-            const submitButton = document.getElementById('submitButtonText');
-            const mpContainer = document.getElementById('mercadoPagoContainer');
-
-            paymentSection.classList.remove('hidden');
-            
-            if (planType === 'individual') {
-                planSummary.textContent = 'Plano Individual - Cobrança mensal automática';
-                planPrice.textContent = 'R$ 19,90/mês';
-                submitButton.textContent = 'Assinar Plano Individual';
-            } else if (planType === 'school') {
-                planSummary.textContent = 'Plano Escola - Cobrança mensal automática';
-                planPrice.textContent = 'R$ 199,00/mês';
-                submitButton.textContent = 'Assinar Plano Escola';
-            }
-
-            // Initialize Mercado Pago
-            initializeMercadoPago(planType);
-        }
-
-        // Initialize Mercado Pago
-        async function initializeMercadoPago(planType) {
-            const mpContainer = document.getElementById('mercadoPagoContainer');
-            mpContainer.classList.remove('hidden');
-
+        // Load user data
+        async function loadUserData() {
             try {
-                // Destroy existing brick if exists
-                if (bricksBuilder) {
-                    bricksBuilder.unmount();
-                }
-
-                const amount = planType === 'individual' ? 19.90 : 199.00;
-
-                bricksBuilder = mp.bricks().create("cardPayment", "cardPaymentBrick_container", {
-                    initialization: {
-                        amount: amount,
-                        payer: {
-                            email: document.getElementById('registerEmail').value || ''
-                        }
-                    },
-                    customization: {
-                        visual: {
-                            style: {
-                                customVariables: {
-                                    theme: 'default'
-                                }
-                            }
-                        },
-                        paymentMethods: {
-                            creditCard: "all",
-                            debitCard: "all"
-                        }
-                    },
-                    callbacks: {
-                        onReady: () => {
-                            console.log('Mercado Pago ready');
-                        },
-                        onSubmit: (cardFormData) => {
-                            return processPayment(cardFormData, planType);
-                        },
-                        onError: (error) => {
-                            console.error('Mercado Pago error:', error);
-                        }
-                    }
-                });
-
-            } catch (error) {
-                console.error('Erro ao inicializar Mercado Pago:', error);
-            }
-        }
-
-        // Process payment
-        async function processPayment(cardFormData, planType) {
-            showLoading();
-
-            try {
-                // Create user first
-                const userData = {
-                    name: document.getElementById('registerName').value,
-                    email: document.getElementById('registerEmail').value,
-                    password: document.getElementById('registerPassword').value,
-                    schoolName: document.getElementById('schoolName').value,
-                    userType: document.getElementById('userType').value,
-                    planType: planType
-                };
-
-                // Create payment preference
-                const paymentData = {
-                    ...cardFormData,
-                    transaction_amount: planType === 'individual' ? 19.90 : 199.00,
-                    description: `EduPlan - ${planType === 'individual' ? 'Plano Individual' : 'Plano Escola'}`,
-                    payment_method_id: cardFormData.payment_method_id,
-                    payer: {
-                        email: userData.email,
-                        identification: {
-                            type: cardFormData.payer.identification.type,
-                            number: cardFormData.payer.identification.number
-                        }
-                    }
-                };
-
-                // Process payment via your backend
-                const paymentResponse = await fetch('/api/process-payment', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        userData,
-                        paymentData
-                    })
-                });
-
-                const result = await paymentResponse.json();
-
-                if (result.success) {
-                    // Create user account
-                    await createUserAccount(userData, result.paymentId);
-                    showPaymentSuccess();
-                } else {
-                    showPaymentError(result.message);
-                }
-
-            } catch (error) {
-                console.error('Erro no pagamento:', error);
-                showPaymentError('Erro interno. Tente novamente.');
-            }
-        }
-
-        // Handle login
-        async function handleLogin(e) {
-            e.preventDefault();
-            
-            const email = document.getElementById('loginEmail').value;
-            const password = document.getElementById('loginPassword').value;
-
-            try {
-                const { data, error } = await supabase.auth.signInWithPassword({
-                    email,
-                    password
-                });
+                const { data: userData, error } = await supabase
+                    .from('users')
+                    .select(`
+                        name, 
+                        user_type, 
+                        school_id,
+                        schools (name)
+                    `)
+                    .eq('id', currentUser.id)
+                    .single();
 
                 if (error) throw error;
 
-                redirectToDashboard();
-
-            } catch (error) {
-                console.error('Erro no login:', error);
-                alert('Erro no login: ' + error.message);
-            }
-        }
-
-        // Handle register
-        async function handleRegister(e) {
-            e.preventDefault();
-            
-            const name = document.getElementById('registerName').value;
-            const email = document.getElementById('registerEmail').value;
-            const password = document.getElementById('registerPassword').value;
-            const confirmPassword = document.getElementById('confirmPassword').value;
-            const schoolName = document.getElementById('schoolName').value;
-            const userType = document.getElementById('userType').value;
-            const planType = document.getElementById('selectedPlan').value;
-
-            // Validations
-            if (!planType) {
-                alert('Por favor, selecione um plano.');
-                return;
-            }
-
-            if (password !== confirmPassword) {
-                alert('As senhas não coincidem.');
-                return;
-            }
-
-            if (password.length < 6) {
-                alert('A senha deve ter pelo menos 6 caracteres.');
-                return;
-            }
-
-            try {
-                // For paid plans, the payment process will handle account creation
-                // The Mercado Pago brick will trigger the payment flow
-                if (!bricksBuilder) {
-                    alert('Erro: Sistema de pagamento não inicializado. Tente novamente.');
+                if (userData.user_type !== 'direcao') {
+                    showToast('Acesso negado', 'error');
+                    setTimeout(() => window.location.href = './index.html', 2000);
                     return;
                 }
-                // Payment will be handled by Mercado Pago brick
+
+                currentSchoolId = userData.school_id;
+                document.getElementById('userName').textContent = userData.name || 'Direção';
+                document.getElementById('schoolName').textContent = userData.schools?.name || 'Escola';
 
             } catch (error) {
-                console.error('Erro no registro:', error);
-                alert('Erro no registro: ' + error.message);
+                console.error('Erro ao carregar dados do usuário:', error);
+                showToast('Erro ao carregar dados do usuário', 'error');
             }
         }
 
-        // Create trial account
-        async function createTrialAccount(userData) {
-            showLoading();
+        // Load initial data
+        async function loadInitialData() {
+            await Promise.all([
+                loadStats(),
+                loadSemanarios(),
+                loadProfessores(),
+                loadRecados(),
+                loadNotifications(),
+                loadWeekOptions()
+            ]);
+        }
+
+        // Load stats
+        async function loadStats() {
+            try {
+                // Total professores
+                const { data: professores, error: profError } = await supabase
+                    .from('users')
+                    .select('id')
+                    .eq('school_id', currentSchoolId)
+                    .eq('user_type', 'professor');
+
+                if (profError) throw profError;
+
+                // Semanários desta semana
+                const currentWeek = getCurrentWeek().toString().padStart(2, '0');
+                const { data: semanariosSemana, error: semError } = await supabase
+                    .from('planejamentos')
+                    .select('id')
+                    .eq('school_id', currentSchoolId)
+                    .eq('semana', currentWeek);
+
+                if (semError) throw semError;
+
+                // Pendentes de análise
+                const { data: pendentes, error: pendError } = await supabase
+                    .from('planejamentos')
+                    .select('id')
+                    .eq('school_id', currentSchoolId)
+                    .is('devolutiva_status', null);
+
+                if (pendError) throw pendError;
+
+                // Recados enviados (últimos 30 dias)
+                const thirtyDaysAgo = new Date();
+                thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+                
+                const { data: recados, error: recError } = await supabase
+                    .from('recados')
+                    .select('id')
+                    .eq('remetente_id', currentUser.id)
+                    .gte('created_at', thirtyDaysAgo.toISOString());
+
+                if (recError) throw recError;
+
+                // Update stats
+                document.getElementById('totalProfessores').textContent = professores?.length || 0;
+                document.getElementById('semanariosSemana').textContent = semanariosSemana?.length || 0;
+                document.getElementById('pendentesAnalise').textContent = pendentes?.length || 0;
+                document.getElementById('recadosEnviados').textContent = recados?.length || 0;
+
+            } catch (error) {
+                console.error('Erro ao carregar estatísticas:', error);
+            }
+        }
+
+        // Load semanarios
+        async function loadSemanarios() {
+            const loadingDiv = document.getElementById('loadingSemanarios');
+            const listDiv = document.getElementById('semanariosList');
+            const noDataDiv = document.getElementById('noSemanarios');
+
+            loadingDiv.classList.remove('hidden');
+            listDiv.classList.add('hidden');
+            noDataDiv.classList.add('hidden');
 
             try {
-                // Create auth user
-                const { data: authData, error: authError } = await supabase.auth.signUp({
-                    email: userData.email,
-                    password: userData.password
-                });
+                let query = supabase
+                    .from('planejamentos')
+                    .select(`
+                        *,
+                        turmas (nome, ano, materia),
+                        users (name)
+                    `)
+                    .eq('school_id', currentSchoolId)
+                    .order('created_at', { ascending: false });
 
-                if (authError) throw authError;
+                // Apply filters
+                const professorFilter = document.getElementById('professorFilter')?.value;
+                const statusFilter = document.getElementById('statusFilter')?.value;
+                const semanaFilter = document.getElementById('semanaFilter')?.value;
 
-                // Create school
-                const { data: schoolData, error: schoolError } = await supabase
-                    .from('schools')
-                    .insert([{
-                        name: userData.schoolName,
-                        plan_type: 'trial',
-                        plan_status: 'active',
-                        trial_ends_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
-                    }])
-                    .select()
-                    .single();
+                if (professorFilter) {
+                    query = query.eq('professor_id', professorFilter);
+                }
 
-                if (schoolError) throw schoolError;
+                if (semanaFilter) {
+                    query = query.eq('semana', semanaFilter);
+                }
 
-                // Create user profile
-                const { error: userError } = await supabase
-                    .from('users')
-                    .insert([{
-                        id: authData.user.id,
-                        email: userData.email,
-                        name: userData.name,
-                        user_type: userData.userType,
-                        school_id: schoolData.id,
-                        is_active: true
-                    }]);
+                const { data: semanarios, error } = await query;
 
-                if (userError) throw userError;
+                if (error) throw error;
 
-                showPaymentSuccess();
+                // Filter by status if needed
+                let filteredSemanarios = semanarios;
+                if (statusFilter) {
+                    if (statusFilter === 'sem-devolutiva') {
+                        filteredSemanarios = semanarios.filter(s => !s.devolutiva_status);
+                    } else {
+                        filteredSemanarios = semanarios.filter(s => s.devolutiva_status === statusFilter);
+                    }
+                }
+
+                if (filteredSemanarios.length === 0) {
+                    noDataDiv.classList.remove('hidden');
+                } else {
+                    renderSemanarios(filteredSemanarios);
+                    listDiv.classList.remove('hidden');
+                }
 
             } catch (error) {
-                console.error('Erro ao criar conta trial:', error);
-                showPaymentError('Erro ao criar conta. Tente novamente.');
+                console.error('Erro ao carregar semanários:', error);
+                showToast('Erro ao carregar semanários', 'error');
+                noDataDiv.classList.remove('hidden');
+            } finally {
+                loadingDiv.classList.add('hidden');
             }
         }
 
-        // Create user account (after payment)
-        async function createUserAccount(userData, paymentId) {
+        // Render semanarios
+        function renderSemanarios(semanarios) {
+            const container = document.getElementById('semanariosList');
+            container.innerHTML = '';
+
+            semanarios.forEach(semanario => {
+                const statusInfo = getStatusInfo(semanario.devolutiva_status);
+                
+                const div = document.createElement('div');
+                div.className = 'bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow cursor-pointer';
+                div.onclick = () => viewSemanario(semanario.id);
+                
+                div.innerHTML = `
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center space-x-4">
+                            <div class="flex items-center space-x-2">
+                                <i class="fas fa-user text-gray-400"></i>
+                                <span class="font-medium text-gray-900">${semanario.users?.name}</span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <i class="fas fa-users text-gray-400"></i>
+                                <span class="text-gray-600">${semanario.turmas?.nome} - ${semanario.turmas?.ano}º ano</span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <i class="fas fa-calendar text-gray-400"></i>
+                                <span class="text-gray-600">Semana ${semanario.semana}</span>
+                            </div>
+                        </div>
+                        ${statusInfo.html}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-1">${semanario.tema}</h3>
+                        <p class="text-gray-600 text-sm">${semanario.objetivos.substring(0, 150)}...</p>
+                    </div>
+
+                    <div class="flex items-center justify-between text-sm text-gray-500">
+                        <span>Criado em ${new Date(semanario.created_at).toLocaleDateString('pt-BR')}</span>
+                        <span class="text-blue-600 hover:text-blue-800">
+                            <i class="fas fa-eye mr-1"></i>
+                            Visualizar
+                        </span>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        // Load professores
+        async function loadProfessores() {
+            const loadingDiv = document.getElementById('loadingProfessores');
+            const listDiv = document.getElementById('professoresList');
+
+            loadingDiv.classList.remove('hidden');
+            listDiv.classList.add('hidden');
+
             try {
-                // Create auth user
-                const { data: authData, error: authError } = await supabase.auth.signUp({
-                    email: userData.email,
-                    password: userData.password
+                const { data: professores, error } = await supabase
+                    .from('users')
+                    .select(`
+                        *,
+                        turmas (id, nome, ano, materia)
+                    `)
+                    .eq('school_id', currentSchoolId)
+                    .eq('user_type', 'professor')
+                    .order('name');
+
+                if (error) throw error;
+
+                // Load professor filters
+                const professorFilter = document.getElementById('professorFilter');
+                const professorDestino = document.getElementById('professorDestino');
+                
+                professorFilter.innerHTML = '<option value="">Todos os professores</option>';
+                professorDestino.innerHTML = '<option value="">Selecione um professor</option>';
+                
+                professores.forEach(prof => {
+                    const option1 = document.createElement('option');
+                    option1.value = prof.id;
+                    option1.textContent = prof.name;
+                    professorFilter.appendChild(option1);
+
+                    const option2 = document.createElement('option');
+                    option2.value = prof.id;
+                    option2.textContent = prof.name;
+                    professorDestino.appendChild(option2);
                 });
 
-                if (authError) throw authError;
-
-                // Create school
-                const { data: schoolData, error: schoolError } = await supabase
-                    .from('schools')
-                    .insert([{
-                        name: userData.schoolName,
-                        plan_type: userData.planType,
-                        plan_status: 'active',
-                        payment_id: paymentId,
-                        next_billing_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
-                    }])
-                    .select()
-                    .single();
-
-                if (schoolError) throw schoolError;
-
-                // Create user profile
-                const { error: userError } = await supabase
-                    .from('users')
-                    .insert([{
-                        id: authData.user.id,
-                        email: userData.email,
-                        name: userData.name,
-                        user_type: userData.userType,
-                        school_id: schoolData.id,
-                        is_active: true
-                    }]);
-
-                if (userError) throw userError;
+                renderProfessores(professores);
+                listDiv.classList.remove('hidden');
 
             } catch (error) {
-                console.error('Erro ao criar conta:', error);
-                throw error;
+                console.error('Erro ao carregar professores:', error);
+                showToast('Erro ao carregar professores', 'error');
+            } finally {
+                loadingDiv.classList.add('hidden');
             }
         }
 
-        // Redirect to dashboard
-        function redirectToDashboard() {
-            // Get user type and redirect accordingly
-            supabase.auth.getUser().then(({ data: { user } }) => {
-                if (user) {
-                    supabase
-                        .from('users')
-                        .select('user_type')
-                        .eq('id', user.id)
-                        .single()
-                        .then(({ data }) => {
-                            if (data) {
-                                switch (data.user_type) {
-                                    case 'direcao':
-                                        window.location.href = './dashboard-direcao.html';
-                                        break;
-                                    case 'coordenacao':
-                                        window.location.href = './dashboard-coordenacao.html';
-                                        break;
-                                    case 'professor':
-                                        window.location.href = './dashboard-professor.html';
-                                        break;
-                                    default:
-                                        window.location.href = './dashboard-professor.html';
-                                }
+        // Render professores
+        function renderProfessores(professores) {
+            const container = document.getElementById('professoresList');
+            container.innerHTML = '';
+
+            professores.forEach(professor => {
+                const div = document.createElement('div');
+                div.className = 'bg-white border border-gray-200 rounded-lg p-6 card-hover';
+                
+                div.innerHTML = `
+                    <div class="flex items-center space-x-4 mb-4">
+                        <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-chalkboard-teacher text-blue-600 text-xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-gray-900">${professor.name}</h3>
+                            <p class="text-sm text-gray-600">${professor.email}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-2">
+                        <h4 class="font-medium text-gray-900">Turmas:</h4>
+                        ${professor.turmas?.length ? professor.turmas.map(turma => `
+                            <div class="flex items-center space-x-2 text-sm text-gray-600">
+                                <i class="fas fa-users"></i>
+                                <span>${turma.nome} - ${turma.ano}º ano - ${getMateriaName(turma.materia)}</span>
+                            </div>
+                        `).join('') : '<p class="text-sm text-gray-500">Nenhuma turma atribuída</p>'}
+                    </div>
+                    
+                    <div class="mt-4 pt-4 border-t border-gray-200">
+                        <button 
+                            onclick="openRecadoProfessorModal('${professor.id}')"
+                            class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg text-sm transition-colors"
+                        >
+                            <i class="fas fa-paper-plane mr-2"></i>
+                            Enviar Recado
+                        </button>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        // Load recados
+        async function loadRecados() {
+            const loadingDiv = document.getElementById('loadingRecados');
+            const listDiv = document.getElementById('recadosList');
+
+            loadingDiv.classList.remove('hidden');
+            listDiv.classList.add('hidden');
+
+            try {
+                const { data: recados, error } = await supabase
+                    .from('recados')
+                    .select(`
+                        *,
+                        destinatario:users!recados_destinatario_id_fkey (name, user_type)
+                    `)
+                    .eq('remetente_id', currentUser.id)
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+
+                renderRecados(recados);
+                listDiv.classList.remove('hidden');
+
+            } catch (error) {
+                console.error('Erro ao carregar recados:', error);
+                showToast('Erro ao carregar recados', 'error');
+            } finally {
+                loadingDiv.classList.add('hidden');
+            }
+        }
+
+        // Render recados
+        function renderRecados(recados) {
+            const container = document.getElementById('recadosList');
+            container.innerHTML = '';
+
+            if (recados.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-12">
+                        <i class="fas fa-envelope text-4xl text-gray-400 mb-4"></i>
+                        <h3 class="text-lg font-medium text-gray-900 mb-2">Nenhum recado enviado</h3>
+                        <p class="text-gray-600">Você ainda não enviou nenhum recado.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            recados.forEach(recado => {
+                const div = document.createElement('div');
+                div.className = `bg-white border border-gray-200 rounded-lg p-6 priority-${recado.prioridade || 'media'}`;
+                
+                const isAdmin = recado.destinatario?.user_type === 'admin';
+                const destinatarioName = isAdmin ? 'Administração' : recado.destinatario?.name;
+                const icon = isAdmin ? 'cog' : 'chalkboard-teacher';
+                const color = isAdmin ? 'purple' : 'blue';
+                
+                div.innerHTML = `
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 bg-${color}-100 rounded-full flex items-center justify-center">
+                                <i class="fas fa-${icon} text-${color}-600"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-gray-900">${recado.assunto}</h3>
+                                <p class="text-sm text-gray-600">Para: ${destinatarioName}</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getPriorityClass(recado.prioridade)}">
+                                ${getPriorityText(recado.prioridade)}
+                            </span>
+                            <p class="text-xs text-gray-500 mt-1">${new Date(recado.created_at).toLocaleString('pt-BR')}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <p class="text-gray-700">${recado.mensagem}</p>
+                    </div>
+                    
+                    <div class="flex items-center justify-between text-sm">
+                        <span class="text-gray-500">
+                            ${recado.lido ? 
+                                '<i class="fas fa-check-double text-green-500 mr-1"></i>Lido' : 
+                                '<i class="fas fa-clock text-yellow-500 mr-1"></i>Não lido'
                             }
+                        </span>
+                        ${isAdmin ? `
+                            <span class="text-${color}-600">
+                                <i class="fas fa-${recado.tipo_solicitacao === 'renovacao' ? 'credit-card' : 
+                                    recado.tipo_solicitacao === 'correcao' ? 'bug' : 
+                                    recado.tipo_solicitacao === 'atualizacao' ? 'sync' : 'question'} mr-1"></i>
+                                ${getTipoSolicitacaoText(recado.tipo_solicitacao)}
+                            </span>
+                        ` : ''}
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        // Load notifications
+        async function loadNotifications() {
+            try {
+                // Load recent activities for notifications
+                const { data: notifications, error } = await supabase
+                    .from('planejamentos')
+                    .select(`
+                        id,
+                        tema,
+                        semana,
+                        created_at,
+                        turmas (nome),
+                        users (name)
+                    `)
+                    .eq('school_id', currentSchoolId)
+                    .is('devolutiva_status', null)
+                    .order('created_at', { ascending: false })
+                    .limit(10);
+
+                if (error) throw error;
+
+                // Count unread notifications (last 24 hours)
+                const oneDayAgo = new Date();
+                oneDayAgo.setDate(oneDayAgo.getDate() - 1);
+                
+                const unreadCount = notifications.filter(n => 
+                    new Date(n.created_at) > oneDayAgo
+                ).length;
+
+                updateNotificationBadge(unreadCount);
+                renderNotifications(notifications);
+
+            } catch (error) {
+                console.error('Erro ao carregar notificações:', error);
+            }
+        }
+
+        // Update notification badge
+        function updateNotificationBadge(count) {
+            const badge = document.getElementById('notificationBadge');
+            if (count > 0) {
+                badge.textContent = count > 9 ? '9+' : count;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
+
+        // Render notifications
+        function renderNotifications(notifications) {
+            const container = document.getElementById('notificationsList');
+            container.innerHTML = '';
+
+            if (notifications.length === 0) {
+                container.innerHTML = `
+                    <div class="p-4 text-center text-gray-500">
+                        <i class="fas fa-bell-slash text-2xl mb-2"></i>
+                        <p>Nenhuma notificação recente</p>
+                    </div>
+                `;
+                return;
+            }
+
+            notifications.forEach(notification => {
+                const date = new Date(notification.created_at).toLocaleDateString('pt-BR');
+                
+                const div = document.createElement('div');
+                div.className = 'p-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors';
+                div.onclick = () => {
+                    viewSemanario(notification.id);
+                    toggleNotifications();
+                };
+                
+                div.innerHTML = `
+                    <div class="flex items-start space-x-3">
+                        <div class="flex-shrink-0 mt-1">
+                            <i class="fas fa-calendar-plus text-blue-500"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-medium text-gray-900 truncate">
+                                Novo semanário - ${notification.users?.name}
+                            </p>
+                            <p class="text-sm text-gray-600 truncate">
+                                ${notification.turmas?.nome} - Semana ${notification.semana}
+                            </p>
+                            <p class="text-sm text-gray-600 truncate">
+                                ${notification.tema}
+                            </p>
+                            <p class="text-xs text-gray-500 mt-1">${date}</p>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        // Load week options
+        function loadWeekOptions() {
+            const filter = document.getElementById('semanaFilter');
+            if (!filter) return;
+            
+            const currentWeek = getCurrentWeek();
+            
+            // Add current and surrounding weeks
+            for (let i = -4; i <= 8; i++) {
+                const week = getWeekNumber(currentWeek + i);
+                
+                const option = document.createElement('option');
+                option.value = week;
+                option.textContent = `Semana ${week}`;
+                filter.appendChild(option);
+            }
+        }
+
+        // Get current week number
+        function getCurrentWeek() {
+            const now = new Date();
+            const start = new Date(now.getFullYear(), 0, 1);
+            const diff = now - start;
+            const oneWeek = 1000 * 60 * 60 * 24 * 7;
+            return Math.ceil(diff / oneWeek);
+        }
+
+        // Get week number with year handling
+        function getWeekNumber(week) {
+            if (week < 1) return `${52 + week}`;
+            if (week > 52) return `${week - 52}`;
+            return week.toString().padStart(2, '0');
+        }
+
+        // Get status info
+        function getStatusInfo(status) {
+            const statusMap = {
+                'realizado': {
+                    html: `<span class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-green-100 text-green-800">
+                        <i class="fas fa-check-circle mr-2"></i>
+                        Aprovado
+                    </span>`
+                },
+                'ressalvas': {
+                    html: `<span class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-yellow-100 text-yellow-800">
+                        <i class="fas fa-exclamation-triangle mr-2"></i>
+                        Com ressalvas
+                    </span>`
+                },
+                'completar': {
+                    html: `<span class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-red-100 text-red-800">
+                        <i class="fas fa-times-circle mr-2"></i>
+                        Para completar
+                    </span>`
+                },
+                'procurar': {
+                    html: `<span class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-purple-100 text-purple-800">
+                        <i class="fas fa-user-tie mr-2"></i>
+                        Procurar coordenação
+                    </span>`
+                }
+            };
+
+            if (!status) {
+                return {
+                    html: `<span class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-gray-100 text-gray-600">
+                        <i class="fas fa-clock mr-2"></i>
+                        Pendente análise
+                    </span>`
+                };
+            }
+
+            return statusMap[status];
+        }
+
+        // Get materia name
+        function getMateriaName(materia) {
+            const materias = {
+                'lingua-portuguesa': 'Língua Portuguesa',
+                'matematica': 'Matemática',
+                'ciencias': 'Ciências',
+                'historia': 'História',
+                'geografia': 'Geografia',
+                'arte': 'Arte',
+                'educacao-fisica': 'Educação Física',
+                'ensino-religioso': 'Ensino Religioso'
+            };
+            return materias[materia] || materia;
+        }
+
+        // Get priority class
+        function getPriorityClass(priority) {
+            const classes = {
+                'baixa': 'bg-green-100 text-green-800',
+                'media': 'bg-yellow-100 text-yellow-800',
+                'alta': 'bg-red-100 text-red-800',
+                'critica': 'bg-red-200 text-red-900'
+            };
+            return classes[priority] || classes.media;
+        }
+
+        // Get priority text
+        function getPriorityText(priority) {
+            const texts = {
+                'baixa': 'Baixa',
+                'media': 'Média',
+                'alta': 'Alta',
+                'critica': 'Crítica'
+            };
+            return texts[priority] || 'Média';
+        }
+
+        // Get tipo solicitacao text
+        function getTipoSolicitacaoText(tipo) {
+            const texts = {
+                'correcao': 'Correção',
+                'atualizacao': 'Atualização',
+                'renovacao': 'Renovação',
+                'suporte': 'Suporte',
+                'outro': 'Outro'
+            };
+            return texts[tipo] || 'Outro';
+        }
+
+        // Switch tabs
+        function switchTab(tabName) {
+            // Update active tab
+            document.querySelectorAll('[id^="tab-"]').forEach(tab => {
+                tab.classList.remove('border-blue-500', 'text-blue-600');
+                tab.classList.add('border-transparent', 'text-gray-500');
+            });
+            
+            document.getElementById(`tab-${tabName}`).classList.remove('border-transparent', 'text-gray-500');
+            document.getElementById(`tab-${tabName}`).classList.add('border-blue-500', 'text-blue-600');
+
+            // Show/hide content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+            
+            document.getElementById(`content-${tabName}`).classList.remove('hidden');
+            
+            activeTab = tabName;
+
+            // Load data for specific tabs
+            if (tabName === 'professores') {
+                loadProfessores();
+            } else if (tabName === 'recados') {
+                loadRecados();
+            } else if (tabName === 'relatorios') {
+                loadRelatorios();
+            }
+        }
+
+        // Load relatorios
+        function loadRelatorios() {
+            // This would load charts and reports
+            // For now, just show placeholder content
+            console.log('Loading relatórios...');
+        }
+
+        // Toggle notifications dropdown
+        function toggleNotifications() {
+            const dropdown = document.getElementById('notificationsDropdown');
+            dropdown.classList.toggle('hidden');
+        }
+
+        // View semanario
+        async function viewSemanario(semanarioId) {
+            try {
+                const { data: semanario, error } = await supabase
+                    .from('planejamentos')
+                    .select(`
+                        *,
+                        turmas (nome, ano, materia),
+                        users (name)
+                    `)
+                    .eq('id', semanarioId)
+                    .single();
+
+                if (error) throw error;
+
+                currentSemanario = semanario;
+
+                // Fill modal content
+                const content = document.getElementById('semanarioContent');
+                content.innerHTML = `
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div>
+                            <h4 class="font-medium text-gray-900 mb-2">Informações Básicas</h4>
+                            <div class="space-y-2 text-sm">
+                                <p><span class="font-medium">Professor:</span> ${semanario.users?.name}</p>
+                                <p><span class="font-medium">Turma:</span> ${semanario.turmas?.nome} - ${semanario.turmas?.ano}º ano</p>
+                                <p><span class="font-medium">Matéria:</span> ${getMateriaName(semanario.turmas?.materia)}</p>
+                                <p><span class="font-medium">Semana:</span> ${semanario.semana}</p>
+                                <p><span class="font-medium">Criado em:</span> ${new Date(semanario.created_at).toLocaleString('pt-BR')}</p>
+                            </div>
+                        </div>
+                        <div>
+                            <h4 class="font-medium text-gray-900 mb-2">Status Atual</h4>
+                            ${getStatusInfo(semanario.devolutiva_status).html}
+                            ${semanario.devolutiva_data ? `
+                                <p class="text-sm text-gray-600 mt-2">
+                                    Devolutiva em: ${new Date(semanario.devolutiva_data).toLocaleString('pt-BR')}
+                                </p>
+                            ` : ''}
+                        </div>
+                    </div>
+
+                    <div class="space-y-6">
+                        <div>
+                            <h4 class="font-medium text-gray-900 mb-2">Tema da Semana</h4>
+                            <p class="text-gray-700">${semanario.tema}</p>
+                        </div>
+
+                        <div>
+                            <h4 class="font-medium text-gray-900 mb-2">Objetivos de Aprendizagem</h4>
+                            <p class="text-gray-700">${semanario.objetivos}</p>
+                        </div>
+
+                        <div>
+                            <h4 class="font-medium text-gray-900 mb-2">Conteúdos</h4>
+                            <p class="text-gray-700">${semanario.conteudos}</p>
+                        </div>
+
+                        <div>
+                            <h4 class="font-medium text-gray-900 mb-2">Metodologia</h4>
+                            <p class="text-gray-700">${semanario.metodologia}</p>
+                        </div>
+
+                        ${semanario.recursos ? `
+                            <div>
+                                <h4 class="font-medium text-gray-900 mb-2">Recursos Didáticos</h4>
+                                <p class="text-gray-700">${semanario.recursos}</p>
+                            </div>
+                        ` : ''}
+
+                        <div>
+                            <h4 class="font-medium text-gray-900 mb-2">Avaliação</h4>
+                            <p class="text-gray-700">${semanario.avaliacao}</p>
+                        </div>
+
+                        ${semanario.observacoes ? `
+                            <div>
+                                <h4 class="font-medium text-gray-900 mb-2">Observações</h4>
+                                <p class="text-gray-700">${semanario.observacoes}</p>
+                            </div>
+                        ` : ''}
+
+                        ${semanario.devolutiva_comentario ? `
+                            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                <h4 class="font-medium text-blue-900 mb-2">Comentário da Devolutiva Anterior</h4>
+                                <p class="text-blue-800">${semanario.devolutiva_comentario}</p>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+
+                // Set current values in devolutiva form
+                document.getElementById('statusDevolutiva').value = semanario.devolutiva_status || '';
+                document.getElementById('comentarioDevolutiva').value = semanario.devolutiva_comentario || '';
+
+                document.getElementById('semanarioModal').classList.remove('hidden');
+
+            } catch (error) {
+                console.error('Erro ao carregar semanário:', error);
+                showToast('Erro ao carregar semanário', 'error');
+            }
+        }
+
+        // Close semanario modal
+        function closeSemanarioModal() {
+            document.getElementById('semanarioModal').classList.add('hidden');
+            currentSemanario = null;
+        }
+
+        // Open recado professor modal
+        function openRecadoProfessorModal(professorId = null) {
+            if (professorId) {
+                document.getElementById('professorDestino').value = professorId;
+            }
+            document.getElementById('recadoProfessorModal').classList.remove('hidden');
+        }
+
+        // Close recado professor modal
+        function closeRecadoProfessorModal() {
+            document.getElementById('recadoProfessorModal').classList.add('hidden');
+            document.getElementById('recadoProfessorForm').reset();
+        }
+
+        // Open recado admin modal
+        function openRecadoAdminModal() {
+            document.getElementById('recadoAdminModal').classList.remove('hidden');
+        }
+
+        // Close recado admin modal
+        function closeRecadoAdminModal() {
+            document.getElementById('recadoAdminModal').classList.add('hidden');
+            document.getElementById('recadoAdminForm').reset();
+        }
+
+        // Setup event listeners
+        function setupEventListeners() {
+            // Filter changes
+            document.getElementById('professorFilter')?.addEventListener('change', loadSemanarios);
+            document.getElementById('statusFilter')?.addEventListener('change', loadSemanarios);
+            document.getElementById('semanaFilter')?.addEventListener('change', loadSemanarios);
+
+            // Recado professor form
+            document.getElementById('recadoProfessorForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const formData = new FormData(e.target);
+                const data = Object.fromEntries(formData.entries());
+                
+                const btn = document.getElementById('enviarRecadoBtn');
+                const btnText = document.getElementById('enviarRecadoText');
+                const btnLoading = document.getElementById('enviarRecadoLoading');
+
+                btn.disabled = true;
+                btnText.classList.add('hidden');
+                btnLoading.classList.remove('hidden');
+
+                try {
+                    const { error } = await supabase
+                        .from('recados')
+                        .insert({
+                            remetente_id: currentUser.id,
+                            destinatario_id: data.professorDestino,
+                            assunto: data.assuntoRecado,
+                            mensagem: data.mensagemRecado,
+                            prioridade: data.prioridadeRecado,
+                            tipo: 'professor'
                         });
+
+                    if (error) throw error;
+
+                    showToast('Recado enviado com sucesso!', 'success');
+                    closeRecadoProfessorModal();
+                    await loadStats();
+                    if (activeTab === 'recados') {
+                        await loadRecados();
+                    }
+
+                } catch (error) {
+                    console.error('Erro ao enviar recado:', error);
+                    showToast('Erro ao enviar recado', 'error');
+                } finally {
+                    btn.disabled = false;
+                    btnText.classList.remove('hidden');
+                    btnLoading.classList.add('hidden');
+                }
+            });
+
+            // Recado admin form
+            document.getElementById('recadoAdminForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const formData = new FormData(e.target);
+                const data = Object.fromEntries(formData.entries());
+                
+                const btn = document.getElementById('enviarAdminBtn');
+                const btnText = document.getElementById('enviarAdminText');
+                const btnLoading = document.getElementById('enviarAdminLoading');
+
+                btn.disabled = true;
+                btnText.classList.add('hidden');
+                btnLoading.classList.remove('hidden');
+
+                try {
+                    // Get admin user ID (assuming there's an admin user)
+                    const { data: adminUser, error: adminError } = await supabase
+                        .from('users')
+                        .select('id')
+                        .eq('user_type', 'admin')
+                        .limit(1)
+                        .single();
+
+                    if (adminError) throw adminError;
+
+                    const { error } = await supabase
+                        .from('recados')
+                        .insert({
+                            remetente_id: currentUser.id,
+                            destinatario_id: adminUser.id,
+                            assunto: data.assuntoAdmin,
+                            mensagem: data.descricaoAdmin,
+                            prioridade: data.urgenciaAdmin,
+                            tipo: 'admin',
+                            tipo_solicitacao: data.tipoSolicitacao
+                        });
+
+                    if (error) throw error;
+
+                    showToast('Solicitação enviada para a administração!', 'success');
+                    closeRecadoAdminModal();
+                    await loadStats();
+                    if (activeTab === 'recados') {
+                        await loadRecados();
+                    }
+
+                } catch (error) {
+                    console.error('Erro ao enviar solicitação:', error);
+                    showToast('Erro ao enviar solicitação', 'error');
+                } finally {
+                    btn.disabled = false;
+                    btnText.classList.remove('hidden');
+                    btnLoading.classList.add('hidden');
+                }
+            });
+
+            // Devolutiva form
+            document.getElementById('devolutivaForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                if (!currentSemanario) return;
+                
+                const formData = new FormData(e.target);
+                const data = Object.fromEntries(formData.entries());
+                
+                const btn = document.getElementById('salvarDevolutivaBtn');
+                const btnText = document.getElementById('salvarDevolutivaText');
+                const btnLoading = document.getElementById('salvarDevolutivaLoading');
+
+                btn.disabled = true;
+                btnText.classList.add('hidden');
+                btnLoading.classList.remove('hidden');
+
+                try {
+                    const { error } = await supabase
+                        .from('planejamentos')
+                        .update({
+                            devolutiva_status: data.statusDevolutiva,
+                            devolutiva_comentario: data.comentarioDevolutiva || null,
+                            devolutiva_data: new Date().toISOString(),
+                            devolutiva_por: currentUser.id
+                        })
+                        .eq('id', currentSemanario.id);
+
+                    if (error) throw error;
+
+                    showToast('Devolutiva salva com sucesso!', 'success');
+                    closeSemanarioModal();
+                    await loadSemanarios();
+                    await loadStats();
+
+                } catch (error) {
+                    console.error('Erro ao salvar devolutiva:', error);
+                    showToast('Erro ao salvar devolutiva', 'error');
+                } finally {
+                    btn.disabled = false;
+                    btnText.classList.remove('hidden');
+                    btnLoading.classList.add('hidden');
+                }
+            });
+
+            // Close modals on outside click
+            document.getElementById('recadoProfessorModal').addEventListener('click', function(e) {
+                if (e.target.id === 'recadoProfessorModal') {
+                    closeRecadoProfessorModal();
+                }
+            });
+
+            document.getElementById('recadoAdminModal').addEventListener('click', function(e) {
+                if (e.target.id === 'recadoAdminModal') {
+                    closeRecadoAdminModal();
+                }
+            });
+
+            document.getElementById('semanarioModal').addEventListener('click', function(e) {
+                if (e.target.id === 'semanarioModal') {
+                    closeSemanarioModal();
+                }
+            });
+
+            // Close notifications when clicking outside
+            document.addEventListener('click', function(e) {
+                const dropdown = document.getElementById('notificationsDropdown');
+                const button = document.getElementById('notificationBtn');
+                
+                if (!dropdown.contains(e.target) && !button.contains(e.target)) {
+                    dropdown.classList.add('hidden');
                 }
             });
         }
+
+        // Show toast notification
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            const icon = document.getElementById('toastIcon');
+            const messageEl = document.getElementById('toastMessage');
+
+            const icons = {
+                success: '<i class="fas fa-check-circle text-green-500"></i>',
+                error: '<i class="fas fa-exclamation-circle text-red-500"></i>',
+                info: '<i class="fas fa-info-circle text-blue-500"></i>'
+            };
+
+            icon.innerHTML = icons[type] || icons.info;
+            messageEl.textContent = message;
+
+            toast.classList.remove('translate-x-full');
+            setTimeout(() => {
+                toast.classList.add('translate-x-full');
+            }, 3000);
+        }
+
+        // Logout
+        async function logout() {
+            await supabase.auth.signOut();
+            window.location.href = './index.html';
+        }
     </script>
-</body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9811a969d721f190',t:'MTc1ODIwNzA5MC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
 
