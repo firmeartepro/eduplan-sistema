@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Semanário - Dashboard do Professor</title>
+    <title>Dashboard Professor - Semanário</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -15,511 +15,354 @@
         .card-hover:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
         .fade-in { animation: fadeIn 0.6s ease-in; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        .sidebar-active { transform: translateX(0); }
-        .sidebar-inactive { transform: translateX(-100%); }
-        .modal-backdrop { backdrop-filter: blur(4px); }
-        .schedule-grid { display: grid; grid-template-columns: 100px repeat(5, 1fr); gap: 1px; }
-        .schedule-cell { min-height: 60px; border: 1px solid #e5e7eb; }
-        .schedule-header { background: #f3f4f6; font-weight: 600; }
-        .schedule-time { background: #f9fafb; display: flex; align-items: center; justify-content: center; font-size: 0.875rem; }
-        .schedule-slot { background: white; position: relative; cursor: pointer; }
-        .schedule-slot:hover { background: #f0f9ff; }
-        .schedule-class { background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; margin: 2px; }
-        .bncc-skill { transition: all 0.2s ease; }
-        .bncc-skill:hover { background: #dbeafe; }
-        .bncc-skill.selected { background: #3b82f6; color: white; }
-        .ai-config-step { border-left: 4px solid #10b981; }
-        .loading-dots::after { content: '...'; animation: dots 1.5s steps(4, end) infinite; }
-        @keyframes dots { 0%, 20% { color: rgba(0,0,0,0); text-shadow: .25em 0 0 rgba(0,0,0,0), .5em 0 0 rgba(0,0,0,0); } 40% { color: black; text-shadow: .25em 0 0 rgba(0,0,0,0), .5em 0 0 rgba(0,0,0,0); } 60% { text-shadow: .25em 0 0 black, .5em 0 0 rgba(0,0,0,0); } 80%, 100% { text-shadow: .25em 0 0 black, .5em 0 0 black; } }
+        .loading-spinner { animation: spin 1s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .pulse-notification { animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .devolutiva-realizado { background: linear-gradient(135deg, #10b981, #059669); }
+        .devolutiva-ressalvas { background: linear-gradient(135deg, #f59e0b, #d97706); }
+        .devolutiva-completar { background: linear-gradient(135deg, #ef4444, #dc2626); }
+        .devolutiva-procurar { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
     </style>
 </head>
-<body class="bg-gray-50">
-    <!-- Sidebar -->
-    <div id="sidebar" class="fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform sidebar-inactive transition-transform duration-300 ease-in-out">
-        <div class="flex items-center justify-between h-16 px-6 border-b border-gray-200">
-            <div class="flex items-center">
-                <div class="w-8 h-8 gradient-bg rounded-lg flex items-center justify-center mr-3">
-                    <i class="fas fa-calendar-week text-white text-sm"></i>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="gradient-bg shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
+                            <i class="fas fa-chalkboard-teacher text-indigo-600 text-xl"></i>
+                        </div>
+                        <div>
+                            <h1 class="text-xl font-bold text-white">Dashboard Professor</h1>
+                            <p class="text-indigo-100 text-sm" id="schoolName">Carregando...</p>
+                        </div>
+                    </div>
                 </div>
-                <h1 class="text-xl font-bold text-gray-800">Semanário</h1>
+                
+                <div class="flex items-center space-x-4">
+                    <!-- Notification Bell -->
+                    <div class="relative">
+                        <button id="notificationBtn" onclick="toggleNotifications()" class="bg-white bg-opacity-20 hover:bg-opacity-30 text-white p-2 rounded-lg transition-all duration-200 relative">
+                            <i class="fas fa-bell text-lg"></i>
+                            <span id="notificationBadge" class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center pulse-notification">0</span>
+                        </button>
+                        
+                        <!-- Notifications Dropdown -->
+                        <div id="notificationsDropdown" class="hidden absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl z-50 border border-gray-200">
+                            <div class="p-4 border-b border-gray-200">
+                                <h3 class="font-semibold text-gray-900">Devolutivas Recentes</h3>
+                            </div>
+                            <div id="notificationsList" class="max-h-64 overflow-y-auto">
+                                <!-- Notifications will be loaded here -->
+                            </div>
+                            <div class="p-3 border-t border-gray-200 text-center">
+                                <button onclick="markAllAsRead()" class="text-sm text-indigo-600 hover:text-indigo-800">
+                                    Marcar todas como lidas
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="text-right">
+                        <p class="text-white font-medium" id="userName">Carregando...</p>
+                        <p class="text-indigo-100 text-sm">Professor(a)</p>
+                    </div>
+                    <button onclick="logout()" class="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-4 py-2 rounded-lg transition-all duration-200">
+                        <i class="fas fa-sign-out-alt mr-2"></i>
+                        Sair
+                    </button>
+                </div>
             </div>
-            <button onclick="toggleSidebar()" class="text-gray-500 hover:text-gray-700">
-                <i class="fas fa-times"></i>
-            </button>
         </div>
-        
-        <nav class="mt-6">
-            <div class="px-6 mb-4">
-                <div class="text-sm text-gray-500 mb-2">Bem-vindo,</div>
-                <div class="font-semibold text-gray-800" id="userName">Professor</div>
-            </div>
-            
-            <a href="#" onclick="showSection('dashboard')" class="nav-item flex items-center px-6 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
-                <i class="fas fa-home mr-3"></i>
-                Dashboard
-            </a>
-            <a href="#" onclick="showSection('turmas')" class="nav-item flex items-center px-6 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
-                <i class="fas fa-users mr-3"></i>
-                Minhas Turmas
-            </a>
-            <a href="#" onclick="showSection('horarios')" class="nav-item flex items-center px-6 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
-                <i class="fas fa-clock mr-3"></i>
-                Horários
-            </a>
-            <a href="#" onclick="showSection('planejamento')" class="nav-item flex items-center px-6 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
-                <i class="fas fa-calendar-alt mr-3"></i>
-                Planejamento Semanal
-            </a>
-            <a href="#" onclick="showSection('ia-config')" class="nav-item flex items-center px-6 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
-                <i class="fas fa-robot mr-3"></i>
-                Configurar IA
-            </a>
-            
-            <div class="border-t border-gray-200 mt-6 pt-6">
-                <a href="#" onclick="logout()" class="flex items-center px-6 py-3 text-red-600 hover:bg-red-50 transition-colors">
-                    <i class="fas fa-sign-out-alt mr-3"></i>
-                    Sair
-                </a>
-            </div>
-        </nav>
-    </div>
+    </header>
 
     <!-- Main Content -->
-    <div class="lg:ml-64">
-        <!-- Header -->
-        <header class="bg-white shadow-sm border-b border-gray-200">
-            <div class="flex items-center justify-between px-6 py-4">
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white rounded-xl shadow-sm p-6 card-hover fade-in">
                 <div class="flex items-center">
-                    <button onclick="toggleSidebar()" class="lg:hidden text-gray-500 hover:text-gray-700 mr-4">
-                        <i class="fas fa-bars"></i>
-                    </button>
-                    <h2 id="pageTitle" class="text-2xl font-bold text-gray-800">Dashboard</h2>
-                </div>
-                <div class="flex items-center space-x-4">
-                    <div class="text-sm text-gray-500" id="currentDate"></div>
-                    <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                        <i class="fas fa-user text-blue-600 text-sm"></i>
+                    <div class="p-3 rounded-full bg-blue-100">
+                        <i class="fas fa-calendar-week text-blue-600 text-xl"></i>
                     </div>
-                </div>
-            </div>
-        </header>
-
-        <!-- Dashboard Section -->
-        <div id="dashboardSection" class="p-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                <div class="bg-white rounded-xl shadow-sm p-6 card-hover">
-                    <div class="flex items-center">
-                        <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mr-4">
-                            <i class="fas fa-users text-blue-600"></i>
-                        </div>
-                        <div>
-                            <div class="text-2xl font-bold text-gray-800" id="totalTurmas">0</div>
-                            <div class="text-sm text-gray-500">Turmas</div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="bg-white rounded-xl shadow-sm p-6 card-hover">
-                    <div class="flex items-center">
-                        <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mr-4">
-                            <i class="fas fa-calendar-check text-green-600"></i>
-                        </div>
-                        <div>
-                            <div class="text-2xl font-bold text-gray-800" id="planosSemanais">0</div>
-                            <div class="text-sm text-gray-500">Planos Semanais</div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="bg-white rounded-xl shadow-sm p-6 card-hover">
-                    <div class="flex items-center">
-                        <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mr-4">
-                            <i class="fas fa-clock text-purple-600"></i>
-                        </div>
-                        <div>
-                            <div class="text-2xl font-bold text-gray-800" id="aulasSemanais">0</div>
-                            <div class="text-sm text-gray-500">Aulas/Semana</div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="bg-white rounded-xl shadow-sm p-6 card-hover">
-                    <div class="flex items-center">
-                        <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mr-4">
-                            <i class="fas fa-robot text-orange-600"></i>
-                        </div>
-                        <div>
-                            <div class="text-2xl font-bold text-gray-800" id="iaStatus">-</div>
-                            <div class="text-sm text-gray-500">IA Gemini</div>
-                        </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Total Semanários</p>
+                        <p class="text-2xl font-bold text-gray-900" id="totalSemanarios">0</p>
                     </div>
                 </div>
             </div>
 
-            <!-- Quick Actions -->
-            <div class="bg-white rounded-xl shadow-sm p-6 mb-8">
-                <h3 class="text-lg font-semibold text-gray-800 mb-4">Ações Rápidas</h3>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <button onclick="showSection('turmas')" class="flex items-center justify-center p-4 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors">
-                        <i class="fas fa-plus text-blue-600 mr-2"></i>
-                        <span class="text-blue-600 font-medium">Nova Turma</span>
-                    </button>
-                    <button onclick="showSection('planejamento')" class="flex items-center justify-center p-4 bg-green-50 hover:bg-green-100 rounded-lg transition-colors">
-                        <i class="fas fa-calendar-plus text-green-600 mr-2"></i>
-                        <span class="text-green-600 font-medium">Novo Planejamento</span>
-                    </button>
-                    <button onclick="showSection('ia-config')" class="flex items-center justify-center p-4 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors">
-                        <i class="fas fa-robot text-purple-600 mr-2"></i>
-                        <span class="text-purple-600 font-medium">Configurar IA</span>
-                    </button>
+            <div class="bg-white rounded-xl shadow-sm p-6 card-hover fade-in">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-green-100">
+                        <i class="fas fa-check-circle text-green-600 text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Aprovados</p>
+                        <p class="text-2xl font-bold text-gray-900" id="semanarios-aprovados">0</p>
+                    </div>
                 </div>
             </div>
 
-            <!-- Recent Activity -->
-            <div class="bg-white rounded-xl shadow-sm p-6">
-                <h3 class="text-lg font-semibold text-gray-800 mb-4">Atividade Recente</h3>
-                <div id="recentActivity" class="space-y-3">
-                    <div class="text-gray-500 text-center py-8">
-                        <i class="fas fa-history text-4xl mb-4"></i>
-                        <p>Nenhuma atividade recente</p>
+            <div class="bg-white rounded-xl shadow-sm p-6 card-hover fade-in">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-yellow-100">
+                        <i class="fas fa-exclamation-triangle text-yellow-600 text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Com Ressalvas</p>
+                        <p class="text-2xl font-bold text-gray-900" id="semanarios-ressalvas">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm p-6 card-hover fade-in">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-red-100">
+                        <i class="fas fa-clock text-red-600 text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Pendentes</p>
+                        <p class="text-2xl font-bold text-gray-900" id="semanarios-pendentes">0</p>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Turmas Section -->
-        <div id="turmasSection" class="p-6 hidden">
-            <div class="flex justify-between items-center mb-6">
-                <h3 class="text-xl font-semibold text-gray-800">Minhas Turmas</h3>
-                <button onclick="openTurmaModal()" class="gradient-bg text-white px-4 py-2 rounded-lg hover:opacity-90 transition-all">
-                    <i class="fas fa-plus mr-2"></i>
-                    Nova Turma
-                </button>
-            </div>
-
-            <div id="turmasGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <!-- Turmas will be loaded here -->
-            </div>
-        </div>
-
-        <!-- Horários Section -->
-        <div id="horariosSection" class="p-6 hidden">
-            <div class="flex justify-between items-center mb-6">
-                <h3 class="text-xl font-semibold text-gray-800">Horário das Aulas</h3>
-                <button onclick="openHorarioModal()" class="gradient-bg text-white px-4 py-2 rounded-lg hover:opacity-90 transition-all">
-                    <i class="fas fa-plus mr-2"></i>
-                    Adicionar Horário
-                </button>
-            </div>
-
-            <div class="bg-white rounded-xl shadow-sm p-6">
-                <div id="scheduleGrid" class="schedule-grid">
-                    <!-- Schedule will be generated here -->
+        <!-- Quick Actions -->
+        <div class="bg-white rounded-xl shadow-sm p-6 mb-8 fade-in">
+            <div class="flex flex-col sm:flex-row gap-4 items-center justify-between">
+                <div>
+                    <h2 class="text-lg font-semibold text-gray-900 mb-1">Ações Rápidas</h2>
+                    <p class="text-gray-600">Gerencie seus semanários de forma eficiente</p>
+                </div>
+                <div class="flex space-x-3">
+                    <button onclick="openNovoSemanarioModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+                        <i class="fas fa-plus mr-2"></i>
+                        Novo Semanário
+                    </button>
+                    <button onclick="loadPlanejamentos()" class="border border-gray-300 text-gray-700 px-6 py-3 rounded-lg font-medium hover:bg-gray-50 transition-colors">
+                        <i class="fas fa-sync-alt mr-2"></i>
+                        Atualizar
+                    </button>
                 </div>
             </div>
         </div>
 
-        <!-- Planejamento Section -->
-        <div id="planejamentoSection" class="p-6 hidden">
-            <div class="flex justify-between items-center mb-6">
-                <h3 class="text-xl font-semibold text-gray-800">Planejamento Semanal</h3>
-                <button onclick="openPlanejamentoModal()" class="gradient-bg text-white px-4 py-2 rounded-lg hover:opacity-90 transition-all">
-                    <i class="fas fa-plus mr-2"></i>
-                    Novo Planejamento
-                </button>
-            </div>
-
-            <div class="mb-6">
-                <div class="flex items-center space-x-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Semana</label>
-                        <input type="week" id="weekSelector" class="border border-gray-300 rounded-lg px-3 py-2" onchange="loadPlanejamentos()">
-                    </div>
+        <!-- Filters -->
+        <div class="bg-white rounded-xl shadow-sm p-6 mb-8 fade-in">
+            <div class="flex flex-col sm:flex-row gap-4 items-center justify-between">
+                <div class="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Turma</label>
-                        <select id="turmaFilter" class="border border-gray-300 rounded-lg px-3 py-2" onchange="loadPlanejamentos()">
+                        <select id="turmaFilter" class="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
                             <option value="">Todas as turmas</option>
                         </select>
                     </div>
-                </div>
-            </div>
-
-            <div id="planejamentosGrid" class="grid grid-cols-1 gap-6">
-                <!-- Planejamentos will be loaded here -->
-            </div>
-        </div>
-
-        <!-- IA Config Section -->
-        <div id="iaConfigSection" class="p-6 hidden">
-            <div class="max-w-4xl mx-auto">
-                <h3 class="text-xl font-semibold text-gray-800 mb-6">Configuração da IA Gemini</h3>
-                
-                <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
-                    <div class="flex items-center mb-4">
-                        <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mr-4">
-                            <i class="fas fa-robot text-purple-600"></i>
-                        </div>
-                        <div>
-                            <h4 class="text-lg font-semibold text-gray-800">Google Gemini AI</h4>
-                            <p class="text-gray-600">Configure sua chave API para gerar planos de aula automaticamente</p>
-                        </div>
-                    </div>
-
-                    <div id="iaConfigSteps" class="space-y-6">
-                        <!-- Step 1 -->
-                        <div class="ai-config-step pl-4">
-                            <h5 class="font-semibold text-gray-800 mb-2">1. Obter Chave API do Google</h5>
-                            <p class="text-gray-600 mb-3">Acesse o Google AI Studio para obter sua chave API gratuita:</p>
-                            <a href="https://makersuite.google.com/app/apikey" target="_blank" class="inline-flex items-center text-blue-600 hover:text-blue-800">
-                                <i class="fas fa-external-link-alt mr-2"></i>
-                                Google AI Studio
-                            </a>
-                        </div>
-
-                        <!-- Step 2 -->
-                        <div class="ai-config-step pl-4">
-                            <h5 class="font-semibold text-gray-800 mb-2">2. Inserir Chave API</h5>
-                            <div class="flex space-x-3">
-                                <input type="password" id="geminiApiKey" placeholder="Cole sua chave API aqui..." class="flex-1 border border-gray-300 rounded-lg px-3 py-2">
-                                <button onclick="testGeminiConnection()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors">
-                                    <i class="fas fa-check mr-2"></i>
-                                    Testar
-                                </button>
-                                <button onclick="saveGeminiConfig()" class="gradient-bg text-white px-4 py-2 rounded-lg hover:opacity-90 transition-all">
-                                    <i class="fas fa-save mr-2"></i>
-                                    Salvar
-                                </button>
-                            </div>
-                            <div id="apiTestResult" class="mt-2 text-sm"></div>
-                        </div>
-
-                        <!-- Step 3 -->
-                        <div class="ai-config-step pl-4">
-                            <h5 class="font-semibold text-gray-800 mb-2">3. Status da Configuração</h5>
-                            <div id="iaStatusDisplay" class="flex items-center">
-                                <div class="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
-                                <span class="text-gray-600">IA não configurada</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Usage Guide -->
-                <div class="bg-blue-50 rounded-xl p-6">
-                    <h4 class="font-semibold text-blue-800 mb-3">Como usar a IA nos seus planejamentos:</h4>
-                    <ul class="space-y-2 text-blue-700">
-                        <li class="flex items-start">
-                            <i class="fas fa-check-circle mt-1 mr-2"></i>
-                            <span>Selecione a turma, matéria e habilidades da BNCC</span>
-                        </li>
-                        <li class="flex items-start">
-                            <i class="fas fa-check-circle mt-1 mr-2"></i>
-                            <span>Clique em "Gerar com IA" no formulário de planejamento</span>
-                        </li>
-                        <li class="flex items-start">
-                            <i class="fas fa-check-circle mt-1 mr-2"></i>
-                            <span>A IA criará um plano personalizado baseado na BNCC</span>
-                        </li>
-                        <li class="flex items-start">
-                            <i class="fas fa-check-circle mt-1 mr-2"></i>
-                            <span>Você pode editar e personalizar o plano gerado</span>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal: Nova Turma -->
-    <div id="turmaModal" class="fixed inset-0 bg-black bg-opacity-50 modal-backdrop hidden flex items-center justify-center z-50">
-        <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-md mx-4">
-            <div class="flex justify-between items-center mb-6">
-                <h3 class="text-xl font-semibold text-gray-800">Nova Turma</h3>
-                <button onclick="closeTurmaModal()" class="text-gray-500 hover:text-gray-700">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-
-            <form id="turmaForm" class="space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Ano Escolar</label>
-                    <select id="turmaAno" class="w-full border border-gray-300 rounded-lg px-3 py-2" required>
-                        <option value="">Selecione o ano</option>
-                        <option value="1">1º Ano</option>
-                        <option value="2">2º Ano</option>
-                        <option value="3">3º Ano</option>
-                        <option value="4">4º Ano</option>
-                        <option value="5">5º Ano</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Matéria</label>
-                    <select id="turmaMateria" class="w-full border border-gray-300 rounded-lg px-3 py-2" required>
-                        <option value="">Selecione a matéria</option>
-                        <option value="lingua-portuguesa">Língua Portuguesa</option>
-                        <option value="matematica">Matemática</option>
-                        <option value="ciencias">Ciências</option>
-                        <option value="historia">História</option>
-                        <option value="geografia">Geografia</option>
-                        <option value="arte">Arte</option>
-                        <option value="educacao-fisica">Educação Física</option>
-                        <option value="ensino-religioso">Ensino Religioso</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Nome da Turma</label>
-                    <input type="text" id="turmaNome" placeholder="Ex: 5º B - Arte" class="w-full border border-gray-300 rounded-lg px-3 py-2" required>
-                </div>
-
-                <div class="flex space-x-3 pt-4">
-                    <button type="button" onclick="closeTurmaModal()" class="flex-1 border border-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-50 transition-colors">
-                        Cancelar
-                    </button>
-                    <button type="submit" class="flex-1 gradient-bg text-white py-2 px-4 rounded-lg hover:opacity-90 transition-all">
-                        Criar Turma
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Modal: Novo Horário -->
-    <div id="horarioModal" class="fixed inset-0 bg-black bg-opacity-50 modal-backdrop hidden flex items-center justify-center z-50">
-        <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-md mx-4">
-            <div class="flex justify-between items-center mb-6">
-                <h3 class="text-xl font-semibold text-gray-800">Adicionar Horário</h3>
-                <button onclick="closeHorarioModal()" class="text-gray-500 hover:text-gray-700">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-
-            <form id="horarioForm" class="space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Turma</label>
-                    <select id="horarioTurma" class="w-full border border-gray-300 rounded-lg px-3 py-2" required>
-                        <option value="">Selecione a turma</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Dia da Semana</label>
-                    <select id="horarioDia" class="w-full border border-gray-300 rounded-lg px-3 py-2" required>
-                        <option value="">Selecione o dia</option>
-                        <option value="segunda">Segunda-feira</option>
-                        <option value="terca">Terça-feira</option>
-                        <option value="quarta">Quarta-feira</option>
-                        <option value="quinta">Quinta-feira</option>
-                        <option value="sexta">Sexta-feira</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Horário</label>
-                    <select id="horarioHora" class="w-full border border-gray-300 rounded-lg px-3 py-2" required>
-                        <option value="">Selecione o horário</option>
-                        <option value="07:00">07:00 - 07:50</option>
-                        <option value="08:00">08:00 - 08:50</option>
-                        <option value="09:00">09:00 - 09:50</option>
-                        <option value="10:00">10:00 - 10:50</option>
-                        <option value="11:00">11:00 - 11:50</option>
-                        <option value="13:00">13:00 - 13:50</option>
-                        <option value="14:00">14:00 - 14:50</option>
-                        <option value="15:00">15:00 - 15:50</option>
-                        <option value="16:00">16:00 - 16:50</option>
-                        <option value="17:00">17:00 - 17:50</option>
-                    </select>
-                </div>
-
-                <div class="flex space-x-3 pt-4">
-                    <button type="button" onclick="closeHorarioModal()" class="flex-1 border border-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-50 transition-colors">
-                        Cancelar
-                    </button>
-                    <button type="submit" class="flex-1 gradient-bg text-white py-2 px-4 rounded-lg hover:opacity-90 transition-all">
-                        Adicionar
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Modal: Novo Planejamento -->
-    <div id="planejamentoModal" class="fixed inset-0 bg-black bg-opacity-50 modal-backdrop hidden flex items-center justify-center z-50">
-        <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-4xl mx-4 max-h-[90vh] overflow-y-auto">
-            <div class="flex justify-between items-center mb-6">
-                <h3 class="text-xl font-semibold text-gray-800">Novo Planejamento Semanal</h3>
-                <button onclick="closePlanejamentoModal()" class="text-gray-500 hover:text-gray-700">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-
-            <form id="planejamentoForm" class="space-y-6">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Turma</label>
-                        <select id="planejamentoTurma" class="w-full border border-gray-300 rounded-lg px-3 py-2" required onchange="loadBNCCSkills()">
-                            <option value="">Selecione a turma</option>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Semana</label>
+                        <select id="semanaFilter" class="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                            <option value="">Todas as semanas</option>
                         </select>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Semana</label>
-                        <input type="week" id="planejamentoSemana" class="w-full border border-gray-300 rounded-lg px-3 py-2" required>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                        <select id="statusFilter" class="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                            <option value="">Todos os status</option>
+                            <option value="realizado">Aprovado</option>
+                            <option value="ressalvas">Com ressalvas</option>
+                            <option value="completar">Para completar</option>
+                            <option value="procurar">Procurar coordenação</option>
+                            <option value="sem-devolutiva">Sem devolutiva</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Planejamentos List -->
+        <div class="bg-white rounded-xl shadow-sm fade-in">
+            <div class="p-6 border-b border-gray-200">
+                <h2 class="text-xl font-bold text-gray-900">
+                    <i class="fas fa-calendar-week mr-2 text-indigo-600"></i>
+                    Meus Semanários
+                </h2>
+            </div>
+            
+            <div id="loadingPlanejamentos" class="flex items-center justify-center py-12">
+                <div class="text-center">
+                    <i class="fas fa-spinner loading-spinner text-3xl text-indigo-600 mb-4"></i>
+                    <p class="text-gray-600">Carregando semanários...</p>
+                </div>
+            </div>
+
+            <div id="planejamentosList" class="hidden">
+                <!-- Planejamentos will be loaded here -->
+            </div>
+
+            <div id="noPlanejamentos" class="hidden p-12 text-center">
+                <i class="fas fa-calendar-times text-4xl text-gray-400 mb-4"></i>
+                <h3 class="text-lg font-medium text-gray-900 mb-2">Nenhum semanário encontrado</h3>
+                <p class="text-gray-600">Você ainda não criou nenhum semanário. Clique em "Novo Semanário" para começar.</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Novo Semanário Modal -->
+    <div id="novoSemanarioModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xl font-bold text-gray-900">Novo Semanário</h3>
+                    <button onclick="closeNovoSemanarioModal()" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <form id="novoSemanarioForm" class="p-6 space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="turma" class="block text-sm font-medium text-gray-700 mb-2">Turma *</label>
+                        <select id="turma" name="turma" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                            <option value="">Selecione uma turma</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label for="semana" class="block text-sm font-medium text-gray-700 mb-2">Semana *</label>
+                        <select id="semana" name="semana" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                            <option value="">Selecione a semana</option>
+                        </select>
                     </div>
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Tema da Semana</label>
-                    <input type="text" id="planejamentoTema" placeholder="Ex: Frações e Números Decimais" class="w-full border border-gray-300 rounded-lg px-3 py-2" required>
-                </div>
-
-                <!-- BNCC Skills Selection -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Habilidades da BNCC</label>
-                    <div id="bnccSkillsContainer" class="border border-gray-300 rounded-lg p-4 max-h-60 overflow-y-auto">
-                        <p class="text-gray-500 text-center">Selecione uma turma para carregar as habilidades</p>
-                    </div>
+                    <label for="tema" class="block text-sm font-medium text-gray-700 mb-2">Tema da Semana *</label>
+                    <input type="text" id="tema" name="tema" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="Ex: Frações e Números Decimais">
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Objetivos da Semana</label>
-                    <textarea id="planejamentoObjetivos" rows="3" placeholder="Descreva os objetivos de aprendizagem para esta semana..." class="w-full border border-gray-300 rounded-lg px-3 py-2"></textarea>
+                    <label for="objetivos" class="block text-sm font-medium text-gray-700 mb-2">Objetivos de Aprendizagem *</label>
+                    <textarea id="objetivos" name="objetivos" required rows="3" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="Descreva os objetivos que os alunos devem alcançar..."></textarea>
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Conteúdo Programático</label>
-                    <textarea id="planejamentoConteudo" rows="4" placeholder="Descreva o conteúdo que será trabalhado..." class="w-full border border-gray-300 rounded-lg px-3 py-2"></textarea>
+                    <label for="conteudos" class="block text-sm font-medium text-gray-700 mb-2">Conteúdos *</label>
+                    <textarea id="conteudos" name="conteudos" required rows="4" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="Liste os conteúdos que serão trabalhados..."></textarea>
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Metodologia</label>
-                    <textarea id="planejamentoMetodologia" rows="3" placeholder="Como o conteúdo será desenvolvido..." class="w-full border border-gray-300 rounded-lg px-3 py-2"></textarea>
+                    <label for="metodologia" class="block text-sm font-medium text-gray-700 mb-2">Metodologia *</label>
+                    <textarea id="metodologia" name="metodologia" required rows="4" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="Descreva as estratégias e métodos de ensino..."></textarea>
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Recursos Necessários</label>
-                    <textarea id="planejamentoRecursos" rows="2" placeholder="Materiais, equipamentos, etc..." class="w-full border border-gray-300 rounded-lg px-3 py-2"></textarea>
+                    <label for="recursos" class="block text-sm font-medium text-gray-700 mb-2">Recursos Didáticos</label>
+                    <textarea id="recursos" name="recursos" rows="3" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="Materiais, tecnologias e recursos que serão utilizados..."></textarea>
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Avaliação</label>
-                    <textarea id="planejamentoAvaliacao" rows="2" placeholder="Como será avaliado o aprendizado..." class="w-full border border-gray-300 rounded-lg px-3 py-2"></textarea>
+                    <label for="avaliacao" class="block text-sm font-medium text-gray-700 mb-2">Avaliação *</label>
+                    <textarea id="avaliacao" name="avaliacao" required rows="3" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="Como será avaliado o aprendizado dos alunos..."></textarea>
+                </div>
+
+                <div>
+                    <label for="observacoes" class="block text-sm font-medium text-gray-700 mb-2">Observações</label>
+                    <textarea id="observacoes" name="observacoes" rows="3" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="Observações adicionais, adaptações, etc..."></textarea>
                 </div>
 
                 <div class="flex space-x-3 pt-4">
-                    <button type="button" onclick="closePlanejamentoModal()" class="border border-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-50 transition-colors">
+                    <button type="button" onclick="closeNovoSemanarioModal()" class="flex-1 border border-gray-300 text-gray-700 py-3 px-4 rounded-lg hover:bg-gray-50 transition-colors">
                         Cancelar
                     </button>
-                    <button type="button" onclick="generateWithAI()" class="bg-purple-600 text-white py-2 px-4 rounded-lg hover:bg-purple-700 transition-colors">
-                        <i class="fas fa-robot mr-2"></i>
-                        Gerar com IA
-                    </button>
-                    <button type="submit" class="gradient-bg text-white py-2 px-4 rounded-lg hover:opacity-90 transition-all">
-                        <i class="fas fa-save mr-2"></i>
-                        Salvar Planejamento
+                    <button type="submit" id="salvarSemanarioBtn" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-3 px-4 rounded-lg transition-colors">
+                        <span id="salvarSemanarioText">Salvar Semanário</span>
+                        <span id="salvarSemanarioLoading" class="hidden">
+                            <i class="fas fa-spinner loading-spinner mr-2"></i>
+                            Salvando...
+                        </span>
                     </button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Devolutiva Detail Modal -->
+    <div id="devolutivaModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xl font-bold text-gray-900">Devolutiva Recebida</h3>
+                    <button onclick="closeDevolutivaModal()" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="p-6">
+                <!-- Semanário Info -->
+                <div class="bg-gray-50 rounded-lg p-4 mb-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <p class="text-sm text-gray-600">Turma</p>
+                            <p class="font-medium" id="devolutivaTurma">-</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600">Semana</p>
+                            <p class="font-medium" id="devolutivaSemana">-</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600">Tema</p>
+                            <p class="font-medium" id="devolutivaTema">-</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600">Data da Devolutiva</p>
+                            <p class="font-medium" id="devolutivaData">-</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Status -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-3">Status</label>
+                    <div id="devolutivaStatus" class="p-4 rounded-lg">
+                        <!-- Status will be filled here -->
+                    </div>
+                </div>
+
+                <!-- Comentários -->
+                <div class="mb-6" id="devolutivaComentarioSection">
+                    <label class="block text-sm font-medium text-gray-700 mb-3">Comentários da Coordenação/Direção</label>
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <p id="devolutivaComentario" class="text-blue-800">-</p>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="flex space-x-3">
+                    <button onclick="closeDevolutivaModal()" class="flex-1 border border-gray-300 text-gray-700 py-3 px-4 rounded-lg hover:bg-gray-50 transition-colors">
+                        Fechar
+                    </button>
+                    <button onclick="editarSemanario()" id="editarSemanarioBtn" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-3 px-4 rounded-lg transition-colors">
+                        <i class="fas fa-edit mr-2"></i>
+                        Editar Semanário
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed top-4 right-4 bg-white border border-gray-200 rounded-lg shadow-lg p-4 transform translate-x-full transition-transform duration-300 z-50">
+        <div class="flex items-center">
+            <div id="toastIcon" class="mr-3"></div>
+            <div>
+                <p id="toastMessage" class="font-medium text-gray-900"></p>
+            </div>
         </div>
     </div>
 
@@ -529,450 +372,331 @@
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNycXFoZWFjc2dsaHl5aHZmY2hnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgxNTMxMDMsImV4cCI6MjA3MzcyOTEwM30.ZOKVDK1FEyDM-lcPrw4-0xbVDxYLftek3NHYcmjc_7w';
         
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        
-        let currentUser = null;
-        let userTurmas = [];
-        let userHorarios = [];
-        let geminiApiKey = null;
 
-        // BNCC Skills Database
-        const bnccSkills = {
-            'lingua-portuguesa': {
-                1: [
-                    'EF01LP01 - Reconhecer que textos são lidos e escritos da esquerda para a direita e de cima para baixo da página',
-                    'EF01LP02 - Escrever, espontaneamente ou por ditado, palavras e frases de forma alfabética',
-                    'EF01LP03 - Observar escritas convencionais, comparando-as às suas produções escritas',
-                    'EF01LP04 - Distinguir as letras do alfabeto de outros sinais gráficos'
-                ],
-                2: [
-                    'EF02LP01 - Utilizar, ao produzir o texto, grafia correta de palavras conhecidas',
-                    'EF02LP02 - Segmentar palavras em sílabas e remover e substituir sílabas iniciais, mediais ou finais',
-                    'EF02LP03 - Ler e escrever palavras com correspondências regulares diretas',
-                    'EF02LP04 - Ler e escrever corretamente palavras com sílabas CV, V, CVC, CCV'
-                ],
-                3: [
-                    'EF03LP01 - Ler e escrever palavras com correspondências regulares contextuais',
-                    'EF03LP02 - Ler e escrever corretamente palavras com sílabas CV, V, CVC, CCV, VC, VV, CVV',
-                    'EF03LP03 - Ler e escrever corretamente palavras com os dígrafos lh, nh, ch',
-                    'EF03LP04 - Usar acento gráfico (agudo ou circunflexo) em monossílabos tônicos terminados em a, e, o'
-                ],
-                4: [
-                    'EF04LP01 - Grafar palavras utilizando regras de correspondência fonema-grafema regulares',
-                    'EF04LP02 - Ler e escrever, corretamente, palavras com sílabas VV e CVV em casos nos quais a combinação VV (ditongo) é reduzida na língua oral',
-                    'EF04LP03 - Localizar palavras no dicionário para esclarecer significados, reconhecendo o significado mais plausível',
-                    'EF04LP04 - Usar acento gráfico (agudo ou circunflexo) em paroxítonas terminadas em -i(s), -l, -n, -r, -ã(s), -ão(s)'
-                ],
-                5: [
-                    'EF05LP01 - Grafar palavras utilizando regras de correspondência fonema-grafema regulares, contextuais e morfológicas',
-                    'EF05LP02 - Identificar o caráter polissêmico das palavras (uma mesma palavra com diferentes significados)',
-                    'EF05LP03 - Acentuar corretamente palavras oxítonas, paroxítonas e proparoxítonas',
-                    'EF05LP04 - Diferenciar, na leitura de textos, vírgula, ponto e vírgula, dois-pontos e reconhecer o efeito de sentido'
-                ]
-            },
-            'matematica': {
-                1: [
-                    'EF01MA01 - Utilizar números naturais como indicador de quantidade ou de ordem em diferentes situações cotidianas',
-                    'EF01MA02 - Contar de maneira exata ou aproximada, utilizando diferentes estratégias',
-                    'EF01MA03 - Estimar e comparar quantidades de objetos de dois conjuntos',
-                    'EF01MA04 - Contar a quantidade de objetos de coleções até 100 unidades'
-                ],
-                2: [
-                    'EF02MA01 - Comparar e ordenar números naturais (até a ordem de centenas) pela compreensão de características do sistema de numeração decimal',
-                    'EF02MA02 - Fazer estimativas por meio de estratégias diversas a respeito da quantidade de objetos de coleções',
-                    'EF02MA03 - Comparar quantidades de objetos de dois conjuntos, por estimativa e/ou por correspondência',
-                    'EF02MA04 - Compor e decompor números naturais de até três ordens, com suporte de material manipulável'
-                ],
-                3: [
-                    'EF03MA01 - Ler, escrever e comparar números naturais de até a ordem de unidade de milhar',
-                    'EF03MA02 - Identificar características do sistema de numeração decimal, utilizando a composição e a decomposição de número natural',
-                    'EF03MA03 - Construir e utilizar fatos básicos da adição e da multiplicação para o cálculo mental ou escrito',
-                    'EF03MA04 - Estabelecer a relação entre números naturais e pontos da reta numérica para utilizá-la na ordenação dos números naturais'
-                ],
-                4: [
-                    'EF04MA01 - Ler, escrever e ordenar números naturais até a ordem de dezenas de milhar',
-                    'EF04MA02 - Mostrar, por decomposição e composição, que todo número natural pode ser escrito por meio de adições e multiplicações por potências de dez',
-                    'EF04MA03 - Resolver e elaborar problemas com números naturais envolvendo adição e subtração, utilizando estratégias diversas',
-                    'EF04MA04 - Utilizar as relações entre adição e subtração, bem como entre multiplicação e divisão, para ampliar as estratégias de cálculo'
-                ],
-                5: [
-                    'EF05MA01 - Ler, escrever e ordenar números naturais até a ordem das centenas de milhar com compreensão das principais características do sistema de numeração decimal',
-                    'EF05MA02 - Ler, escrever e ordenar números racionais na forma decimal com compreensão das principais características do sistema de numeração decimal',
-                    'EF05MA03 - Identificar e representar frações (menores e maiores que a unidade), associando-as ao resultado de uma divisão ou à ideia de parte de um todo',
-                    'EF05MA04 - Identificar frações equivalentes'
-                ]
-            },
-            'ciencias': {
-                1: [
-                    'EF01CI01 - Comparar características de diferentes materiais presentes em objetos de uso cotidiano',
-                    'EF01CI02 - Localizar, nomear e representar graficamente (por meio de desenhos) partes do corpo humano',
-                    'EF01CI03 - Discutir as razões pelas quais os hábitos de higiene do corpo são necessários para a manutenção da saúde',
-                    'EF01CI04 - Comparar características físicas entre os colegas, reconhecendo a diversidade e a importância da valorização'
-                ],
-                2: [
-                    'EF02CI01 - Identificar de que materiais (metais, madeira, vidro etc.) são feitos os objetos que fazem parte da vida cotidiana',
-                    'EF02CI02 - Propor o uso de diferentes materiais para a construção de objetos de uso cotidiano',
-                    'EF02CI03 - Discutir os cuidados necessários à prevenção de acidentes domésticos (objetos cortantes e inflamáveis, eletricidade, produtos de limpeza)',
-                    'EF02CI04 - Descrever características de plantas e animais (tamanho, forma, cor, fase da vida, local onde se desenvolvem etc.)'
-                ],
-                3: [
-                    'EF03CI01 - Produzir diferentes sons a partir da vibração de variados objetos e identificar variáveis que influem nesse fenômeno',
-                    'EF03CI02 - Experimentar e relatar o que ocorre com a passagem da luz através de objetos transparentes, translúcidos e opacos',
-                    'EF03CI03 - Discutir hábitos necessários para a manutenção da saúde auditiva e visual considerando as condições do ambiente em que vive',
-                    'EF03CI04 - Identificar características sobre o modo de vida (o que comem, como se reproduzem, como se deslocam etc.) dos animais mais comuns no ambiente próximo'
-                ],
-                4: [
-                    'EF04CI01 - Identificar misturas na vida diária, com base em suas propriedades físicas observáveis',
-                    'EF04CI02 - Testar e relatar transformações nos materiais do dia a dia quando expostos a diferentes condições',
-                    'EF04CI03 - Concluir que algumas mudanças causadas por aquecimento ou resfriamento são reversíveis e outras não',
-                    'EF04CI04 - Analisar e construir cadeias alimentares simples, reconhecendo a posição ocupada pelos seres vivos nessas cadeias'
-                ],
-                5: [
-                    'EF05CI01 - Explorar fenômenos da vida cotidiana que evidenciem propriedades físicas dos materiais',
-                    'EF05CI02 - Aplicar os conhecimentos sobre as mudanças de estado físico da água para explicar o ciclo hidrológico',
-                    'EF05CI03 - Selecionar argumentos que justifiquem a importância da cobertura vegetal para a manutenção do ciclo da água',
-                    'EF05CI04 - Identificar os principais usos da água e de outros materiais nas atividades cotidianas para discutir e propor formas sustentáveis de utilização'
-                ]
-            },
-            'historia': {
-                1: [
-                    'EF01HI01 - Identificar aspectos do seu crescimento por meio do registro das lembranças particulares ou de lembranças dos membros de sua família',
-                    'EF01HI02 - Identificar a relação entre as suas histórias e as histórias de sua família e de sua comunidade',
-                    'EF01HI03 - Descrever e distinguir os seus papéis e responsabilidades relacionados à família, à escola e à comunidade',
-                    'EF01HI04 - Identificar as diferenças entre os variados ambientes em que vive (doméstico, escolar e da comunidade)'
-                ],
-                2: [
-                    'EF02HI01 - Reconhecer espaços de sociabilidade e identificar os motivos que aproximam e separam as pessoas em diferentes grupos sociais ou de parentesco',
-                    'EF02HI02 - Identificar e descrever práticas e papéis sociais que as pessoas exercem em diferentes comunidades',
-                    'EF02HI03 - Selecionar situações cotidianas que remetam à percepção de mudança, pertencimento e memória',
-                    'EF02HI04 - Selecionar e compreender o significado de objetos e documentos pessoais como fontes de memórias e histórias'
-                ],
-                3: [
-                    'EF03HI01 - Identificar os grupos populacionais que formam a cidade, o município e a região, as relações estabelecidas entre eles e os eventos que marcam a formação da cidade',
-                    'EF03HI02 - Selecionar, por meio da consulta de fontes de diferentes naturezas, e registrar acontecimentos ocorridos ao longo do tempo na cidade ou região em que vive',
-                    'EF03HI03 - Identificar e comparar pontos de vista em relação a eventos significativos do local em que vive, aspectos relacionados a condições sociais e à presença de diferentes grupos sociais e culturais',
-                    'EF03HI04 - Identificar os patrimônios históricos e culturais de sua cidade ou região e discutir as razões culturais, sociais e políticas para que assim sejam considerados'
-                ],
-                4: [
-                    'EF04HI01 - Reconhecer a história como resultado da ação do ser humano no tempo e no espaço, com base na identificação de mudanças e permanências ao longo do tempo',
-                    'EF04HI02 - Identificar mudanças e permanências ao longo do tempo, discutindo os sentidos dos grandes marcos da história da humanidade',
-                    'EF04HI03 - Identificar as transformações ocorridas na cidade ao longo do tempo e discutir suas interferências nos modos de vida de seus habitantes',
-                    'EF04HI04 - Identificar as relações entre os indivíduos e a natureza e discutir o significado do nomadismo e da fixação das primeiras comunidades humanas'
-                ],
-                5: [
-                    'EF05HI01 - Identificar os processos de formação das culturas e dos povos, relacionando-os com o espaço geográfico ocupado',
-                    'EF05HI02 - Identificar os mecanismos de organização do poder político com vistas à compreensão da ideia de Estado e/ou de outras formas de ordenação social',
-                    'EF05HI03 - Analisar o papel das culturas e das religiões na composição identitária dos povos antigos',
-                    'EF05HI04 - Associar a noção de cidadania com os princípios de respeito à diversidade, à pluralidade e aos direitos humanos'
-                ]
-            },
-            'geografia': {
-                1: [
-                    'EF01GE01 - Descrever características observadas de seus lugares de vivência (moradia, escola etc.) e identificar semelhanças e diferenças entre esses lugares',
-                    'EF01GE02 - Identificar semelhanças e diferenças entre jogos e brincadeiras de diferentes épocas e lugares',
-                    'EF01GE03 - Identificar e relatar semelhanças e diferenças de usos do espaço público (praças, parques) para o lazer e diferentes manifestações',
-                    'EF01GE04 - Discutir e elaborar, coletivamente, regras de convívio em diferentes espaços (sala de aula, escola etc.)'
-                ],
-                2: [
-                    'EF02GE01 - Descrever a história das migrações no bairro ou comunidade em que vive',
-                    'EF02GE02 - Comparar costumes e tradições de diferentes populações inseridas no bairro ou comunidade em que vive',
-                    'EF02GE03 - Comparar diferentes meios de transporte e de comunicação, indicando o seu papel na conexão entre lugares',
-                    'EF02GE04 - Reconhecer semelhanças e diferenças nos hábitos, nas relações com a natureza e no modo de viver de pessoas em diferentes lugares'
-                ],
-                3: [
-                    'EF03GE01 - Identificar e comparar aspectos culturais dos grupos sociais de seus lugares de vivência, seja na cidade, seja no campo',
-                    'EF03GE02 - Identificar, em seus lugares de vivência, marcas de contribuição cultural e econômica de grupos de diferentes origens',
-                    'EF03GE03 - Reconhecer os diferentes modos de vida de povos e comunidades tradicionais em distintos lugares',
-                    'EF03GE04 - Explicar como os processos naturais e históricos atuam na formação e na mudança das paisagens naturais e antrópicas'
-                ],
-                4: [
-                    'EF04GE01 - Selecionar, em seus lugares de vivência e em suas histórias familiares, elementos de distintas culturas',
-                    'EF04GE02 - Descrever processos migratórios e suas contribuições para a formação da sociedade brasileira',
-                    'EF04GE03 - Distinguir funções e papéis dos órgãos do poder público e canais de participação social na gestão do Município',
-                    'EF04GE04 - Reconhecer especificidades e analisar a interdependência do campo e da cidade, considerando fluxos econômicos, de informações, de ideias e de pessoas'
-                ],
-                5: [
-                    'EF05GE01 - Descrever e analisar dinâmicas populacionais na Unidade da Federação em que vive, estabelecendo relações entre migrações e condições de infraestrutura',
-                    'EF05GE02 - Identificar diferenças étnico-raciais e étnico-culturais e desigualdades sociais entre grupos em diferentes territórios',
-                    'EF05GE03 - Identificar as formas e funções das cidades e analisar as mudanças sociais, econômicas e ambientais provocadas pelo seu crescimento',
-                    'EF05GE04 - Reconhecer as características da cidade e analisar as interações entre a cidade e o campo e entre cidades na rede urbana'
-                ]
-            },
-            'arte': {
-                1: [
-                    'EF15AR01 - Identificar e apreciar formas distintas das artes visuais tradicionais e contemporâneas, cultivando a percepção, o imaginário, a capacidade de simbolizar e o repertório imagético',
-                    'EF15AR02 - Explorar e reconhecer elementos constitutivos das artes visuais (ponto, linha, forma, cor, espaço, movimento etc.)',
-                    'EF15AR03 - Reconhecer e analisar a influência de distintas matrizes estéticas e culturais das artes visuais nas manifestações artísticas das culturas locais, regionais e nacionais',
-                    'EF15AR04 - Experimentar diferentes formas de expressão artística (desenho, pintura, colagem, quadrinhos, dobradura, escultura, modelagem, instalação, vídeo, fotografia etc.)'
-                ],
-                2: [
-                    'EF15AR05 - Experimentar a criação em artes visuais de modo individual, coletivo e colaborativo, explorando diferentes espaços da escola e da comunidade',
-                    'EF15AR06 - Dialogar sobre a sua criação e as dos colegas, para alcançar sentidos plurais',
-                    'EF15AR07 - Reconhecer algumas categorias do sistema das artes visuais (museus, galerias, instituições, artistas, artesãos, curadores etc.)',
-                    'EF15AR08 - Experimentar diferentes formas de expressão artística (desenho, pintura, colagem, quadrinhos, dobradura, escultura, modelagem, instalação, vídeo, fotografia etc.), fazendo uso sustentável de materiais, instrumentos, recursos e técnicas convencionais e não convencionais'
-                ],
-                3: [
-                    'EF15AR09 - Estabelecer relações entre as partes do corpo e destas com o todo corporal na construção do movimento dançado',
-                    'EF15AR10 - Experimentar diferentes formas de orientação no espaço (deslocamentos, planos, direções, caminhos etc.) e ritmos de movimento (lento, moderado e rápido) na construção do movimento dançado',
-                    'EF15AR11 - Criar e improvisar movimentos dançados de modo individual, coletivo e colaborativo, considerando os aspectos estruturais, dinâmicos e expressivos dos elementos constitutivos do movimento',
-                    'EF15AR12 - Discutir, com respeito e sem preconceito, as experiências pessoais e coletivas em dança vivenciadas na escola e em outros contextos'
-                ],
-                4: [
-                    'EF15AR13 - Identificar e apreciar criticamente diversas formas e gêneros de expressão musical, reconhecendo e analisando os usos e as funções da música em diversos contextos de circulação',
-                    'EF15AR14 - Perceber e explorar os elementos constitutivos da música (altura, intensidade, timbre, melodia, ritmo etc.), por meio de jogos, brincadeiras, canções e práticas diversas de composição/criação, execução e apreciação musical',
-                    'EF15AR15 - Explorar fontes sonoras diversas, como as existentes no próprio corpo (palmas, voz, percussão corporal), na natureza e em objetos cotidianos',
-                    'EF15AR16 - Explorar diferentes formas de registro musical não convencional (representação gráfica de sons, partituras criativas etc.), bem como procedimentos e técnicas de registro em áudio e audiovisual'
-                ],
-                5: [
-                    'EF15AR17 - Experimentar improvisações, composições e sonorização de histórias, entre outros, utilizando vozes, sons corporais e/ou instrumentos musicais convencionais ou não convencionais',
-                    'EF15AR18 - Reconhecer e apreciar formas distintas de manifestações do teatro presentes em diferentes contextos, aprendendo a ver e a ouvir histórias dramatizadas',
-                    'EF15AR19 - Descobrir teatralidades na vida cotidiana, identificando elementos teatrais (variadas entonações de voz, diferentes fisicalidades, diversidade de personagens e narrativas etc.)',
-                    'EF15AR20 - Experimentar o trabalho colaborativo, coletivo e autoral em improvisações teatrais e processos narrativos criativos em teatro'
-                ]
-            },
-            'educacao-fisica': {
-                1: [
-                    'EF12EF01 - Experimentar, fruir e recriar diferentes brincadeiras e jogos da cultura popular presentes no contexto comunitário e regional',
-                    'EF12EF02 - Explicar, por meio de múltiplas linguagens (corporal, visual, oral e escrita), as brincadeiras e os jogos populares do contexto comunitário e regional',
-                    'EF12EF03 - Planejar e utilizar estratégias para resolver desafios de brincadeiras e jogos populares do contexto comunitário e regional',
-                    'EF12EF04 - Colaborar na proposição e na produção de alternativas para a prática, em outros momentos e espaços, de brincadeiras e jogos e demais práticas corporais'
-                ],
-                2: [
-                    'EF12EF05 - Experimentar e fruir, prezando pelo trabalho coletivo e pelo protagonismo, a prática de esportes de marca e de precisão',
-                    'EF12EF06 - Discutir a importância da observação das normas e das regras dos esportes de marca e de precisão para assegurar a integridade própria e as dos demais participantes',
-                    'EF12EF07 - Experimentar, fruir e identificar diferentes elementos básicos da ginástica (equilíbrios, saltos, giros, rotações, acrobacias, com e sem materiais)',
-                    'EF12EF08 - Planejar e utilizar estratégias para a execução de diferentes elementos básicos da ginástica'
-                ],
-                3: [
-                    'EF35EF01 - Experimentar e fruir brincadeiras e jogos populares do Brasil e do mundo, incluindo aqueles de matriz indígena e africana',
-                    'EF35EF02 - Planejar e utilizar estratégias para possibilitar a participação segura de todos os alunos em brincadeiras e jogos populares do Brasil e de matriz indígena e africana',
-                    'EF35EF03 - Descrever, por meio de múltiplas linguagens (corporal, oral, escrita, audiovisual), as brincadeiras e os jogos populares do Brasil e de matriz indígena e africana',
-                    'EF35EF04 - Recriar, individual e coletivamente, e experimentar, na escola e fora dela, brincadeiras e jogos populares do Brasil e do mundo'
-                ],
-                4: [
-                    'EF35EF05 - Experimentar e fruir diversos tipos de esportes de campo e taco, rede/parede e invasão, identificando seus elementos comuns e criando estratégias individuais e coletivas básicas para sua execução',
-                    'EF35EF06 - Diferenciar os conceitos de jogo e esporte, identificando as características que os constituem na contemporaneidade e suas manifestações (profissional e comunitária/lazer)',
-                    'EF35EF07 - Experimentar e fruir, de forma coletiva, combinações de diferentes elementos da ginástica geral (equilíbrios, saltos, giros, rotações, acrobacias, com e sem materiais)',
-                    'EF35EF08 - Planejar e utilizar estratégias para resolver desafios na execução de elementos básicos de apresentações coletivas de ginástica geral'
-                ],
-                5: [
-                    'EF35EF09 - Experimentar, recriar e fruir danças populares do Brasil e do mundo e danças de matriz indígena e africana',
-                    'EF35EF10 - Comparar e identificar os elementos constitutivos comuns e diferentes (ritmo, espaço, gestos) em danças populares do Brasil e do mundo e danças de matriz indígena e africana',
-                    'EF35EF11 - Formular e utilizar estratégias para a execução de elementos constitutivos das danças populares do Brasil e do mundo, e das danças de matriz indígena e africana',
-                    'EF35EF12 - Identificar situações de injustiça e preconceito geradas e/ou presentes no contexto das danças e demais práticas corporais'
-                ]
-            },
-            'ensino-religioso': {
-                1: [
-                    'EF01ER01 - Identificar e acolher as semelhanças e diferenças entre o eu, o outro e o nós',
-                    'EF01ER02 - Reconhecer que o seu nome e o das demais pessoas os identificam e os diferenciam',
-                    'EF01ER03 - Reconhecer e respeitar as características físicas e subjetivas de cada um',
-                    'EF01ER04 - Valorizar a diversidade de formas de vida'
-                ],
-                2: [
-                    'EF02ER01 - Reconhecer os diferentes espaços de convivência',
-                    'EF02ER02 - Identificar costumes, crenças e formas diversas de viver em variados ambientes de convivência',
-                    'EF02ER03 - Identificar as diferentes formas de registro das memórias pessoais, familiares e escolares (fotos, músicas, imagens, textos etc.)',
-                    'EF02ER04 - Identificar os símbolos presentes nos variados espaços de convivência'
-                ],
-                3: [
-                    'EF03ER01 - Identificar e respeitar os diferentes espaços e territórios religiosos de diferentes tradições e movimentos religiosos',
-                    'EF03ER02 - Caracterizar os espaços e territórios religiosos como locais de realização das práticas celebrativas',
-                    'EF03ER03 - Identificar e respeitar práticas celebrativas (cerimônias, orações, festividades, peregrinações, entre outras) de diferentes tradições religiosas',
-                    'EF03ER04 - Caracterizar as práticas celebrativas como parte integrante do conjunto das manifestações religiosas de diferentes culturas e sociedades'
-                ],
-                4: [
-                    'EF04ER01 - Identificar ritos presentes no cotidiano pessoal, familiar, escolar e comunitário',
-                    'EF04ER02 - Identificar ritos e suas funções em diferentes manifestações e tradições religiosas',
-                    'EF04ER03 - Caracterizar ritos de iniciação e de passagem em diversos grupos religiosos (nascimento, casamento e morte)',
-                    'EF04ER04 - Identificar as diversas formas de expressão da espiritualidade (orações, cultos, gestos, cantos, dança, meditação) nas diferentes tradições religiosas'
-                ],
-                5: [
-                    'EF05ER01 - Identificar e respeitar acontecimentos sagrados de diferentes culturas e tradições religiosas',
-                    'EF05ER02 - Identificar, distinguir e respeitar acontecimentos sagrados de diferentes culturas e tradições religiosas como recurso para preservar a memória',
-                    'EF05ER03 - Reconhecer funções e mensagens religiosas contidas nos mitos de criação (cosmogonias)',
-                    'EF05ER04 - Reconhecer a importância da tradição oral para preservar memórias e acontecimentos religiosos'
-                ]
-            }
-        };
+        let currentUser = null;
+        let currentSchoolId = null;
+        let userTurmas = [];
+        let currentPlanejamento = null;
 
         // Initialize
-        document.addEventListener('DOMContentLoaded', () => {
-            checkAuth();
-            updateCurrentDate();
-            setCurrentWeek();
-            loadUserData();
+        document.addEventListener('DOMContentLoaded', async () => {
+            await checkAuth();
+            await loadUserData();
+            await loadTurmas();
+            await loadWeekOptions();
+            await loadPlanejamentos();
+            await loadNotifications();
+            setupEventListeners();
+            
+            // Auto-refresh notifications every 30 seconds
+            setInterval(loadNotifications, 30000);
         });
 
-        // Authentication
+        // Check authentication
         async function checkAuth() {
-            try {
-                const { data: { session } } = await supabase.auth.getSession();
-                if (!session) {
-                    window.location.href = './index.html';
-                    return;
-                }
-                
-                currentUser = session.user;
-                document.getElementById('userName').textContent = currentUser.email.split('@')[0];
-                
-            } catch (error) {
-                console.error('Erro na autenticação:', error);
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) {
                 window.location.href = './index.html';
+                return;
             }
+            currentUser = session.user;
         }
 
         // Load user data
         async function loadUserData() {
-            await loadTurmas();
-            await loadHorarios();
-            await loadGeminiConfig();
-            updateDashboardStats();
-        }
-
-        // Update current date
-        function updateCurrentDate() {
-            const now = new Date();
-            const options = { 
-                weekday: 'long', 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
-            };
-            document.getElementById('currentDate').textContent = now.toLocaleDateString('pt-BR', options);
-        }
-
-        // Set current week
-        function setCurrentWeek() {
-            const now = new Date();
-            const year = now.getFullYear();
-            const week = getWeekNumber(now);
-            document.getElementById('weekSelector').value = `${year}-W${week.toString().padStart(2, '0')}`;
-            
-            const planejamentoSemana = document.getElementById('planejamentoSemana');
-            if (planejamentoSemana) {
-                planejamentoSemana.value = `${year}-W${week.toString().padStart(2, '0')}`;
-            }
-        }
-
-        // Get week number
-        function getWeekNumber(date) {
-            const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-            const dayNum = d.getUTCDay() || 7;
-            d.setUTCDate(d.getUTCDate() + 4 - dayNum);
-            const yearStart = new Date(Date.UTC(d.getUTCFullYear(),0,1));
-            return Math.ceil((((d - yearStart) / 86400000) + 1)/7);
-        }
-
-        // Sidebar functions
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            sidebar.classList.toggle('sidebar-active');
-            sidebar.classList.toggle('sidebar-inactive');
-        }
-
-        // Navigation
-        function showSection(sectionName) {
-            // Hide all sections
-            const sections = ['dashboardSection', 'turmasSection', 'horariosSection', 'planejamentoSection', 'iaConfigSection'];
-            sections.forEach(section => {
-                document.getElementById(section).classList.add('hidden');
-            });
-
-            // Show selected section
-            document.getElementById(sectionName + 'Section').classList.remove('hidden');
-
-            // Update page title
-            const titles = {
-                'dashboard': 'Dashboard',
-                'turmas': 'Minhas Turmas',
-                'horarios': 'Horários',
-                'planejamento': 'Planejamento Semanal',
-                'ia-config': 'Configurar IA'
-            };
-            document.getElementById('pageTitle').textContent = titles[sectionName];
-
-            // Update nav items
-            document.querySelectorAll('.nav-item').forEach(item => {
-                item.classList.remove('bg-blue-50', 'text-blue-600');
-            });
-            event.target.classList.add('bg-blue-50', 'text-blue-600');
-
-            // Load section specific data
-            if (sectionName === 'horarios') {
-                generateScheduleGrid();
-            } else if (sectionName === 'planejamento') {
-                loadPlanejamentos();
-                loadTurmasForSelect();
-            }
-
-            // Close sidebar on mobile
-            if (window.innerWidth < 1024) {
-                toggleSidebar();
-            }
-        }
-
-        // Turmas functions
-        async function loadTurmas() {
             try {
-                const { data, error } = await supabase
-                    .from('turmas')
-                    .select('*')
-                    .eq('professor_id', currentUser.id)
-                    .order('created_at', { ascending: false });
+                const { data: userData, error } = await supabase
+                    .from('users')
+                    .select(`
+                        name, 
+                        user_type, 
+                        school_id,
+                        schools (name)
+                    `)
+                    .eq('id', currentUser.id)
+                    .single();
 
                 if (error) throw error;
 
-                userTurmas = data || [];
-                renderTurmas();
-                loadTurmasForSelect();
+                if (userData.user_type !== 'professor') {
+                    showToast('Acesso negado', 'error');
+                    setTimeout(() => window.location.href = './index.html', 2000);
+                    return;
+                }
+
+                currentSchoolId = userData.school_id;
+                document.getElementById('userName').textContent = userData.name || 'Professor';
+                document.getElementById('schoolName').textContent = userData.schools?.name || 'Escola';
+
+            } catch (error) {
+                console.error('Erro ao carregar dados do usuário:', error);
+                showToast('Erro ao carregar dados do usuário', 'error');
+            }
+        }
+
+        // Load turmas
+        async function loadTurmas() {
+            try {
+                const { data: turmas, error } = await supabase
+                    .from('turmas')
+                    .select('*')
+                    .eq('professor_id', currentUser.id)
+                    .eq('school_id', currentSchoolId)
+                    .order('nome');
+
+                if (error) throw error;
+
+                userTurmas = turmas;
+                
+                const turmaSelect = document.getElementById('turma');
+                const turmaFilter = document.getElementById('turmaFilter');
+                
+                turmas.forEach(turma => {
+                    const option1 = document.createElement('option');
+                    option1.value = turma.id;
+                    option1.textContent = `${turma.nome} - ${turma.ano}º ano - ${getMateriaName(turma.materia)}`;
+                    turmaSelect.appendChild(option1);
+
+                    const option2 = document.createElement('option');
+                    option2.value = turma.id;
+                    option2.textContent = `${turma.nome} - ${turma.ano}º ano`;
+                    turmaFilter.appendChild(option2);
+                });
 
             } catch (error) {
                 console.error('Erro ao carregar turmas:', error);
+                showToast('Erro ao carregar turmas', 'error');
             }
         }
 
-        function renderTurmas() {
-            const grid = document.getElementById('turmasGrid');
+        // Load week options
+        function loadWeekOptions() {
+            const select = document.getElementById('semana');
+            const filter = document.getElementById('semanaFilter');
+            const currentWeek = getCurrentWeek();
             
-            if (userTurmas.length === 0) {
-                grid.innerHTML = `
-                    <div class="col-span-full text-center py-12">
-                        <i class="fas fa-users text-4xl text-gray-300 mb-4"></i>
-                        <h3 class="text-lg font-medium text-gray-500 mb-2">Nenhuma turma cadastrada</h3>
-                        <p class="text-gray-400 mb-4">Comece criando sua primeira turma</p>
-                        <button onclick="openTurmaModal()" class="gradient-bg text-white px-6 py-2 rounded-lg hover:opacity-90 transition-all">
-                            <i class="fas fa-plus mr-2"></i>
-                            Criar Primeira Turma
-                        </button>
+            // Add current and next weeks
+            for (let i = -2; i <= 10; i++) {
+                const week = getWeekNumber(currentWeek + i);
+                
+                const option1 = document.createElement('option');
+                option1.value = week;
+                option1.textContent = `Semana ${week}`;
+                if (i === 0) option1.selected = true;
+                select.appendChild(option1);
+
+                const option2 = document.createElement('option');
+                option2.value = week;
+                option2.textContent = `Semana ${week}`;
+                filter.appendChild(option2);
+            }
+        }
+
+        // Get current week number
+        function getCurrentWeek() {
+            const now = new Date();
+            const start = new Date(now.getFullYear(), 0, 1);
+            const diff = now - start;
+            const oneWeek = 1000 * 60 * 60 * 24 * 7;
+            return Math.ceil(diff / oneWeek);
+        }
+
+        // Get week number with year handling
+        function getWeekNumber(week) {
+            if (week < 1) return `${52 + week}`;
+            if (week > 52) return `${week - 52}`;
+            return week.toString().padStart(2, '0');
+        }
+
+        // Load planejamentos
+        async function loadPlanejamentos() {
+            const loadingDiv = document.getElementById('loadingPlanejamentos');
+            const listDiv = document.getElementById('planejamentosList');
+            const noDataDiv = document.getElementById('noPlanejamentos');
+
+            loadingDiv.classList.remove('hidden');
+            listDiv.classList.add('hidden');
+            noDataDiv.classList.add('hidden');
+
+            try {
+                let query = supabase
+                    .from('planejamentos')
+                    .select(`
+                        *,
+                        turmas (nome, ano, materia)
+                    `)
+                    .eq('professor_id', currentUser.id)
+                    .order('created_at', { ascending: false });
+
+                // Apply filters
+                const turmaFilter = document.getElementById('turmaFilter').value;
+                const semanaFilter = document.getElementById('semanaFilter').value;
+                const statusFilter = document.getElementById('statusFilter').value;
+
+                if (turmaFilter) {
+                    query = query.eq('turma_id', turmaFilter);
+                }
+
+                if (semanaFilter) {
+                    query = query.eq('semana', semanaFilter);
+                }
+
+                const { data: planejamentos, error } = await query;
+
+                if (error) throw error;
+
+                // Filter by status if needed
+                let filteredPlanejamentos = planejamentos;
+                if (statusFilter) {
+                    if (statusFilter === 'sem-devolutiva') {
+                        filteredPlanejamentos = planejamentos.filter(p => !p.devolutiva_status);
+                    } else {
+                        filteredPlanejamentos = planejamentos.filter(p => p.devolutiva_status === statusFilter);
+                    }
+                }
+
+                if (filteredPlanejamentos.length === 0) {
+                    noDataDiv.classList.remove('hidden');
+                } else {
+                    renderPlanejamentos(filteredPlanejamentos);
+                    listDiv.classList.remove('hidden');
+                }
+
+                updateStats(planejamentos);
+
+            } catch (error) {
+                console.error('Erro ao carregar planejamentos:', error);
+                showToast('Erro ao carregar semanários', 'error');
+                noDataDiv.classList.remove('hidden');
+            } finally {
+                loadingDiv.classList.add('hidden');
+            }
+        }
+
+        // Render planejamentos
+        function renderPlanejamentos(planejamentos) {
+            const container = document.getElementById('planejamentosList');
+            container.innerHTML = '';
+
+            planejamentos.forEach(planejamento => {
+                const statusInfo = getStatusInfo(planejamento.devolutiva_status);
+                
+                const div = document.createElement('div');
+                div.className = 'border-b border-gray-200 p-6 hover:bg-gray-50 transition-colors';
+                div.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <div class="flex-1">
+                            <div class="flex items-center space-x-4 mb-3">
+                                <div class="flex items-center space-x-2">
+                                    <i class="fas fa-users text-gray-400"></i>
+                                    <span class="font-medium text-gray-900">${planejamento.turmas?.nome} - ${planejamento.turmas?.ano}º ano</span>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <i class="fas fa-book text-gray-400"></i>
+                                    <span class="text-gray-600">${getMateriaName(planejamento.turmas?.materia)}</span>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <i class="fas fa-calendar text-gray-400"></i>
+                                    <span class="text-gray-600">Semana ${planejamento.semana}</span>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <h3 class="text-lg font-semibold text-gray-900 mb-1">${planejamento.tema}</h3>
+                                <p class="text-gray-600 text-sm">${planejamento.objetivos.substring(0, 100)}...</p>
+                            </div>
+
+                            ${statusInfo.html}
+                            
+                            ${planejamento.devolutiva_comentario ? `
+                                <div class="mt-3 p-3 bg-blue-50 rounded-lg">
+                                    <p class="text-sm text-blue-800">
+                                        <i class="fas fa-comment mr-2"></i>
+                                        ${planejamento.devolutiva_comentario.substring(0, 100)}${planejamento.devolutiva_comentario.length > 100 ? '...' : ''}
+                                    </p>
+                                </div>
+                            ` : ''}
+                        </div>
+                        
+                        <div class="flex items-center space-x-3">
+                            ${planejamento.devolutiva_status ? `
+                                <button 
+                                    onclick="viewDevolutiva('${planejamento.id}')"
+                                    class="bg-blue-100 hover:bg-blue-200 text-blue-700 px-4 py-2 rounded-lg transition-colors"
+                                >
+                                    <i class="fas fa-eye mr-2"></i>
+                                    Ver Devolutiva
+                                </button>
+                            ` : ''}
+                            <button 
+                                onclick="editPlanejamento('${planejamento.id}')"
+                                class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg transition-colors"
+                            >
+                                <i class="fas fa-edit mr-2"></i>
+                                Editar
+                            </button>
+                            <button 
+                                onclick="deletePlanejamento('${planejamento.id}')"
+                                class="bg-red-100 hover:bg-red-200 text-red-700 px-4 py-2 rounded-lg transition-colors"
+                            >
+                                <i class="fas fa-trash mr-2"></i>
+                                Excluir
+                            </button>
+                        </div>
                     </div>
                 `;
-                return;
-            }
-
-            grid.innerHTML = userTurmas.map(turma => `
-                <div class="bg-white rounded-xl shadow-sm p-6 card-hover">
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="w-12 h-12 gradient-bg rounded-lg flex items-center justify-center">
-                            <i class="fas fa-users text-white"></i>
-                        </div>
-                        <div class="flex space-x-2">
-                            <button onclick="editTurma(${turma.id})" class="text-blue-600 hover:text-blue-800">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button onclick="deleteTurma(${turma.id})" class="text-red-600 hover:text-red-800">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <h3 class="text-lg font-semibold text-gray-800 mb-2">${turma.nome}</h3>
-                    <div class="space-y-1 text-sm text-gray-600">
-                        <div><i class="fas fa-graduation-cap mr-2"></i>${turma.ano}º Ano</div>
-                        <div><i class="fas fa-book mr-2"></i>${getMateriaName(turma.materia)}</div>
-                    </div>
-                </div>
-            `).join('');
+                container.appendChild(div);
+            });
         }
 
+        // Get status info
+        function getStatusInfo(status) {
+            const statusMap = {
+                'realizado': {
+                    color: 'green',
+                    icon: 'check-circle',
+                    text: 'Realizado com sucesso',
+                    bgClass: 'bg-green-100 text-green-800'
+                },
+                'ressalvas': {
+                    color: 'yellow',
+                    icon: 'exclamation-triangle',
+                    text: 'Com ressalvas',
+                    bgClass: 'bg-yellow-100 text-yellow-800'
+                },
+                'completar': {
+                    color: 'red',
+                    icon: 'times-circle',
+                    text: 'Favor completar o semanário',
+                    bgClass: 'bg-red-100 text-red-800'
+                },
+                'procurar': {
+                    color: 'purple',
+                    icon: 'user-tie',
+                    text: 'Procure a coordenação',
+                    bgClass: 'bg-purple-100 text-purple-800'
+                }
+            };
+
+            if (!status) {
+                return {
+                    html: `<div class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-gray-100 text-gray-600">
+                        <i class="fas fa-clock mr-2"></i>
+                        Aguardando devolutiva
+                    </div>`
+                };
+            }
+
+            const info = statusMap[status];
+            return {
+                html: `<div class="inline-flex items-center px-3 py-1 rounded-full text-sm ${info.bgClass}">
+                    <i class="fas fa-${info.icon} mr-2"></i>
+                    ${info.text}
+                </div>`
+            };
+        }
+
+        // Get materia name
         function getMateriaName(materia) {
             const materias = {
                 'lingua-portuguesa': 'Língua Portuguesa',
@@ -987,604 +711,344 @@
             return materias[materia] || materia;
         }
 
-        function loadTurmasForSelect() {
-            const selects = ['horarioTurma', 'planejamentoTurma', 'turmaFilter'];
-            
-            selects.forEach(selectId => {
-                const select = document.getElementById(selectId);
-                if (select) {
-                    const currentValue = select.value;
-                    select.innerHTML = '<option value="">Selecione a turma</option>';
-                    
-                    userTurmas.forEach(turma => {
-                        const option = document.createElement('option');
-                        option.value = turma.id;
-                        option.textContent = turma.nome;
-                        select.appendChild(option);
-                    });
-                    
-                    if (currentValue) select.value = currentValue;
-                }
+        // Update stats
+        function updateStats(planejamentos) {
+            const stats = {
+                total: planejamentos.length,
+                aprovados: 0,
+                ressalvas: 0,
+                pendentes: 0
+            };
+
+            planejamentos.forEach(p => {
+                if (p.devolutiva_status === 'realizado') stats.aprovados++;
+                else if (p.devolutiva_status === 'ressalvas') stats.ressalvas++;
+                else stats.pendentes++;
             });
+
+            document.getElementById('totalSemanarios').textContent = stats.total;
+            document.getElementById('semanarios-aprovados').textContent = stats.aprovados;
+            document.getElementById('semanarios-ressalvas').textContent = stats.ressalvas;
+            document.getElementById('semanarios-pendentes').textContent = stats.pendentes;
         }
 
-        // Modal functions
-        function openTurmaModal() {
-            document.getElementById('turmaModal').classList.remove('hidden');
-        }
-
-        function closeTurmaModal() {
-            document.getElementById('turmaModal').classList.add('hidden');
-            document.getElementById('turmaForm').reset();
-        }
-
-        function openHorarioModal() {
-            document.getElementById('horarioModal').classList.remove('hidden');
-        }
-
-        function closeHorarioModal() {
-            document.getElementById('horarioModal').classList.add('hidden');
-            document.getElementById('horarioForm').reset();
-        }
-
-        function openPlanejamentoModal() {
-            document.getElementById('planejamentoModal').classList.remove('hidden');
-        }
-
-        function closePlanejamentoModal() {
-            document.getElementById('planejamentoModal').classList.add('hidden');
-            document.getElementById('planejamentoForm').reset();
-        }
-
-        // Form handlers
-        document.getElementById('turmaForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const formData = {
-                professor_id: currentUser.id,
-                ano: parseInt(document.getElementById('turmaAno').value),
-                materia: document.getElementById('turmaMateria').value,
-                nome: document.getElementById('turmaNome').value
-            };
-
+        // Load notifications
+        async function loadNotifications() {
             try {
-                const { error } = await supabase
-                    .from('turmas')
-                    .insert([formData]);
-
-                if (error) throw error;
-
-                closeTurmaModal();
-                await loadTurmas();
-                updateDashboardStats();
-
-            } catch (error) {
-                console.error('Erro ao criar turma:', error);
-                alert('Erro ao criar turma. Tente novamente.');
-            }
-        });
-
-        document.getElementById('horarioForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const formData = {
-                professor_id: currentUser.id,
-                turma_id: parseInt(document.getElementById('horarioTurma').value),
-                dia_semana: document.getElementById('horarioDia').value,
-                horario: document.getElementById('horarioHora').value
-            };
-
-            try {
-                const { error } = await supabase
-                    .from('horarios')
-                    .insert([formData]);
-
-                if (error) throw error;
-
-                closeHorarioModal();
-                await loadHorarios();
-                generateScheduleGrid();
-
-            } catch (error) {
-                console.error('Erro ao criar horário:', error);
-                alert('Erro ao criar horário. Tente novamente.');
-            }
-        });
-
-        document.getElementById('planejamentoForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const selectedSkills = Array.from(document.querySelectorAll('.bncc-skill.selected'))
-                .map(skill => skill.textContent);
-
-            const formData = {
-                professor_id: currentUser.id,
-                turma_id: parseInt(document.getElementById('planejamentoTurma').value),
-                semana: document.getElementById('planejamentoSemana').value,
-                tema: document.getElementById('planejamentoTema').value,
-                habilidades_bncc: selectedSkills,
-                objetivos: document.getElementById('planejamentoObjetivos').value,
-                conteudo: document.getElementById('planejamentoConteudo').value,
-                metodologia: document.getElementById('planejamentoMetodologia').value,
-                recursos: document.getElementById('planejamentoRecursos').value,
-                avaliacao: document.getElementById('planejamentoAvaliacao').value
-            };
-
-            try {
-                const { error } = await supabase
+                const { data: notifications, error } = await supabase
                     .from('planejamentos')
-                    .insert([formData]);
-
-                if (error) throw error;
-
-                closePlanejamentoModal();
-                await loadPlanejamentos();
-                updateDashboardStats();
-
-            } catch (error) {
-                console.error('Erro ao criar planejamento:', error);
-                alert('Erro ao criar planejamento. Tente novamente.');
-            }
-        });
-
-        // BNCC Skills
-        function loadBNCCSkills() {
-            const turmaId = document.getElementById('planejamentoTurma').value;
-            const turma = userTurmas.find(t => t.id == turmaId);
-            
-            if (!turma) {
-                document.getElementById('bnccSkillsContainer').innerHTML = 
-                    '<p class="text-gray-500 text-center">Selecione uma turma para carregar as habilidades</p>';
-                return;
-            }
-
-            const skills = bnccSkills[turma.materia]?.[turma.ano] || [];
-            
-            if (skills.length === 0) {
-                document.getElementById('bnccSkillsContainer').innerHTML = 
-                    '<p class="text-gray-500 text-center">Nenhuma habilidade encontrada para esta turma</p>';
-                return;
-            }
-
-            document.getElementById('bnccSkillsContainer').innerHTML = skills.map(skill => `
-                <div class="bncc-skill p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-blue-50 transition-colors mb-2" onclick="toggleSkill(this)">
-                    <div class="text-sm font-medium text-gray-800">${skill}</div>
-                </div>
-            `).join('');
-        }
-
-        function toggleSkill(element) {
-            element.classList.toggle('selected');
-        }
-
-        // Horários
-        async function loadHorarios() {
-            try {
-                const { data, error } = await supabase
-                    .from('horarios')
                     .select(`
-                        *,
-                        turmas (nome, materia)
+                        id,
+                        tema,
+                        semana,
+                        devolutiva_status,
+                        devolutiva_data,
+                        devolutiva_comentario,
+                        turmas (nome, ano)
                     `)
-                    .eq('professor_id', currentUser.id);
+                    .eq('professor_id', currentUser.id)
+                    .not('devolutiva_status', 'is', null)
+                    .order('devolutiva_data', { ascending: false })
+                    .limit(10);
 
                 if (error) throw error;
 
-                userHorarios = data || [];
-
-            } catch (error) {
-                console.error('Erro ao carregar horários:', error);
-            }
-        }
-
-        function generateScheduleGrid() {
-            const grid = document.getElementById('scheduleGrid');
-            const dias = ['segunda', 'terca', 'quarta', 'quinta', 'sexta'];
-            const horarios = ['07:00', '08:00', '09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00', '17:00'];
-
-            let html = `
-                <div class="schedule-header schedule-cell"></div>
-                ${dias.map(dia => `<div class="schedule-header schedule-cell text-center py-3">${getDiaName(dia)}</div>`).join('')}
-            `;
-
-            horarios.forEach(horario => {
-                html += `<div class="schedule-time schedule-cell">${horario}</div>`;
+                // Count unread notifications (last 7 days)
+                const sevenDaysAgo = new Date();
+                sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
                 
-                dias.forEach(dia => {
-                    const aula = userHorarios.find(h => h.dia_semana === dia && h.horario === horario);
-                    
-                    if (aula) {
-                        html += `
-                            <div class="schedule-slot schedule-cell">
-                                <div class="schedule-class">
-                                    <div class="font-semibold">${aula.turmas.nome}</div>
-                                    <div class="text-xs opacity-75">${getMateriaName(aula.turmas.materia)}</div>
-                                </div>
-                            </div>
-                        `;
-                    } else {
-                        html += `<div class="schedule-slot schedule-cell" onclick="addQuickClass('${dia}', '${horario}')"></div>`;
-                    }
-                });
-            });
+                const unreadCount = notifications.filter(n => 
+                    new Date(n.devolutiva_data) > sevenDaysAgo
+                ).length;
 
-            grid.innerHTML = html;
-        }
-
-        function getDiaName(dia) {
-            const nomes = {
-                'segunda': 'Segunda',
-                'terca': 'Terça',
-                'quarta': 'Quarta',
-                'quinta': 'Quinta',
-                'sexta': 'Sexta'
-            };
-            return nomes[dia];
-        }
-
-        function addQuickClass(dia, horario) {
-            document.getElementById('horarioDia').value = dia;
-            document.getElementById('horarioHora').value = horario;
-            openHorarioModal();
-        }
-
-        // Planejamentos
-        async function loadPlanejamentos() {
-            const semana = document.getElementById('weekSelector').value;
-            const turmaId = document.getElementById('turmaFilter').value;
-            
-            try {
-                let query = supabase
-                    .from('planejamentos')
-                    .select(`
-                        *,
-                        turmas (nome, materia, ano)
-                    `)
-                    .eq('professor_id', currentUser.id);
-
-                if (semana) query = query.eq('semana', semana);
-                if (turmaId) query = query.eq('turma_id', turmaId);
-
-                const { data, error } = await query.order('created_at', { ascending: false });
-
-                if (error) throw error;
-
-                renderPlanejamentos(data || []);
+                updateNotificationBadge(unreadCount);
+                renderNotifications(notifications);
 
             } catch (error) {
-                console.error('Erro ao carregar planejamentos:', error);
+                console.error('Erro ao carregar notificações:', error);
             }
         }
 
-        function renderPlanejamentos(planejamentos) {
-            const grid = document.getElementById('planejamentosGrid');
-            
-            if (planejamentos.length === 0) {
-                grid.innerHTML = `
-                    <div class="text-center py-12">
-                        <i class="fas fa-calendar-alt text-4xl text-gray-300 mb-4"></i>
-                        <h3 class="text-lg font-medium text-gray-500 mb-2">Nenhum planejamento encontrado</h3>
-                        <p class="text-gray-400 mb-4">Crie seu primeiro planejamento semanal</p>
-                        <button onclick="openPlanejamentoModal()" class="gradient-bg text-white px-6 py-2 rounded-lg hover:opacity-90 transition-all">
-                            <i class="fas fa-plus mr-2"></i>
-                            Criar Planejamento
-                        </button>
+        // Update notification badge
+        function updateNotificationBadge(count) {
+            const badge = document.getElementById('notificationBadge');
+            if (count > 0) {
+                badge.textContent = count > 9 ? '9+' : count;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
+
+        // Render notifications
+        function renderNotifications(notifications) {
+            const container = document.getElementById('notificationsList');
+            container.innerHTML = '';
+
+            if (notifications.length === 0) {
+                container.innerHTML = `
+                    <div class="p-4 text-center text-gray-500">
+                        <i class="fas fa-bell-slash text-2xl mb-2"></i>
+                        <p>Nenhuma devolutiva recente</p>
                     </div>
                 `;
                 return;
             }
 
-            grid.innerHTML = planejamentos.map(plano => `
-                <div class="bg-white rounded-xl shadow-sm p-6 card-hover">
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="flex items-center">
-                            <div class="w-12 h-12 gradient-bg rounded-lg flex items-center justify-center mr-4">
-                                <i class="fas fa-calendar-week text-white"></i>
-                            </div>
-                            <div>
-                                <h3 class="text-lg font-semibold text-gray-800">${plano.tema}</h3>
-                                <p class="text-sm text-gray-600">${plano.turmas.nome} - Semana ${plano.semana}</p>
-                            </div>
+            notifications.forEach(notification => {
+                const statusInfo = getStatusInfo(notification.devolutiva_status);
+                const date = new Date(notification.devolutiva_data).toLocaleDateString('pt-BR');
+                
+                const div = document.createElement('div');
+                div.className = 'p-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors';
+                div.onclick = () => {
+                    viewDevolutiva(notification.id);
+                    toggleNotifications();
+                };
+                
+                div.innerHTML = `
+                    <div class="flex items-start space-x-3">
+                        <div class="flex-shrink-0 mt-1">
+                            <i class="fas fa-comment-dots text-indigo-500"></i>
                         </div>
-                        <div class="flex space-x-2">
-                            <button onclick="viewPlanejamento(${plano.id})" class="text-blue-600 hover:text-blue-800">
-                                <i class="fas fa-eye"></i>
-                            </button>
-                            <button onclick="editPlanejamento(${plano.id})" class="text-green-600 hover:text-green-800">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button onclick="deletePlanejamento(${plano.id})" class="text-red-600 hover:text-red-800">
-                                <i class="fas fa-trash"></i>
-                            </button>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-medium text-gray-900 truncate">
+                                ${notification.turmas?.nome} - Semana ${notification.semana}
+                            </p>
+                            <p class="text-sm text-gray-600 truncate">
+                                ${notification.tema}
+                            </p>
+                            <div class="mt-1">
+                                ${statusInfo.html}
+                            </div>
+                            <p class="text-xs text-gray-500 mt-1">${date}</p>
                         </div>
                     </div>
-                    
-                    <div class="space-y-2 text-sm">
-                        <div><strong>Objetivos:</strong> ${plano.objetivos?.substring(0, 100)}${plano.objetivos?.length > 100 ? '...' : ''}</div>
-                        <div><strong>Habilidades BNCC:</strong> ${plano.habilidades_bncc?.length || 0} selecionadas</div>
-                    </div>
-                </div>
-            `).join('');
+                `;
+                container.appendChild(div);
+            });
         }
 
-        // IA Configuration
-        async function loadGeminiConfig() {
+        // Toggle notifications dropdown
+        function toggleNotifications() {
+            const dropdown = document.getElementById('notificationsDropdown');
+            dropdown.classList.toggle('hidden');
+        }
+
+        // Mark all notifications as read
+        function markAllAsRead() {
+            updateNotificationBadge(0);
+            toggleNotifications();
+            showToast('Notificações marcadas como lidas', 'success');
+        }
+
+        // View devolutiva
+        async function viewDevolutiva(planejamentoId) {
             try {
-                const { data, error } = await supabase
-                    .from('user_configs')
-                    .select('gemini_api_key')
-                    .eq('user_id', currentUser.id)
+                const { data: planejamento, error } = await supabase
+                    .from('planejamentos')
+                    .select(`
+                        *,
+                        turmas (nome, ano, materia)
+                    `)
+                    .eq('id', planejamentoId)
                     .single();
 
-                if (data && data.gemini_api_key) {
-                    geminiApiKey = data.gemini_api_key;
-                    document.getElementById('geminiApiKey').value = '••••••••••••••••';
-                    updateIAStatus(true);
+                if (error) throw error;
+
+                currentPlanejamento = planejamento;
+
+                // Fill modal data
+                document.getElementById('devolutivaTurma').textContent = `${planejamento.turmas?.nome} - ${planejamento.turmas?.ano}º ano`;
+                document.getElementById('devolutivaSemana').textContent = `Semana ${planejamento.semana}`;
+                document.getElementById('devolutivaTema').textContent = planejamento.tema;
+                
+                const devolutivaData = new Date(planejamento.devolutiva_data).toLocaleString('pt-BR');
+                document.getElementById('devolutivaData').textContent = devolutivaData;
+
+                // Set status
+                const statusInfo = getStatusInfo(planejamento.devolutiva_status);
+                document.getElementById('devolutivaStatus').innerHTML = statusInfo.html;
+
+                // Set comment
+                const comentarioSection = document.getElementById('devolutivaComentarioSection');
+                const comentario = document.getElementById('devolutivaComentario');
+                
+                if (planejamento.devolutiva_comentario) {
+                    comentario.textContent = planejamento.devolutiva_comentario;
+                    comentarioSection.classList.remove('hidden');
                 } else {
-                    updateIAStatus(false);
+                    comentarioSection.classList.add('hidden');
                 }
 
-            } catch (error) {
-                console.error('Erro ao carregar config da IA:', error);
-                updateIAStatus(false);
-            }
-        }
-
-        function updateIAStatus(configured) {
-            const statusDisplay = document.getElementById('iaStatusDisplay');
-            const dashboardStatus = document.getElementById('iaStatus');
-            
-            if (configured) {
-                statusDisplay.innerHTML = `
-                    <div class="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-                    <span class="text-green-600">IA configurada e pronta</span>
-                `;
-                dashboardStatus.textContent = 'Ativa';
-                dashboardStatus.className = 'text-2xl font-bold text-green-600';
-            } else {
-                statusDisplay.innerHTML = `
-                    <div class="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
-                    <span class="text-gray-600">IA não configurada</span>
-                `;
-                dashboardStatus.textContent = 'Inativa';
-                dashboardStatus.className = 'text-2xl font-bold text-red-600';
-            }
-        }
-
-        async function testGeminiConnection() {
-            const apiKey = document.getElementById('geminiApiKey').value;
-            const resultDiv = document.getElementById('apiTestResult');
-            
-            if (!apiKey || apiKey === '••••••••••••••••') {
-                resultDiv.innerHTML = '<span class="text-red-600">Por favor, insira uma chave API válida</span>';
-                return;
-            }
-
-            resultDiv.innerHTML = '<span class="text-blue-600">Testando conexão...</span>';
-
-            try {
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        contents: [{
-                            parts: [{
-                                text: "Responda apenas 'OK' se você conseguir me ouvir."
-                            }]
-                        }]
-                    })
-                });
-
-                if (response.ok) {
-                    resultDiv.innerHTML = '<span class="text-green-600"><i class="fas fa-check mr-1"></i>Conexão bem-sucedida!</span>';
-                } else {
-                    resultDiv.innerHTML = '<span class="text-red-600"><i class="fas fa-times mr-1"></i>Chave API inválida</span>';
-                }
+                document.getElementById('devolutivaModal').classList.remove('hidden');
 
             } catch (error) {
-                resultDiv.innerHTML = '<span class="text-red-600"><i class="fas fa-times mr-1"></i>Erro na conexão</span>';
+                console.error('Erro ao carregar devolutiva:', error);
+                showToast('Erro ao carregar devolutiva', 'error');
             }
         }
 
-        async function saveGeminiConfig() {
-            const apiKey = document.getElementById('geminiApiKey').value;
-            
-            if (!apiKey || apiKey === '••••••••••••••••') {
-                alert('Por favor, insira uma chave API válida');
-                return;
+        // Close devolutiva modal
+        function closeDevolutivaModal() {
+            document.getElementById('devolutivaModal').classList.add('hidden');
+            currentPlanejamento = null;
+        }
+
+        // Edit semanario from devolutiva modal
+        function editarSemanario() {
+            if (currentPlanejamento) {
+                editPlanejamento(currentPlanejamento.id);
+                closeDevolutivaModal();
             }
+        }
+
+        // Open novo semanario modal
+        function openNovoSemanarioModal() {
+            document.getElementById('novoSemanarioModal').classList.remove('hidden');
+        }
+
+        // Close novo semanario modal
+        function closeNovoSemanarioModal() {
+            document.getElementById('novoSemanarioModal').classList.add('hidden');
+            document.getElementById('novoSemanarioForm').reset();
+        }
+
+        // Save novo semanario
+        document.getElementById('novoSemanarioForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData.entries());
+            
+            const btn = document.getElementById('salvarSemanarioBtn');
+            const btnText = document.getElementById('salvarSemanarioText');
+            const btnLoading = document.getElementById('salvarSemanarioLoading');
+
+            btn.disabled = true;
+            btnText.classList.add('hidden');
+            btnLoading.classList.remove('hidden');
 
             try {
                 const { error } = await supabase
-                    .from('user_configs')
-                    .upsert([{
-                        user_id: currentUser.id,
-                        gemini_api_key: apiKey
-                    }]);
+                    .from('planejamentos')
+                    .insert({
+                        professor_id: currentUser.id,
+                        school_id: currentSchoolId,
+                        turma_id: data.turma,
+                        semana: data.semana,
+                        tema: data.tema,
+                        objetivos: data.objetivos,
+                        conteudos: data.conteudos,
+                        metodologia: data.metodologia,
+                        recursos: data.recursos || null,
+                        avaliacao: data.avaliacao,
+                        observacoes: data.observacoes || null
+                    });
 
                 if (error) throw error;
 
-                geminiApiKey = apiKey;
-                updateIAStatus(true);
-                alert('Configuração salva com sucesso!');
+                showToast('Semanário criado com sucesso!', 'success');
+                closeNovoSemanarioModal();
+                await loadPlanejamentos();
 
             } catch (error) {
-                console.error('Erro ao salvar config:', error);
-                alert('Erro ao salvar configuração. Tente novamente.');
+                console.error('Erro ao criar semanário:', error);
+                showToast('Erro ao criar semanário', 'error');
+            } finally {
+                btn.disabled = false;
+                btnText.classList.remove('hidden');
+                btnLoading.classList.add('hidden');
             }
+        });
+
+        // Edit planejamento (placeholder)
+        function editPlanejamento(id) {
+            showToast('Funcionalidade de edição em desenvolvimento', 'info');
         }
 
-        // AI Generation
-        async function generateWithAI() {
-            if (!geminiApiKey) {
-                alert('Configure sua chave API do Gemini primeiro na seção "Configurar IA"');
-                return;
-            }
-
-            const turmaId = document.getElementById('planejamentoTurma').value;
-            const tema = document.getElementById('planejamentoTema').value;
-            
-            if (!turmaId || !tema) {
-                alert('Selecione uma turma e defina um tema antes de gerar com IA');
-                return;
-            }
-
-            const turma = userTurmas.find(t => t.id == turmaId);
-            const selectedSkills = Array.from(document.querySelectorAll('.bncc-skill.selected'))
-                .map(skill => skill.textContent);
-
-            if (selectedSkills.length === 0) {
-                alert('Selecione pelo menos uma habilidade da BNCC');
-                return;
-            }
-
-            // Show loading
-            const button = event.target;
-            const originalText = button.innerHTML;
-            button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Gerando...';
-            button.disabled = true;
+        // Delete planejamento
+        async function deletePlanejamento(id) {
+            if (!confirm('Tem certeza que deseja excluir este semanário?')) return;
 
             try {
-                const prompt = `
-                    Crie um planejamento semanal detalhado para:
-                    - Turma: ${turma.nome} (${turma.ano}º ano)
-                    - Matéria: ${getMateriaName(turma.materia)}
-                    - Tema: ${tema}
-                    - Habilidades BNCC: ${selectedSkills.join(', ')}
-                    
-                    Forneça:
-                    1. Objetivos de aprendizagem específicos
-                    2. Conteúdo programático detalhado
-                    3. Metodologia de ensino adequada à idade
-                    4. Recursos necessários
-                    5. Formas de avaliação
-                    
-                    Seja específico e prático, considerando a faixa etária dos alunos.
-                `;
+                const { error } = await supabase
+                    .from('planejamentos')
+                    .delete()
+                    .eq('id', id);
 
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${geminiApiKey}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        contents: [{
-                            parts: [{
-                                text: prompt
-                            }]
-                        }]
-                    })
-                });
+                if (error) throw error;
 
-                if (!response.ok) {
-                    throw new Error('Erro na API do Gemini');
-                }
-
-                const data = await response.json();
-                const generatedText = data.candidates[0].content.parts[0].text;
-
-                // Parse the generated content (simple parsing)
-                const sections = generatedText.split(/\d+\.\s*/);
-                
-                if (sections.length >= 5) {
-                    document.getElementById('planejamentoObjetivos').value = sections[1] || '';
-                    document.getElementById('planejamentoConteudo').value = sections[2] || '';
-                    document.getElementById('planejamentoMetodologia').value = sections[3] || '';
-                    document.getElementById('planejamentoRecursos').value = sections[4] || '';
-                    document.getElementById('planejamentoAvaliacao').value = sections[5] || '';
-                } else {
-                    // If parsing fails, put everything in content
-                    document.getElementById('planejamentoConteudo').value = generatedText;
-                }
+                showToast('Semanário excluído com sucesso!', 'success');
+                await loadPlanejamentos();
 
             } catch (error) {
-                console.error('Erro na geração com IA:', error);
-                alert('Erro ao gerar planejamento com IA. Verifique sua configuração.');
-            } finally {
-                button.innerHTML = originalText;
-                button.disabled = false;
+                console.error('Erro ao excluir semanário:', error);
+                showToast('Erro ao excluir semanário', 'error');
             }
         }
 
-        // Dashboard stats
-        function updateDashboardStats() {
-            document.getElementById('totalTurmas').textContent = userTurmas.length;
-            
-            // Calculate weekly classes
-            const aulasSemanais = userHorarios.length;
-            document.getElementById('aulasSemanais').textContent = aulasSemanais;
+        // Setup event listeners
+        function setupEventListeners() {
+            // Filter changes
+            document.getElementById('turmaFilter').addEventListener('change', loadPlanejamentos);
+            document.getElementById('semanaFilter').addEventListener('change', loadPlanejamentos);
+            document.getElementById('statusFilter').addEventListener('change', loadPlanejamentos);
+
+            // Close modals on outside click
+            document.getElementById('novoSemanarioModal').addEventListener('click', function(e) {
+                if (e.target.id === 'novoSemanarioModal') {
+                    closeNovoSemanarioModal();
+                }
+            });
+
+            document.getElementById('devolutivaModal').addEventListener('click', function(e) {
+                if (e.target.id === 'devolutivaModal') {
+                    closeDevolutivaModal();
+                }
+            });
+
+            // Close notifications when clicking outside
+            document.addEventListener('click', function(e) {
+                const dropdown = document.getElementById('notificationsDropdown');
+                const button = document.getElementById('notificationBtn');
+                
+                if (!dropdown.contains(e.target) && !button.contains(e.target)) {
+                    dropdown.classList.add('hidden');
+                }
+            });
+        }
+
+        // Show toast notification
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            const icon = document.getElementById('toastIcon');
+            const messageEl = document.getElementById('toastMessage');
+
+            const icons = {
+                success: '<i class="fas fa-check-circle text-green-500"></i>',
+                error: '<i class="fas fa-exclamation-circle text-red-500"></i>',
+                info: '<i class="fas fa-info-circle text-blue-500"></i>'
+            };
+
+            icon.innerHTML = icons[type] || icons.info;
+            messageEl.textContent = message;
+
+            toast.classList.remove('translate-x-full');
+            setTimeout(() => {
+                toast.classList.add('translate-x-full');
+            }, 3000);
         }
 
         // Logout
         async function logout() {
-            try {
-                await supabase.auth.signOut();
-                window.location.href = './index.html';
-            } catch (error) {
-                console.error('Erro no logout:', error);
-            }
-        }
-
-        // Utility functions
-        async function deleteTurma(id) {
-            if (!confirm('Tem certeza que deseja excluir esta turma?')) return;
-
-            try {
-                const { error } = await supabase
-                    .from('turmas')
-                    .delete()
-                    .eq('id', id);
-
-                if (error) throw error;
-
-                await loadTurmas();
-                updateDashboardStats();
-
-            } catch (error) {
-                console.error('Erro ao excluir turma:', error);
-                alert('Erro ao excluir turma. Tente novamente.');
-            }
-        }
-
-        async function deletePlanejamento(id) {
-            if (!confirm('Tem certeza que deseja excluir este planejamento?')) return;
-
-            try {
-                const { error } = await supabase
-                    .from('planejamentos')
-                    .delete()
-                    .eq('id', id);
-
-                if (error) throw error;
-
-                await loadPlanejamentos();
-                updateDashboardStats();
-
-            } catch (error) {
-                console.error('Erro ao excluir planejamento:', error);
-                alert('Erro ao excluir planejamento. Tente novamente.');
-            }
-        }
-
-        function viewPlanejamento(id) {
-            // Implementation for viewing planejamento details
-            console.log('View planejamento:', id);
-        }
-
-        function editPlanejamento(id) {
-            // Implementation for editing planejamento
-            console.log('Edit planejamento:', id);
-        }
-
-        function editTurma(id) {
-            // Implementation for editing turma
-            console.log('Edit turma:', id);
+            await supabase.auth.signOut();
+            window.location.href = './index.html';
         }
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9811543a005ff1c5',t:'MTc1ODIwMzYwMS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98119af846b08776',t:'MTc1ODIwNjQ5OC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
+
 
 
 
