@@ -12,288 +12,152 @@
         .gradient-bg { background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); }
         .card-hover { transition: all 0.3s ease; }
         .card-hover:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
-        .fade-in { animation: fadeIn 0.6s ease-in; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
-    <!-- Loading Screen -->
-    <div id="loadingScreen" class="fixed inset-0 bg-white z-50 flex items-center justify-center">
-        <div class="text-center">
-            <div class="w-16 h-16 border-4 border-red-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p class="text-gray-600">Verificando acesso...</p>
+    <!-- Header -->
+    <header class="gradient-bg shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
+                            <i class="fas fa-crown text-red-600 text-xl"></i>
+                        </div>
+                        <div>
+                            <h1 class="text-xl font-bold text-white">Dashboard Admin</h1>
+                            <p class="text-red-100 text-sm">Sistema de Gestão Completa</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex items-center space-x-4">
+                    <div class="text-right">
+                        <p class="text-white font-medium">Administrador</p>
+                        <p class="text-red-100 text-sm">Sistema Master</p>
+                    </div>
+                    <button onclick="logout()" class="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-4 py-2 rounded-lg transition-all duration-200">
+                        <i class="fas fa-sign-out-alt mr-2"></i>
+                        Sair
+                    </button>
+                </div>
+            </div>
         </div>
-    </div>
+    </header>
 
     <!-- Main Content -->
-    <div id="mainContent" style="display: none;">
-        <!-- Header -->
-        <header class="gradient-bg shadow-lg">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex justify-between items-center py-4">
-                    <div class="flex items-center space-x-4">
-                        <div class="flex items-center space-x-3">
-                            <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
-                                <i class="fas fa-crown text-red-600 text-xl"></i>
-                            </div>
-                            <div>
-                                <h1 class="text-xl font-bold text-white">Dashboard Admin</h1>
-                                <p class="text-red-100 text-sm">Sistema de Gestão Completa</p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="flex items-center space-x-4">
-                        <div class="text-right">
-                            <p class="text-white font-medium">Administrador</p>
-                            <p class="text-red-100 text-sm">Sistema Master</p>
-                        </div>
-                        <button onclick="logout()" class="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-4 py-2 rounded-lg transition-all duration-200">
-                            <i class="fas fa-sign-out-alt mr-2"></i>
-                            Sair
-                        </button>
-                    </div>
-                </div>
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Welcome Card -->
+        <div class="bg-white rounded-xl shadow-sm p-8 mb-8 text-center">
+            <div class="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <i class="fas fa-crown text-red-600 text-3xl"></i>
             </div>
-        </header>
+            <h2 class="text-3xl font-bold text-gray-900 mb-4">Painel Administrativo</h2>
+            <p class="text-xl text-gray-600 mb-8">Gerencie o sistema e acesse as diferentes áreas</p>
+        </div>
 
-        <!-- Main Content -->
-        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <!-- Welcome Card -->
-            <div class="bg-white rounded-xl shadow-sm p-8 mb-8 fade-in text-center">
-                <div class="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <i class="fas fa-crown text-red-600 text-3xl"></i>
-                </div>
-                <h2 class="text-3xl font-bold text-gray-900 mb-4">Painel Administrativo</h2>
-                <p class="text-xl text-gray-600 mb-8">Gerencie o sistema e acesse as diferentes áreas</p>
-            </div>
-
-            <!-- Access Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-                <!-- Professor Access -->
-                <div class="bg-white rounded-xl shadow-lg p-8 card-hover fade-in border-l-4 border-green-500">
-                    <div class="text-center">
-                        <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <i class="fas fa-chalkboard-teacher text-green-600 text-2xl"></i>
-                        </div>
-                        <h3 class="text-xl font-bold text-gray-900 mb-3">Área do Professor</h3>
-                        <p class="text-gray-600 mb-6">Funcionalidades para criação de semanários e gestão de turmas</p>
-                        <button onclick="accessProfessor()" class="w-full bg-green-600 hover:bg-green-700 text-white py-3 px-6 rounded-lg font-medium transition-colors">
-                            <i class="fas fa-sign-in-alt mr-2"></i>
-                            Entrar como Professor
-                        </button>
+        <!-- Access Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+            <!-- Professor Access -->
+            <div class="bg-white rounded-xl shadow-lg p-8 card-hover border-l-4 border-green-500">
+                <div class="text-center">
+                    <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-chalkboard-teacher text-green-600 text-2xl"></i>
                     </div>
-                </div>
-
-                <!-- Coordenador Access -->
-                <div class="bg-white rounded-xl shadow-lg p-8 card-hover fade-in border-l-4 border-blue-500">
-                    <div class="text-center">
-                        <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <i class="fas fa-user-graduate text-blue-600 text-2xl"></i>
-                        </div>
-                        <h3 class="text-xl font-bold text-gray-900 mb-3">Área da Coordenação</h3>
-                        <p class="text-gray-600 mb-6">Gestão de professores e acompanhamento pedagógico</p>
-                        <button onclick="accessCoordenador()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-lg font-medium transition-colors">
-                            <i class="fas fa-sign-in-alt mr-2"></i>
-                            Entrar como Coordenador
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Diretor Access -->
-                <div class="bg-white rounded-xl shadow-lg p-8 card-hover fade-in border-l-4 border-purple-500">
-                    <div class="text-center">
-                        <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <i class="fas fa-user-tie text-purple-600 text-2xl"></i>
-                        </div>
-                        <h3 class="text-xl font-bold text-gray-900 mb-3">Área da Direção</h3>
-                        <p class="text-gray-600 mb-6">Visão geral da escola e comunicação com administração</p>
-                        <button onclick="accessDiretor()" class="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 px-6 rounded-lg font-medium transition-colors">
-                            <i class="fas fa-sign-in-alt mr-2"></i>
-                            Entrar como Diretor
-                        </button>
-                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3">Área do Professor</h3>
+                    <p class="text-gray-600 mb-6">Funcionalidades para criação de semanários e gestão de turmas</p>
+                    <button onclick="accessProfessor()" class="w-full bg-green-600 hover:bg-green-700 text-white py-3 px-6 rounded-lg font-medium transition-colors">
+                        <i class="fas fa-sign-in-alt mr-2"></i>
+                        Entrar como Professor
+                    </button>
                 </div>
             </div>
 
-            <!-- Admin Tools -->
-            <div class="bg-white rounded-xl shadow-sm p-8 fade-in">
-                <h3 class="text-2xl font-bold text-gray-900 mb-6 text-center">
-                    <i class="fas fa-tools mr-3 text-red-600"></i>
-                    Ferramentas Administrativas
-                </h3>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <!-- Gestão de Escolas -->
-                    <div class="bg-gradient-to-br from-red-500 to-red-600 rounded-lg p-6 text-white text-center card-hover">
-                        <i class="fas fa-school text-3xl mb-4"></i>
-                        <h4 class="font-bold text-lg mb-2">Gestão de Escolas</h4>
-                        <p class="text-red-100 text-sm mb-4">Cadastrar e gerenciar escolas do sistema</p>
-                        <button class="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-4 py-2 rounded-lg text-sm transition-colors">
-                            Em Desenvolvimento
-                        </button>
+            <!-- Coordenador Access -->
+            <div class="bg-white rounded-xl shadow-lg p-8 card-hover border-l-4 border-blue-500">
+                <div class="text-center">
+                    <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-user-graduate text-blue-600 text-2xl"></i>
                     </div>
-
-                    <!-- Gestão de Usuários -->
-                    <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-6 text-white text-center card-hover">
-                        <i class="fas fa-users text-3xl mb-4"></i>
-                        <h4 class="font-bold text-lg mb-2">Gestão de Usuários</h4>
-                        <p class="text-blue-100 text-sm mb-4">Cadastrar professores, coordenadores e diretores</p>
-                        <button class="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-4 py-2 rounded-lg text-sm transition-colors">
-                            Em Desenvolvimento
-                        </button>
-                    </div>
-
-                    <!-- Recados das Escolas -->
-                    <div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg p-6 text-white text-center card-hover">
-                        <i class="fas fa-envelope text-3xl mb-4"></i>
-                        <h4 class="font-bold text-lg mb-2">Recados das Escolas</h4>
-                        <p class="text-purple-100 text-sm mb-4">Visualizar solicitações das diretorias</p>
-                        <button class="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-4 py-2 rounded-lg text-sm transition-colors">
-                            Em Desenvolvimento
-                        </button>
-                    </div>
-
-                    <!-- Controle de Vencimentos -->
-                    <div class="bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-lg p-6 text-white text-center card-hover">
-                        <i class="fas fa-calendar-times text-3xl mb-4"></i>
-                        <h4 class="font-bold text-lg mb-2">Vencimentos</h4>
-                        <p class="text-yellow-100 text-sm mb-4">Controlar vencimentos de escolas e usuários</p>
-                        <button class="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-4 py-2 rounded-lg text-sm transition-colors">
-                            Em Desenvolvimento
-                        </button>
-                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3">Área da Coordenação</h3>
+                    <p class="text-gray-600 mb-6">Gestão de professores e acompanhamento pedagógico</p>
+                    <button onclick="accessCoordenador()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-lg font-medium transition-colors">
+                        <i class="fas fa-sign-in-alt mr-2"></i>
+                        Entrar como Coordenador
+                    </button>
                 </div>
             </div>
 
-            <!-- Info Card -->
-            <div class="mt-8 bg-blue-50 border border-blue-200 rounded-xl p-6 fade-in">
-                <div class="flex items-center">
-                    <i class="fas fa-info-circle text-blue-600 text-2xl mr-4"></i>
-                    <div>
-                        <h4 class="text-lg font-semibold text-blue-900 mb-2">Sistema em Desenvolvimento</h4>
-                        <p class="text-blue-800">
-                            Este é o painel administrativo do Sistema Semanário. As diferentes áreas (Professor, Coordenação, Direção) 
-                            e as ferramentas administrativas completas serão implementadas nas próximas versões.
-                        </p>
+            <!-- Diretor Access -->
+            <div class="bg-white rounded-xl shadow-lg p-8 card-hover border-l-4 border-purple-500">
+                <div class="text-center">
+                    <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-user-tie text-purple-600 text-2xl"></i>
                     </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3">Área da Direção</h3>
+                    <p class="text-gray-600 mb-6">Visão geral da escola e comunicação com administração</p>
+                    <button onclick="accessDiretor()" class="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 px-6 rounded-lg font-medium transition-colors">
+                        <i class="fas fa-sign-in-alt mr-2"></i>
+                        Entrar como Diretor
+                    </button>
                 </div>
-            </div>
-        </main>
-    </div>
-
-    <!-- Toast Notification -->
-    <div id="toast" class="fixed top-4 right-4 bg-white border border-gray-200 rounded-lg shadow-lg p-4 transform translate-x-full transition-transform duration-300 z-50">
-        <div class="flex items-center">
-            <div id="toastIcon" class="mr-3"></div>
-            <div>
-                <p id="toastMessage" class="font-medium text-gray-900"></p>
             </div>
         </div>
-    </div>
+
+        <!-- Admin Tools -->
+        <div class="bg-white rounded-xl shadow-sm p-8">
+            <h3 class="text-2xl font-bold text-gray-900 mb-6 text-center">
+                <i class="fas fa-tools mr-3 text-red-600"></i>
+                Ferramentas Administrativas
+            </h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Gestão de Escolas -->
+                <div class="bg-gradient-to-br from-red-500 to-red-600 rounded-lg p-6 text-white text-center card-hover">
+                    <i class="fas fa-school text-3xl mb-4"></i>
+                    <h4 class="font-bold text-lg mb-2">Gestão de Escolas</h4>
+                    <p class="text-red-100 text-sm mb-4">Cadastrar e gerenciar escolas do sistema</p>
+                    <button class="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-4 py-2 rounded-lg text-sm transition-colors">
+                        Em Desenvolvimento
+                    </button>
+                </div>
+
+                <!-- Gestão de Usuários -->
+                <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-6 text-white text-center card-hover">
+                    <i class="fas fa-users text-3xl mb-4"></i>
+                    <h4 class="font-bold text-lg mb-2">Gestão de Usuários</h4>
+                    <p class="text-blue-100 text-sm mb-4">Cadastrar professores, coordenadores e diretores</p>
+                    <button class="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-4 py-2 rounded-lg text-sm transition-colors">
+                        Em Desenvolvimento
+                    </button>
+                </div>
+
+                <!-- Recados das Escolas -->
+                <div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg p-6 text-white text-center card-hover">
+                    <i class="fas fa-envelope text-3xl mb-4"></i>
+                    <h4 class="font-bold text-lg mb-2">Recados das Escolas</h4>
+                    <p class="text-purple-100 text-sm mb-4">Visualizar solicitações das diretorias</p>
+                    <button class="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-4 py-2 rounded-lg text-sm transition-colors">
+                        Em Desenvolvimento
+                    </button>
+                </div>
+
+                <!-- Controle de Vencimentos -->
+                <div class="bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-lg p-6 text-white text-center card-hover">
+                    <i class="fas fa-calendar-times text-3xl mb-4"></i>
+                    <h4 class="font-bold text-lg mb-2">Vencimentos</h4>
+                    <p class="text-yellow-100 text-sm mb-4">Controlar vencimentos de escolas e usuários</p>
+                    <button class="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-4 py-2 rounded-lg text-sm transition-colors">
+                        Em Desenvolvimento
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
 
     <script>
-        console.log('=== ADMIN PAGE LOADED ===');
-        
-        // Prevent multiple redirects
-        let isRedirecting = false;
-        let authChecked = false;
-
-        // Initialize
-        document.addEventListener('DOMContentLoaded', () => {
-            console.log('DOM loaded - iniciando verificação');
-            showLoading();
-            
-            // Verificação mais direta
-            setTimeout(() => {
-                if (!authChecked) {
-                    checkAuth();
-                }
-            }, 1000);
-        });
-
-        // Show loading screen
-        function showLoading() {
-            console.log('Mostrando tela de loading');
-            const loading = document.getElementById('loadingScreen');
-            const main = document.getElementById('mainContent');
-            
-            if (loading) loading.style.display = 'flex';
-            if (main) main.style.display = 'none';
-        }
-
-        // Hide loading screen
-        function hideLoading() {
-            console.log('Escondendo tela de loading');
-            const loading = document.getElementById('loadingScreen');
-            const main = document.getElementById('mainContent');
-            
-            if (loading) loading.style.display = 'none';
-            if (main) main.style.display = 'block';
-        }
-
-        // Check authentication
-        function checkAuth() {
-            console.log('=== INICIANDO CHECK AUTH ===');
-            
-            if (isRedirecting || authChecked) {
-                console.log('Já verificado ou redirecionando');
-                return;
-            }
-            
-            authChecked = true;
-
-            try {
-                const userSession = sessionStorage.getItem('currentUser');
-                console.log('Sessão encontrada:', userSession);
-
-                if (!userSession) {
-                    console.log('❌ Nenhuma sessão - redirecionando');
-                    redirectToLogin();
-                    return;
-                }
-
-                const currentUser = JSON.parse(userSession);
-                console.log('👤 Dados do usuário:', currentUser);
-                console.log('🔑 Tipo de usuário:', currentUser.user_type);
-                
-                // Verify user type
-                if (currentUser.user_type !== 'admin') {
-                    console.log('❌ Não é admin - redirecionando');
-                    alert('Acesso negado. Esta área é apenas para administradores.');
-                    redirectToLogin();
-                    return;
-                }
-
-                console.log('✅ Admin autorizado - mostrando página');
-                hideLoading();
-                
-            } catch (error) {
-                console.error('💥 Erro na verificação:', error);
-                redirectToLogin();
-            }
-        }
-
-        // Redirect to login (prevent multiple calls)
-        function redirectToLogin() {
-            if (isRedirecting) {
-                console.log('Já está redirecionando...');
-                return;
-            }
-            
-            isRedirecting = true;
-            console.log('🔄 Iniciando redirecionamento para login...');
-            
-            setTimeout(() => {
-                console.log('➡️ Redirecionando agora...');
-                window.location.href = 'index.html';
-            }, 2000);
-        }
-
-        // Access functions - Create temporary sessions for each user type
+        // Funções simples sem verificação de autenticação
         function accessProfessor() {
-            if (isRedirecting) return;
-            
             const tempUser = {
                 id: 'admin-temp-professor',
                 name: 'Admin como Professor',
@@ -304,17 +168,11 @@
             };
             
             sessionStorage.setItem('currentUser', JSON.stringify(tempUser));
-            showToast('Acessando como Professor...', 'info');
-            
-            isRedirecting = true;
-            setTimeout(() => {
-                window.location.href = 'dashboard.html';
-            }, 1000);
+            alert('Redirecionando para área do Professor...');
+            window.location.href = 'dashboard.html';
         }
 
         function accessCoordenador() {
-            if (isRedirecting) return;
-            
             const tempUser = {
                 id: 'admin-temp-coordenador',
                 name: 'Admin como Coordenador',
@@ -325,17 +183,11 @@
             };
             
             sessionStorage.setItem('currentUser', JSON.stringify(tempUser));
-            showToast('Acessando como Coordenador...', 'info');
-            
-            isRedirecting = true;
-            setTimeout(() => {
-                window.location.href = 'coordenacao.html';
-            }, 1000);
+            alert('Redirecionando para área da Coordenação...');
+            window.location.href = 'coordenacao.html';
         }
 
         function accessDiretor() {
-            if (isRedirecting) return;
-            
             const tempUser = {
                 id: 'admin-temp-diretor',
                 name: 'Admin como Diretor',
@@ -346,51 +198,20 @@
             };
             
             sessionStorage.setItem('currentUser', JSON.stringify(tempUser));
-            showToast('Acessando como Diretor...', 'info');
-            
-            isRedirecting = true;
-            setTimeout(() => {
-                window.location.href = 'direcao.html';
-            }, 1000);
+            alert('Redirecionando para área da Direção...');
+            window.location.href = 'direcao.html';
         }
 
-        // Logout
         function logout() {
-            if (isRedirecting) return;
-            
             if (confirm('Tem certeza que deseja sair?')) {
-                sessionStorage.removeItem('currentUser');
-                sessionStorage.removeItem('adminSession');
-                isRedirecting = true;
+                sessionStorage.clear();
                 window.location.href = 'index.html';
             }
         }
-
-        // Show toast notification
-        function showToast(message, type = 'info') {
-            const toast = document.getElementById('toast');
-            const icon = document.getElementById('toastIcon');
-            const messageEl = document.getElementById('toastMessage');
-
-            const icons = {
-                'success': '<i class="fas fa-check-circle text-green-500 text-xl"></i>',
-                'error': '<i class="fas fa-times-circle text-red-500 text-xl"></i>',
-                'warning': '<i class="fas fa-exclamation-triangle text-yellow-500 text-xl"></i>',
-                'info': '<i class="fas fa-info-circle text-blue-500 text-xl"></i>'
-            };
-
-            icon.innerHTML = icons[type] || icons.info;
-            messageEl.textContent = message;
-
-            toast.classList.remove('translate-x-full');
-            
-            setTimeout(() => {
-                toast.classList.add('translate-x-full');
-            }, 4000);
-        }
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98126aadd5eba67d',t:'MTc1ODIxNTAwNi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98127fd9d224f1cd',t:'MTc1ODIxNTg3My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
+
 
 
 
