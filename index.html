@@ -80,32 +80,44 @@
                 <!-- Profile Selector -->
                 <div class="bg-white/10 backdrop-blur-sm rounded-xl p-6 mb-6">
                     <h3 class="text-xl font-semibold mb-4">Escolha seu Perfil de Acesso</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="space-y-3">
                         <!-- Professor Profile -->
                         <div class="profile-card bg-white/20 backdrop-blur-sm rounded-lg p-4 cursor-pointer hover:bg-white/30 transition-all border-2 border-transparent hover:border-white/50" onclick="selectProfile('professor')">
-                            <div class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
-                                <i class="fas fa-chalkboard-teacher text-white text-2xl"></i>
+                            <div class="flex items-center">
+                                <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mr-4">
+                                    <i class="fas fa-chalkboard-teacher text-white text-lg"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <h4 class="font-bold text-white text-base mb-1">Professor</h4>
+                                    <p class="text-white/80 text-sm">Criar planos de aula e receber feedback</p>
+                                </div>
                             </div>
-                            <h4 class="font-bold text-white mb-2">Professor</h4>
-                            <p class="text-white/80 text-sm">Criar planos de aula e receber feedback</p>
                         </div>
                         
                         <!-- Coordination Profile -->
                         <div class="profile-card bg-white/20 backdrop-blur-sm rounded-lg p-4 cursor-pointer hover:bg-white/30 transition-all border-2 border-transparent hover:border-white/50" onclick="selectProfile('coordenacao')">
-                            <div class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
-                                <i class="fas fa-users text-white text-2xl"></i>
+                            <div class="flex items-center">
+                                <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mr-4">
+                                    <i class="fas fa-users text-white text-lg"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <h4 class="font-bold text-white text-base mb-1">Coordenação</h4>
+                                    <p class="text-white/80 text-sm">Acompanhar e orientar professores</p>
+                                </div>
                             </div>
-                            <h4 class="font-bold text-white mb-2">Coordenação</h4>
-                            <p class="text-white/80 text-sm">Acompanhar e dar feedback aos professores</p>
                         </div>
                         
                         <!-- Direction Profile -->
                         <div class="profile-card bg-white/20 backdrop-blur-sm rounded-lg p-4 cursor-pointer hover:bg-white/30 transition-all border-2 border-transparent hover:border-white/50" onclick="selectProfile('direcao')">
-                            <div class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
-                                <i class="fas fa-building text-white text-2xl"></i>
+                            <div class="flex items-center">
+                                <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mr-4">
+                                    <i class="fas fa-building text-white text-lg"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <h4 class="font-bold text-white text-base mb-1">Direção</h4>
+                                    <p class="text-white/80 text-sm">Relatórios executivos e gestão</p>
+                                </div>
                             </div>
-                            <h4 class="font-bold text-white mb-2">Direção</h4>
-                            <p class="text-white/80 text-sm">Visão geral e relatórios executivos</p>
                         </div>
                     </div>
                     
@@ -661,27 +673,37 @@
             }
         }
 
-        // Redirect to profile dashboard
+        // Redirect to profile dashboard - ESTRUTURA CORRETA DOS ARQUIVOS
         function redirectToProfileDashboard(profileType) {
             debugLog('🚀 Redirecionando para dashboard: ' + profileType);
             
-            switch (profileType) {
+            // Save selected profile for dashboard to use
+            localStorage.setItem('userProfile', profileType);
+            localStorage.setItem('selectedProfile', profileType);
+            
+            debugLog('💾 Perfil salvo no localStorage: ' + profileType);
+            
+            // Redirect based on profile type
+            let redirectUrl;
+            switch(profileType) {
                 case 'professor':
-                    debugLog('👨‍🏫 Redirecionando para dashboard de professor');
-                    window.location.href = './dashboard-professor.html';
+                    redirectUrl = './dashboard.html';
+                    debugLog('🏠 Redirecionando para dashboard.html (Professor)');
                     break;
                 case 'coordenacao':
-                    debugLog('📋 Redirecionando para dashboard de coordenação');
-                    window.location.href = './dashboard-coordenacao.html';
+                    redirectUrl = './coordenacao.html';
+                    debugLog('🏠 Redirecionando para coordenacao.html (Coordenação)');
                     break;
                 case 'direcao':
-                    debugLog('🏢 Redirecionando para dashboard de direção');
-                    window.location.href = './dashboard-direcao.html';
+                    redirectUrl = './direcao.html';
+                    debugLog('🏠 Redirecionando para direcao.html (Direção)');
                     break;
                 default:
-                    debugLog('🔄 Perfil não reconhecido, usando dashboard padrão');
-                    window.location.href = './dashboard-professor.html';
+                    redirectUrl = './dashboard.html';
+                    debugLog('🏠 Redirecionamento padrão para dashboard.html');
             }
+            
+            window.location.href = redirectUrl;
         }
 
         // Handle login
@@ -1035,18 +1057,26 @@
                                 redirectToProfileDashboard(data.user_type);
                             } else {
                                 debugLog('❌ Dados do usuário não encontrados');
+                                // Fallback based on selected profile or default
+                                const fallbackProfile = selectedProfile || 'professor';
+                                redirectToProfileDashboard(fallbackProfile);
                             }
                         })
                         .catch(error => {
                             debugLog('❌ Erro ao buscar tipo de usuário: ' + error.message);
+                            // Fallback based on selected profile or default
+                            const fallbackProfile = selectedProfile || 'professor';
+                            redirectToProfileDashboard(fallbackProfile);
                         });
                 } else {
                     debugLog('❌ Usuário não encontrado');
+                    const fallbackProfile = selectedProfile || 'professor';
+                    redirectToProfileDashboard(fallbackProfile);
                 }
             });
         }
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9810fd6a10866ea4',t:'MTc1ODIwMDA0NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98113085b006f190',t:'MTc1ODIwMjEzOC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
 
 
