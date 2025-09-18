@@ -3,432 +3,185 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EduPlan - Sistema de Gestão Pedagógica</title>
+    <title>Semanário - Login</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <!-- Mercado Pago SDK -->
-    <script src="https://sdk.mercadopago.com/js/v2"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
         body { font-family: 'Inter', sans-serif; }
         .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-        .hero-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-        .card-hover { transition: all 0.3s ease; }
-        .card-hover:hover { transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
+        .login-card { backdrop-filter: blur(10px); background: rgba(255, 255, 255, 0.95); }
+        .floating-animation { animation: float 6s ease-in-out infinite; }
+        @keyframes float { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-20px); } }
         .fade-in { animation: fadeIn 0.8s ease-in; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
-        .plan-card { transition: all 0.3s ease; }
-        .plan-card.selected { border-color: #3b82f6; background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); }
-        .plan-card.selected.school { border-color: #10b981; background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); }
-        .plan-card.selected.trial { border-color: #8b5cf6; background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%); }
         .loading-spinner { animation: spin 1s linear infinite; }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        .payment-success { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
-        .payment-error { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
-        .debug-panel { position: fixed; top: 10px; right: 10px; background: #000; color: #0f0; padding: 10px; border-radius: 5px; font-family: monospace; font-size: 12px; max-width: 300px; z-index: 9999; }
-        .profile-card { transition: all 0.3s ease; position: relative; }
-        .profile-card.selected { border-color: #fbbf24 !important; background: rgba(251, 191, 36, 0.3) !important; transform: scale(1.05); }
-        .profile-indicator { position: absolute; top: -8px; right: -8px; background: #10b981; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 12px; }
     </style>
 </head>
-<body class="bg-gray-50">
-    <!-- Debug Panel -->
-    <div id="debugPanel" class="debug-panel hidden">
-        <div>🔍 DEBUG ATIVO</div>
-        <div id="debugInfo"></div>
+<body class="min-h-screen gradient-bg flex items-center justify-center p-4">
+    <!-- Background Elements -->
+    <div class="absolute inset-0 overflow-hidden">
+        <div class="absolute top-1/4 left-1/4 w-64 h-64 bg-white opacity-10 rounded-full floating-animation"></div>
+        <div class="absolute bottom-1/4 right-1/4 w-48 h-48 bg-white opacity-10 rounded-full floating-animation" style="animation-delay: -3s;"></div>
+        <div class="absolute top-3/4 left-1/2 w-32 h-32 bg-white opacity-10 rounded-full floating-animation" style="animation-delay: -1.5s;"></div>
     </div>
 
-    <!-- Header -->
-    <header class="bg-white shadow-sm">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center py-4">
-                <div class="flex items-center">
-                    <div class="w-10 h-10 gradient-bg rounded-lg flex items-center justify-center mr-3">
-                        <i class="fas fa-graduation-cap text-white"></i>
-                    </div>
-                    <h1 class="text-2xl font-bold text-gray-800">EduPlan</h1>
-                </div>
-                <nav class="hidden md:flex space-x-8">
-                    <a href="#features" class="text-gray-600 hover:text-gray-800 transition-colors">Recursos</a>
-                    <a href="#pricing" class="text-gray-600 hover:text-gray-800 transition-colors">Preços</a>
-                    <a href="#contact" class="text-gray-600 hover:text-gray-800 transition-colors">Contato</a>
-                </nav>
-                <div class="flex space-x-4">
-                    <button onclick="showLogin()" class="text-gray-600 hover:text-gray-800 font-medium">
-                        Entrar
-                    </button>
-                    <button onclick="showRegister()" class="gradient-bg text-white px-6 py-2 rounded-lg font-semibold hover:opacity-90 transition-all">
-                        Começar Agora
-                    </button>
-                    <button onclick="toggleDebug()" class="bg-red-500 text-white px-3 py-1 rounded text-xs">
-                        DEBUG
-                    </button>
-                </div>
+    <!-- Login Container -->
+    <div class="relative z-10 w-full max-w-md">
+        <!-- Logo and Title -->
+        <div class="text-center mb-8 fade-in">
+            <div class="inline-flex items-center justify-center w-20 h-20 bg-white rounded-2xl shadow-lg mb-4">
+                <i class="fas fa-calendar-week text-3xl text-indigo-600"></i>
             </div>
+            <h1 class="text-4xl font-bold text-white mb-2">Semanário</h1>
+            <p class="text-indigo-100 text-lg">Sistema de Planejamento Escolar</p>
         </div>
-    </header>
 
-    <!-- Main Content -->
-    <main class="max-w-md mx-auto mt-8 p-6">
-        <!-- Hero Section -->
-        <div id="heroSection" class="text-center mb-12 fade-in">
-            <div class="hero-bg rounded-2xl p-8 text-white mb-8">
-                <h2 class="text-4xl font-bold mb-4">Transforme sua Gestão Pedagógica</h2>
-                <p class="text-xl opacity-90 mb-6">Planos de aula inteligentes, feedback colaborativo e analytics educacional</p>
-                
-                <!-- Profile Selector -->
-                <div class="bg-white/10 backdrop-blur-sm rounded-xl p-6 mb-6">
-                    <h3 class="text-xl font-semibold mb-4">Escolha seu Perfil de Acesso</h3>
-                    <div class="space-y-3">
-                        <!-- Professor Profile -->
-                        <div class="profile-card bg-white/20 backdrop-blur-sm rounded-lg p-4 cursor-pointer hover:bg-white/30 transition-all border-2 border-transparent hover:border-white/50" onclick="selectProfile('professor')">
-                            <div class="flex items-center">
-                                <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mr-4">
-                                    <i class="fas fa-chalkboard-teacher text-white text-lg"></i>
-                                </div>
-                                <div class="flex-1">
-                                    <h4 class="font-bold text-white text-base mb-1">Professor</h4>
-                                    <p class="text-white/80 text-sm">Criar planos de aula e receber feedback</p>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Coordination Profile -->
-                        <div class="profile-card bg-white/20 backdrop-blur-sm rounded-lg p-4 cursor-pointer hover:bg-white/30 transition-all border-2 border-transparent hover:border-white/50" onclick="selectProfile('coordenacao')">
-                            <div class="flex items-center">
-                                <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mr-4">
-                                    <i class="fas fa-users text-white text-lg"></i>
-                                </div>
-                                <div class="flex-1">
-                                    <h4 class="font-bold text-white text-base mb-1">Coordenação</h4>
-                                    <p class="text-white/80 text-sm">Acompanhar e orientar professores</p>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Direction Profile -->
-                        <div class="profile-card bg-white/20 backdrop-blur-sm rounded-lg p-4 cursor-pointer hover:bg-white/30 transition-all border-2 border-transparent hover:border-white/50" onclick="selectProfile('direcao')">
-                            <div class="flex items-center">
-                                <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mr-4">
-                                    <i class="fas fa-building text-white text-lg"></i>
-                                </div>
-                                <div class="flex-1">
-                                    <h4 class="font-bold text-white text-base mb-1">Direção</h4>
-                                    <p class="text-white/80 text-sm">Relatórios executivos e gestão</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div id="profileSelected" class="hidden mt-4 p-3 bg-green-500/20 rounded-lg border border-green-400/30">
-                        <div class="flex items-center justify-center">
-                            <i class="fas fa-check-circle text-green-300 mr-2"></i>
-                            <span class="text-green-100 font-medium" id="selectedProfileText">Perfil selecionado</span>
-                        </div>
+        <!-- Login Card -->
+        <div class="login-card rounded-2xl shadow-2xl p-8 fade-in">
+            <div class="text-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-800 mb-2">Bem-vindo de volta!</h2>
+                <p class="text-gray-600">Faça login para acessar sua conta</p>
+            </div>
+
+            <!-- Login Form -->
+            <form id="loginForm" class="space-y-6">
+                <div>
+                    <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-envelope mr-2 text-gray-400"></i>
+                        Email
+                    </label>
+                    <input 
+                        type="email" 
+                        id="email" 
+                        name="email"
+                        required
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+                        placeholder="seu@email.com"
+                    >
+                </div>
+
+                <div>
+                    <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-lock mr-2 text-gray-400"></i>
+                        Senha
+                    </label>
+                    <div class="relative">
+                        <input 
+                            type="password" 
+                            id="password" 
+                            name="password"
+                            required
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 pr-12"
+                            placeholder="••••••••"
+                        >
+                        <button 
+                            type="button" 
+                            onclick="togglePassword()" 
+                            class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                        >
+                            <i id="passwordIcon" class="fas fa-eye"></i>
+                        </button>
                     </div>
                 </div>
-                
-                <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                    <button onclick="showRegister()" class="bg-white text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-all">
-                        <i class="fas fa-rocket mr-2"></i>
-                        Começar Grátis
-                    </button>
-                    <button onclick="showLogin()" class="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-blue-600 transition-all">
+
+                <!-- Remember Me -->
+                <div class="flex items-center justify-between">
+                    <label class="flex items-center">
+                        <input type="checkbox" id="rememberMe" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                        <span class="ml-2 text-sm text-gray-600">Lembrar de mim</span>
+                    </label>
+                    <a href="#" onclick="showForgotPassword()" class="text-sm text-indigo-600 hover:text-indigo-800 transition-colors">
+                        Esqueceu a senha?
+                    </a>
+                </div>
+
+                <!-- Login Button -->
+                <button 
+                    type="submit" 
+                    id="loginButton"
+                    class="w-full gradient-bg text-white py-3 px-4 rounded-lg font-semibold hover:opacity-90 transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                >
+                    <span id="loginButtonText">
                         <i class="fas fa-sign-in-alt mr-2"></i>
-                        Fazer Login
+                        Entrar
+                    </span>
+                    <span id="loginButtonLoading" class="hidden">
+                        <i class="fas fa-spinner loading-spinner mr-2"></i>
+                        Entrando...
+                    </span>
+                </button>
+            </form>
+
+            <!-- Error Message -->
+            <div id="errorMessage" class="hidden mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <div class="flex items-center">
+                    <i class="fas fa-exclamation-circle text-red-500 mr-2"></i>
+                    <span class="text-red-700 text-sm" id="errorText"></span>
+                </div>
+            </div>
+
+            <!-- Success Message -->
+            <div id="successMessage" class="hidden mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+                <div class="flex items-center">
+                    <i class="fas fa-check-circle text-green-500 mr-2"></i>
+                    <span class="text-green-700 text-sm" id="successText"></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="text-center mt-8 text-indigo-100">
+            <p class="text-sm">
+                © 2024 Semanário. Sistema desenvolvido para educadores.
+            </p>
+        </div>
+    </div>
+
+    <!-- Forgot Password Modal -->
+    <div id="forgotPasswordModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold text-gray-800">Recuperar Senha</h3>
+                <button onclick="closeForgotPassword()" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <p class="text-gray-600 mb-4">Digite seu email para receber as instruções de recuperação de senha.</p>
+            
+            <form id="forgotPasswordForm">
+                <div class="mb-4">
+                    <label for="forgotEmail" class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                    <input 
+                        type="email" 
+                        id="forgotEmail" 
+                        required
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        placeholder="seu@email.com"
+                    >
+                </div>
+                
+                <div class="flex space-x-3">
+                    <button 
+                        type="button" 
+                        onclick="closeForgotPassword()" 
+                        class="flex-1 border border-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-50 transition-colors"
+                    >
+                        Cancelar
+                    </button>
+                    <button 
+                        type="submit" 
+                        class="flex-1 gradient-bg text-white py-2 px-4 rounded-lg hover:opacity-90 transition-all"
+                    >
+                        Enviar
                     </button>
                 </div>
-            </div>
-        </div>
-
-        <!-- Login Form -->
-        <div id="loginForm" class="hidden bg-white rounded-2xl shadow-xl p-8 fade-in">
-            <div class="text-center mb-8">
-                <h2 class="text-3xl font-bold text-gray-800 mb-2">Bem-vindo de volta!</h2>
-                <p class="text-gray-600">Entre na sua conta para continuar</p>
-                
-                <!-- Selected Profile Display -->
-                <div id="loginProfileDisplay" class="hidden mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                    <div class="flex items-center justify-center">
-                        <i class="fas fa-user-circle text-blue-600 mr-2"></i>
-                        <span class="text-blue-800 font-medium">Entrando como: <span id="loginProfileText"></span></span>
-                    </div>
-                </div>
-            </div>
-            
-            <form id="loginFormElement" class="space-y-6">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                    <input type="email" id="loginEmail" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
-                </div>
-                
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Senha</label>
-                    <input type="password" id="loginPassword" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
-                </div>
-                
-                <button type="submit" class="w-full gradient-bg text-white py-3 px-6 rounded-lg font-semibold hover:opacity-90 transition-all">
-                    <i class="fas fa-sign-in-alt mr-2"></i>
-                    Entrar
-                </button>
             </form>
-            
-            <div class="text-center mt-6">
-                <button onclick="showRegister()" class="text-blue-600 hover:text-blue-800 font-medium">
-                    Não tem uma conta? Cadastre-se
-                </button>
-                <br>
-                <button onclick="showHero()" class="text-gray-500 hover:text-gray-700 font-medium mt-2">
-                    ← Voltar para seleção de perfil
-                </button>
-            </div>
         </div>
-
-        <!-- Registration Form -->
-        <div id="registerForm" class="hidden bg-white rounded-2xl shadow-xl p-8 fade-in">
-            <div class="text-center mb-8">
-                <h2 class="text-3xl font-bold text-gray-800 mb-2">Criar Conta</h2>
-                <p class="text-gray-600">Escolha seu plano e comece agora</p>
-            </div>
-            
-            <!-- Plan Selection -->
-            <div id="planSelection" class="mb-8">
-                <h3 class="text-lg font-semibold text-gray-800 mb-4 text-center">Escolha seu Plano</h3>
-                <div class="grid grid-cols-1 gap-4 mb-6">
-                    <!-- Individual Plan -->
-                    <div class="plan-card border-2 border-gray-200 rounded-xl p-4 cursor-pointer hover:border-blue-500 transition-all" onclick="selectPlan('individual')">
-                        <div class="flex items-center">
-                            <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mr-4">
-                                <i class="fas fa-user text-blue-600"></i>
-                            </div>
-                            <div class="flex-1">
-                                <h4 class="font-bold text-gray-800">Plano Individual</h4>
-                                <p class="text-sm text-gray-600">Por professor</p>
-                            </div>
-                            <div class="text-right">
-                                <div class="text-xl font-bold text-blue-600">R$ 19,90</div>
-                                <div class="text-xs text-gray-500">/mês</div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- School Plan -->
-                    <div class="plan-card border-2 border-gray-200 rounded-xl p-4 cursor-pointer hover:border-green-500 transition-all" onclick="selectPlan('school')">
-                        <div class="flex items-center">
-                            <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-4">
-                                <i class="fas fa-school text-green-600"></i>
-                            </div>
-                            <div class="flex-1">
-                                <h4 class="font-bold text-gray-800">Plano Escola</h4>
-                                <p class="text-sm text-gray-600">Usuários ilimitados</p>
-                            </div>
-                            <div class="text-right">
-                                <div class="text-xl font-bold text-green-600">R$ 199,00</div>
-                                <div class="text-xs text-gray-500">/mês</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <form id="registerFormElement" class="space-y-4">
-                <input type="hidden" id="selectedPlan" value="">
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Nome</label>
-                        <input type="text" id="registerName" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                        <input type="email" id="registerEmail" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
-                    </div>
-                </div>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Senha</label>
-                        <input type="password" id="registerPassword" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Confirmar Senha</label>
-                        <input type="password" id="confirmPassword" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
-                    </div>
-                </div>
-                
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Nome da Escola</label>
-                    <input type="text" id="schoolName" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
-                </div>
-                
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Tipo de Usuário</label>
-                    <select id="userType" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
-                        <option value="">Selecione...</option>
-                        <option value="direcao">Direção</option>
-                        <option value="coordenacao">Coordenação</option>
-                        <option value="professor">Professor</option>
-                    </select>
-                </div>
-                
-                <div id="paymentSection" class="hidden">
-                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <i class="fas fa-info-circle text-blue-600 mr-2"></i>
-                                <span class="text-sm text-blue-800" id="planSummary"></span>
-                            </div>
-                            <div class="text-lg font-bold text-blue-800" id="planPrice"></div>
-                        </div>
-                    </div>
-                    
-                    <!-- Mercado Pago Payment -->
-                    <div id="mercadoPagoContainer" class="hidden">
-                        <div id="cardPaymentBrick_container"></div>
-                    </div>
-                </div>
-                
-                <button type="submit" class="w-full gradient-bg text-white py-3 px-6 rounded-lg font-semibold hover:opacity-90 transition-all">
-                    <i class="fas fa-user-plus mr-2"></i>
-                    <span id="submitButtonText">Criar Conta</span>
-                </button>
-            </form>
-            
-            <div class="text-center mt-6">
-                <button onclick="showLogin()" class="text-blue-600 hover:text-blue-800 font-medium">
-                    Já tem uma conta? Faça login
-                </button>
-            </div>
-        </div>
-
-        <!-- Payment Success -->
-        <div id="paymentSuccess" class="hidden bg-white rounded-2xl shadow-xl p-8 text-center fade-in">
-            <div class="w-16 h-16 payment-success rounded-full flex items-center justify-center mx-auto mb-6">
-                <i class="fas fa-check text-white text-2xl"></i>
-            </div>
-            <h2 class="text-2xl font-bold text-gray-800 mb-4">Pagamento Confirmado!</h2>
-            <p class="text-gray-600 mb-6">Sua conta foi criada com sucesso. Você já pode começar a usar o EduPlan!</p>
-            <button onclick="redirectToDashboard()" class="gradient-bg text-white px-8 py-3 rounded-lg font-semibold hover:opacity-90 transition-all">
-                <i class="fas fa-arrow-right mr-2"></i>
-                Acessar Dashboard
-            </button>
-        </div>
-
-        <!-- Payment Error -->
-        <div id="paymentError" class="hidden bg-white rounded-2xl shadow-xl p-8 text-center fade-in">
-            <div class="w-16 h-16 payment-error rounded-full flex items-center justify-center mx-auto mb-6">
-                <i class="fas fa-times text-white text-2xl"></i>
-            </div>
-            <h2 class="text-2xl font-bold text-gray-800 mb-4">Erro no Pagamento</h2>
-            <p class="text-gray-600 mb-6" id="errorMessage">Ocorreu um erro ao processar seu pagamento. Tente novamente.</p>
-            <button onclick="showRegister()" class="gradient-bg text-white px-8 py-3 rounded-lg font-semibold hover:opacity-90 transition-all">
-                <i class="fas fa-arrow-left mr-2"></i>
-                Tentar Novamente
-            </button>
-        </div>
-
-        <!-- Loading -->
-        <div id="loadingScreen" class="hidden bg-white rounded-2xl shadow-xl p-8 text-center fade-in">
-            <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                <i class="fas fa-spinner loading-spinner text-blue-600 text-2xl"></i>
-            </div>
-            <h2 class="text-2xl font-bold text-gray-800 mb-4">Processando...</h2>
-            <p class="text-gray-600">Aguarde enquanto processamos seu pagamento</p>
-        </div>
-    </main>
-
-    <!-- Features Section -->
-    <section id="features" class="py-20 bg-white">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center mb-16">
-                <h2 class="text-4xl font-bold text-gray-800 mb-4">Recursos Poderosos</h2>
-                <p class="text-xl text-gray-600">Tudo que você precisa para uma gestão pedagógica eficiente</p>
-            </div>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                <div class="text-center p-6 card-hover">
-                    <div class="w-16 h-16 gradient-bg rounded-full flex items-center justify-center mx-auto mb-4">
-                        <i class="fas fa-file-alt text-white text-2xl"></i>
-                    </div>
-                    <h3 class="text-xl font-semibold text-gray-800 mb-2">Planos de Aula</h3>
-                    <p class="text-gray-600">Crie e gerencie planos de aula de forma intuitiva e colaborativa</p>
-                </div>
-                
-                <div class="text-center p-6 card-hover">
-                    <div class="w-16 h-16 gradient-bg rounded-full flex items-center justify-center mx-auto mb-4">
-                        <i class="fas fa-comments text-white text-2xl"></i>
-                    </div>
-                    <h3 class="text-xl font-semibold text-gray-800 mb-2">Feedback Colaborativo</h3>
-                    <p class="text-gray-600">Sistema de feedback entre professores e coordenação</p>
-                </div>
-                
-                <div class="text-center p-6 card-hover">
-                    <div class="w-16 h-16 gradient-bg rounded-full flex items-center justify-center mx-auto mb-4">
-                        <i class="fas fa-chart-bar text-white text-2xl"></i>
-                    </div>
-                    <h3 class="text-xl font-semibold text-gray-800 mb-2">Analytics</h3>
-                    <p class="text-gray-600">Relatórios e métricas para tomada de decisão</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Pricing Section -->
-    <section id="pricing" class="py-20 bg-gray-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center mb-16">
-                <h2 class="text-4xl font-bold text-gray-800 mb-4">Planos Flexíveis</h2>
-                <p class="text-xl text-gray-600">Escolha o plano ideal para sua necessidade</p>
-            </div>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-                <div class="bg-white rounded-2xl shadow-xl p-8 card-hover">
-                    <div class="text-center">
-                        <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <i class="fas fa-user text-blue-600 text-2xl"></i>
-                        </div>
-                        <h3 class="text-2xl font-bold text-gray-800 mb-2">Individual</h3>
-                        <div class="text-4xl font-bold text-blue-600 mb-4">R$ 19,90</div>
-                        <p class="text-gray-600 mb-6">por professor/mês</p>
-                        <ul class="text-left space-y-3 mb-8">
-                            <li class="flex items-center"><i class="fas fa-check text-green-500 mr-3"></i>Planos de aula ilimitados</li>
-                            <li class="flex items-center"><i class="fas fa-check text-green-500 mr-3"></i>Feedback da coordenação</li>
-                            <li class="flex items-center"><i class="fas fa-check text-green-500 mr-3"></i>Relatórios básicos</li>
-                            <li class="flex items-center"><i class="fas fa-check text-green-500 mr-3"></i>Suporte por email</li>
-                        </ul>
-                        <button onclick="showRegister()" class="w-full gradient-bg text-white py-3 px-6 rounded-lg font-semibold hover:opacity-90 transition-all">
-                            Começar Agora
-                        </button>
-                    </div>
-                </div>
-                
-                <div class="bg-white rounded-2xl shadow-xl p-8 card-hover border-2 border-green-500 relative">
-                    <div class="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                        <span class="bg-green-500 text-white px-4 py-1 rounded-full text-sm font-medium">Mais Popular</span>
-                    </div>
-                    <div class="text-center">
-                        <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <i class="fas fa-school text-green-600 text-2xl"></i>
-                        </div>
-                        <h3 class="text-2xl font-bold text-gray-800 mb-2">Escola</h3>
-                        <div class="text-4xl font-bold text-green-600 mb-4">R$ 199,00</div>
-                        <p class="text-gray-600 mb-6">por escola/mês</p>
-                        <ul class="text-left space-y-3 mb-8">
-                            <li class="flex items-center"><i class="fas fa-check text-green-500 mr-3"></i>Usuários ilimitados</li>
-                            <li class="flex items-center"><i class="fas fa-check text-green-500 mr-3"></i>Dashboard executivo</li>
-                            <li class="flex items-center"><i class="fas fa-check text-green-500 mr-3"></i>Relatórios avançados</li>
-                            <li class="flex items-center"><i class="fas fa-check text-green-500 mr-3"></i>Analytics completo</li>
-                            <li class="flex items-center"><i class="fas fa-check text-green-500 mr-3"></i>Suporte prioritário</li>
-                        </ul>
-                        <button onclick="showRegister()" class="w-full bg-green-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-green-700 transition-all">
-                            Começar Agora
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
+    </div>
 
     <script>
         // Configuração do Supabase
@@ -436,647 +189,224 @@
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNycXFoZWFjc2dsaHl5aHZmY2hnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgxNTMxMDMsImV4cCI6MjA3MzcyOTEwM30.ZOKVDK1FEyDM-lcPrw4-0xbVDxYLftek3NHYcmjc_7w';
         
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        
-        // 🔑 CREDENCIAIS DO MERCADO PAGO (SUAS CREDENCIAIS INSERIDAS)
-        const MP_PUBLIC_KEY = 'TEST-20668bf5-3f60-463c-9155-5764b536c710';
-        const MP_ACCESS_TOKEN = 'TEST-1091722-1282eaa2aec517ca082d24fada053e89-2329486351';
-        const mp = new MercadoPago(MP_PUBLIC_KEY);
-        
-        let selectedPlan = null;
-        let bricksBuilder = null;
-        let debugMode = false;
-        let selectedProfile = null;
 
-        // Initialize
-        document.addEventListener('DOMContentLoaded', () => {
-            debugLog('🚀 Sistema iniciado');
-            debugLog('🔑 MP Public Key: ' + MP_PUBLIC_KEY.substring(0, 20) + '...');
-            debugLog('🌐 Supabase URL: ' + SUPABASE_URL);
-            
-            setupEventListeners();
-            checkExistingSession();
-            loadSelectedProfile();
+        // Check if user is already logged in
+        document.addEventListener('DOMContentLoaded', async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+                redirectUser(session.user);
+            }
         });
 
-        // Debug functions
-        function toggleDebug() {
-            debugMode = !debugMode;
-            const panel = document.getElementById('debugPanel');
-            if (debugMode) {
-                panel.classList.remove('hidden');
-                debugLog('🔍 Debug mode ATIVADO');
+        // Toggle password visibility
+        function togglePassword() {
+            const passwordInput = document.getElementById('password');
+            const passwordIcon = document.getElementById('passwordIcon');
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                passwordIcon.className = 'fas fa-eye-slash';
             } else {
-                panel.classList.add('hidden');
+                passwordInput.type = 'password';
+                passwordIcon.className = 'fas fa-eye';
             }
         }
 
-        function debugLog(message) {
-            console.log(message);
-            if (debugMode) {
-                const debugInfo = document.getElementById('debugInfo');
-                const time = new Date().toLocaleTimeString();
-                debugInfo.innerHTML += `<div>${time}: ${message}</div>`;
-                debugInfo.scrollTop = debugInfo.scrollHeight;
+        // Show/hide messages
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            const errorText = document.getElementById('errorText');
+            const successDiv = document.getElementById('successMessage');
+            
+            successDiv.classList.add('hidden');
+            errorText.textContent = message;
+            errorDiv.classList.remove('hidden');
+            
+            setTimeout(() => {
+                errorDiv.classList.add('hidden');
+            }, 5000);
+        }
+
+        function showSuccess(message) {
+            const successDiv = document.getElementById('successMessage');
+            const successText = document.getElementById('successText');
+            const errorDiv = document.getElementById('errorMessage');
+            
+            errorDiv.classList.add('hidden');
+            successText.textContent = message;
+            successDiv.classList.remove('hidden');
+            
+            setTimeout(() => {
+                successDiv.classList.add('hidden');
+            }, 3000);
+        }
+
+        // Loading state
+        function setLoading(loading) {
+            const button = document.getElementById('loginButton');
+            const buttonText = document.getElementById('loginButtonText');
+            const buttonLoading = document.getElementById('loginButtonLoading');
+            
+            if (loading) {
+                button.disabled = true;
+                buttonText.classList.add('hidden');
+                buttonLoading.classList.remove('hidden');
+            } else {
+                button.disabled = false;
+                buttonText.classList.remove('hidden');
+                buttonLoading.classList.add('hidden');
             }
         }
 
-        // Setup event listeners
-        function setupEventListeners() {
-            document.getElementById('loginFormElement').addEventListener('submit', handleLogin);
-            document.getElementById('registerFormElement').addEventListener('submit', handleRegister);
-            debugLog('✅ Event listeners configurados');
-        }
-
-        // Load selected profile from localStorage
-        function loadSelectedProfile() {
-            const savedProfile = localStorage.getItem('selectedProfile');
-            if (savedProfile) {
-                selectedProfile = savedProfile;
-                debugLog('📱 Perfil carregado do localStorage: ' + savedProfile);
-                
-                // Update UI to show selected profile
-                document.querySelectorAll('.profile-card').forEach(card => {
-                    card.classList.remove('selected');
-                });
-                
-                const profileCard = document.querySelector(`[onclick="selectProfile('${savedProfile}')"]`);
-                if (profileCard) {
-                    profileCard.classList.add('selected');
-                    showProfileSelected(savedProfile);
-                }
-            }
-        }
-
-        // Profile selection
-        function selectProfile(profileType) {
-            debugLog('👤 Perfil selecionado: ' + profileType);
-            
-            // Remove selection from all profiles
-            document.querySelectorAll('.profile-card').forEach(card => {
-                card.classList.remove('selected');
-            });
-
-            // Add selection to clicked profile
-            event.currentTarget.classList.add('selected');
-            
-            selectedProfile = profileType;
-            
-            // Store in localStorage for login
-            localStorage.setItem('selectedProfile', profileType);
-            
-            // Show selected profile indicator
-            showProfileSelected(profileType);
-            
-            debugLog('✅ Perfil armazenado: ' + profileType);
-        }
-
-        // Show profile selected indicator
-        function showProfileSelected(profileType) {
-            const profileSelected = document.getElementById('profileSelected');
-            const selectedProfileText = document.getElementById('selectedProfileText');
-            
-            const profileNames = {
-                'professor': 'Professor',
-                'coordenacao': 'Coordenação',
-                'direcao': 'Direção'
-            };
-            
-            selectedProfileText.textContent = `Perfil selecionado: ${profileNames[profileType]}`;
-            profileSelected.classList.remove('hidden');
-        }
-
-        // Check existing session
-        async function checkExistingSession() {
-            debugLog('🔍 Verificando sessão existente...');
+        // Redirect user based on type
+        async function redirectUser(user) {
             try {
-                const { data: { session } } = await supabase.auth.getSession();
-                if (session) {
-                    debugLog('✅ Sessão encontrada: ' + session.user.email);
-                    
-                    // If user is logged in but no profile selected, show hero
-                    if (!selectedProfile) {
-                        debugLog('⚠️ Usuário logado mas sem perfil selecionado');
-                        showHero();
-                        return;
-                    }
-                    
-                    // Check profile access and redirect
-                    await checkProfileAccess(session.user.id, selectedProfile);
-                } else {
-                    debugLog('ℹ️ Nenhuma sessão ativa');
-                }
-            } catch (error) {
-                debugLog('❌ Erro ao verificar sessão: ' + error.message);
-                console.error('Erro ao verificar sessão:', error);
-            }
-        }
-
-        // Show/Hide sections
-        function showLogin() {
-            debugLog('📱 Mostrando tela de login');
-            
-            if (!selectedProfile) {
-                alert('Por favor, selecione um perfil antes de fazer login.');
-                return;
-            }
-            
-            hideAllSections();
-            document.getElementById('loginForm').classList.remove('hidden');
-            
-            // Show selected profile in login form
-            const loginProfileDisplay = document.getElementById('loginProfileDisplay');
-            const loginProfileText = document.getElementById('loginProfileText');
-            
-            const profileNames = {
-                'professor': 'Professor',
-                'coordenacao': 'Coordenação',
-                'direcao': 'Direção'
-            };
-            
-            loginProfileText.textContent = profileNames[selectedProfile];
-            loginProfileDisplay.classList.remove('hidden');
-        }
-
-        function showRegister() {
-            debugLog('📱 Mostrando tela de registro');
-            hideAllSections();
-            document.getElementById('registerForm').classList.remove('hidden');
-        }
-
-        function showPaymentSuccess() {
-            debugLog('✅ Mostrando tela de sucesso');
-            hideAllSections();
-            document.getElementById('paymentSuccess').classList.remove('hidden');
-        }
-
-        function showPaymentError(message = 'Ocorreu um erro ao processar seu pagamento. Tente novamente.') {
-            debugLog('❌ Mostrando tela de erro: ' + message);
-            hideAllSections();
-            document.getElementById('errorMessage').textContent = message;
-            document.getElementById('paymentError').classList.remove('hidden');
-        }
-
-        function showLoading() {
-            debugLog('⏳ Mostrando tela de carregamento');
-            hideAllSections();
-            document.getElementById('loadingScreen').classList.remove('hidden');
-        }
-
-        function showHero() {
-            debugLog('🏠 Mostrando tela inicial');
-            hideAllSections();
-            document.getElementById('heroSection').classList.remove('hidden');
-        }
-
-        function hideAllSections() {
-            const sections = ['heroSection', 'loginForm', 'registerForm', 'paymentSuccess', 'paymentError', 'loadingScreen'];
-            sections.forEach(section => {
-                document.getElementById(section).classList.add('hidden');
-            });
-        }
-
-        // Check profile access
-        async function checkProfileAccess(userId, requestedProfile) {
-            debugLog('🔍 Verificando acesso ao perfil: ' + requestedProfile);
-            
-            try {
-                // Special access for owner (your email)
-                const { data: { user } } = await supabase.auth.getUser();
-                
-                if (user.email === 'artebr.firme@gmail.com') {
-                    debugLog('👑 Acesso de proprietário - liberado para todos os perfis');
-                    redirectToProfileDashboard(requestedProfile);
-                    return;
-                }
-                
-                // For other users, check if they have access to this profile
-                const { data, error } = await supabase
+                // Get user data from database
+                const { data: userData, error } = await supabase
                     .from('users')
-                    .select('user_type')
-                    .eq('id', userId)
-                    .eq('user_type', requestedProfile)
+                    .select('user_type, name, school_id')
+                    .eq('id', user.id)
                     .single();
 
-                if (error || !data) {
-                    debugLog('❌ Usuário não tem acesso a este perfil');
-                    alert('Você não tem permissão para acessar este perfil.');
+                if (error) {
+                    console.error('Erro ao buscar dados do usuário:', error);
+                    showError('Erro ao carregar dados do usuário');
                     return;
                 }
 
-                debugLog('✅ Acesso autorizado ao perfil: ' + requestedProfile);
-                redirectToProfileDashboard(requestedProfile);
+                if (!userData) {
+                    showError('Usuário não encontrado no sistema');
+                    await supabase.auth.signOut();
+                    return;
+                }
+
+                // Redirect based on user type
+                switch (userData.user_type) {
+                    case 'professor':
+                        window.location.href = './dashboard.html';
+                        break;
+                    case 'coordenacao':
+                        window.location.href = './coordenacao.html';
+                        break;
+                    case 'direcao':
+                        window.location.href = './direcao.html';
+                        break;
+                    case 'admin':
+                        window.location.href = './admin.html';
+                        break;
+                    default:
+                        showError('Tipo de usuário não reconhecido');
+                        await supabase.auth.signOut();
+                }
 
             } catch (error) {
-                debugLog('❌ Erro ao verificar acesso: ' + error.message);
-                console.error('Erro ao verificar acesso:', error);
-                alert('Erro ao verificar permissões.');
+                console.error('Erro no redirecionamento:', error);
+                showError('Erro interno do sistema');
             }
         }
 
-        // Redirect to profile dashboard - ESTRUTURA CORRETA DOS ARQUIVOS
-        function redirectToProfileDashboard(profileType) {
-            debugLog('🚀 Redirecionando para dashboard: ' + profileType);
-            
-            // Save selected profile for dashboard to use
-            localStorage.setItem('userProfile', profileType);
-            localStorage.setItem('selectedProfile', profileType);
-            
-            debugLog('💾 Perfil salvo no localStorage: ' + profileType);
-            
-            // Redirect based on profile type
-            let redirectUrl;
-            switch(profileType) {
-                case 'professor':
-                    redirectUrl = './dashboard.html';
-                    debugLog('🏠 Redirecionando para dashboard.html (Professor)');
-                    break;
-                case 'coordenacao':
-                    redirectUrl = './coordenacao.html';
-                    debugLog('🏠 Redirecionando para coordenacao.html (Coordenação)');
-                    break;
-                case 'direcao':
-                    redirectUrl = './direcao.html';
-                    debugLog('🏠 Redirecionando para direcao.html (Direção)');
-                    break;
-                default:
-                    redirectUrl = './dashboard.html';
-                    debugLog('🏠 Redirecionamento padrão para dashboard.html');
-            }
-            
-            window.location.href = redirectUrl;
-        }
-
-        // Handle login
-        async function handleLogin(e) {
+        // Login form handler
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            const email = document.getElementById('loginEmail').value;
-            const password = document.getElementById('loginPassword').value;
-            const profile = selectedProfile;
-
-            debugLog('🔐 Tentativa de login');
-            debugLog('📧 Email: ' + email);
-            debugLog('🔑 Senha: ' + password.length + ' caracteres');
-            debugLog('👤 Perfil selecionado: ' + profile);
-
-            if (!profile) {
-                alert('Por favor, selecione um perfil antes de fazer login.');
-                showHero();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            if (!email || !password) {
+                showError('Por favor, preencha todos os campos');
                 return;
             }
 
+            setLoading(true);
+
             try {
-                debugLog('📡 Enviando requisição para Supabase...');
-                
                 const { data, error } = await supabase.auth.signInWithPassword({
-                    email,
-                    password
+                    email: email,
+                    password: password
                 });
 
-                debugLog('📊 Resposta do Supabase recebida');
-
                 if (error) {
-                    debugLog('❌ Erro do Supabase: ' + error.message);
                     throw error;
                 }
 
-                debugLog('✅ Login bem-sucedido!');
-                debugLog('👤 User ID: ' + data.user.id);
-                
-                // Check if user has access to selected profile
-                await checkProfileAccess(data.user.id, profile);
+                if (data.user) {
+                    showSuccess('Login realizado com sucesso! Redirecionando...');
+                    setTimeout(() => {
+                        redirectUser(data.user);
+                    }, 1000);
+                }
 
             } catch (error) {
-                debugLog('💥 Erro completo no login: ' + error.message);
                 console.error('Erro no login:', error);
-                alert('Erro no login: ' + error.message);
-            }
-        }
-
-        // Plan selection
-        function selectPlan(planType) {
-            debugLog('💳 Plano selecionado: ' + planType);
-            
-            // Remove selection from all plans
-            document.querySelectorAll('.plan-card').forEach(card => {
-                card.classList.remove('selected', 'school', 'trial');
-            });
-
-            // Add selection to clicked plan
-            event.currentTarget.classList.add('selected', planType);
-            
-            selectedPlan = planType;
-            document.getElementById('selectedPlan').value = planType;
-
-            // Update payment section
-            updatePaymentSection(planType);
-        }
-
-        // Update payment section
-        function updatePaymentSection(planType) {
-            debugLog('💰 Atualizando seção de pagamento para: ' + planType);
-            
-            const paymentSection = document.getElementById('paymentSection');
-            const planSummary = document.getElementById('planSummary');
-            const planPrice = document.getElementById('planPrice');
-            const submitButton = document.getElementById('submitButtonText');
-            const mpContainer = document.getElementById('mercadoPagoContainer');
-
-            paymentSection.classList.remove('hidden');
-            
-            if (planType === 'individual') {
-                planSummary.textContent = 'Plano Individual - Cobrança mensal automática';
-                planPrice.textContent = 'R$ 19,90/mês';
-                submitButton.textContent = 'Assinar Plano Individual';
-            } else if (planType === 'school') {
-                planSummary.textContent = 'Plano Escola - Cobrança mensal automática';
-                planPrice.textContent = 'R$ 199,00/mês';
-                submitButton.textContent = 'Assinar Plano Escola';
-            }
-
-            // Initialize Mercado Pago
-            initializeMercadoPago(planType);
-        }
-
-        // Initialize Mercado Pago
-        async function initializeMercadoPago(planType) {
-            debugLog('🧱 Inicializando Mercado Pago Brick...');
-            
-            const mpContainer = document.getElementById('mercadoPagoContainer');
-            mpContainer.classList.remove('hidden');
-
-            try {
-                // Destroy existing brick if exists
-                if (bricksBuilder) {
-                    debugLog('🗑️ Removendo brick anterior');
-                    bricksBuilder.unmount();
+                
+                let errorMessage = 'Erro ao fazer login';
+                
+                if (error.message.includes('Invalid login credentials')) {
+                    errorMessage = 'Email ou senha incorretos';
+                } else if (error.message.includes('Email not confirmed')) {
+                    errorMessage = 'Email não confirmado';
+                } else if (error.message.includes('Too many requests')) {
+                    errorMessage = 'Muitas tentativas. Tente novamente em alguns minutos';
                 }
-
-                const amount = planType === 'individual' ? 19.90 : 199.00;
-                debugLog('💵 Valor do plano: R$ ' + amount);
-
-                bricksBuilder = mp.bricks().create("cardPayment", "cardPaymentBrick_container", {
-                    initialization: {
-                        amount: amount,
-                        payer: {
-                            email: document.getElementById('registerEmail').value || ''
-                        }
-                    },
-                    customization: {
-                        visual: {
-                            style: {
-                                customVariables: {
-                                    theme: 'default'
-                                }
-                            }
-                        },
-                        paymentMethods: {
-                            creditCard: "all",
-                            debitCard: "all"
-                        }
-                    },
-                    callbacks: {
-                        onReady: () => {
-                            debugLog('✅ Mercado Pago Brick pronto');
-                        },
-                        onSubmit: (cardFormData) => {
-                            debugLog('💳 Processando pagamento...');
-                            return processPayment(cardFormData, planType);
-                        },
-                        onError: (error) => {
-                            debugLog('❌ Erro no Mercado Pago: ' + error.message);
-                            console.error('Mercado Pago error:', error);
-                        }
-                    }
-                });
-
-                debugLog('✅ Mercado Pago Brick inicializado');
-
-            } catch (error) {
-                debugLog('❌ Erro ao inicializar MP: ' + error.message);
-                console.error('Erro ao inicializar Mercado Pago:', error);
+                
+                showError(errorMessage);
+            } finally {
+                setLoading(false);
             }
+        });
+
+        // Forgot password modal
+        function showForgotPassword() {
+            document.getElementById('forgotPasswordModal').classList.remove('hidden');
         }
 
-        // Process payment
-        async function processPayment(cardFormData, planType) {
-            debugLog('💳 Iniciando processamento de pagamento');
-            showLoading();
-
-            try {
-                // Create user first
-                const userData = {
-                    name: document.getElementById('registerName').value,
-                    email: document.getElementById('registerEmail').value,
-                    password: document.getElementById('registerPassword').value,
-                    schoolName: document.getElementById('schoolName').value,
-                    userType: document.getElementById('userType').value,
-                    planType: planType
-                };
-
-                debugLog('👤 Dados do usuário coletados');
-                debugLog('📧 Email: ' + userData.email);
-                debugLog('🏫 Escola: ' + userData.schoolName);
-
-                // SIMULAÇÃO DE PAGAMENTO (já que não temos backend ainda)
-                debugLog('⚠️ SIMULANDO PAGAMENTO (sem backend)');
-                
-                // Simular delay de processamento
-                await new Promise(resolve => setTimeout(resolve, 2000));
-                
-                // Simular sucesso (80% das vezes)
-                const success = Math.random() > 0.2;
-                
-                if (success) {
-                    debugLog('✅ Pagamento simulado com sucesso');
-                    // Create user account
-                    await createUserAccount(userData, 'SIMULATED_PAYMENT_ID');
-                    showPaymentSuccess();
-                } else {
-                    debugLog('❌ Pagamento simulado rejeitado');
-                    showPaymentError('Pagamento rejeitado (simulação)');
-                }
-
-            } catch (error) {
-                debugLog('💥 Erro no pagamento: ' + error.message);
-                console.error('Erro no pagamento:', error);
-                showPaymentError('Erro interno. Tente novamente.');
-            }
+        function closeForgotPassword() {
+            document.getElementById('forgotPasswordModal').classList.add('hidden');
+            document.getElementById('forgotPasswordForm').reset();
         }
 
-        // Handle register
-        async function handleRegister(e) {
+        // Forgot password form handler
+        document.getElementById('forgotPasswordForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            const name = document.getElementById('registerName').value;
-            const email = document.getElementById('registerEmail').value;
-            const password = document.getElementById('registerPassword').value;
-            const confirmPassword = document.getElementById('confirmPassword').value;
-            const schoolName = document.getElementById('schoolName').value;
-            const userType = document.getElementById('userType').value;
-            const planType = document.getElementById('selectedPlan').value;
-
-            debugLog('📝 Tentativa de registro');
-            debugLog('👤 Nome: ' + name);
-            debugLog('📧 Email: ' + email);
-            debugLog('🏫 Escola: ' + schoolName);
-            debugLog('👥 Tipo: ' + userType);
-            debugLog('💳 Plano: ' + planType);
-
-            // Validations
-            if (!planType) {
-                debugLog('❌ Erro: Nenhum plano selecionado');
-                alert('Por favor, selecione um plano.');
-                return;
-            }
-
-            if (password !== confirmPassword) {
-                debugLog('❌ Erro: Senhas não coincidem');
-                alert('As senhas não coincidem.');
-                return;
-            }
-
-            if (password.length < 6) {
-                debugLog('❌ Erro: Senha muito curta');
-                alert('A senha deve ter pelo menos 6 caracteres.');
-                return;
-            }
-
-            try {
-                debugLog('💳 Verificando sistema de pagamento...');
-                
-                // For paid plans, the payment process will handle account creation
-                // The Mercado Pago brick will trigger the payment flow
-                if (!bricksBuilder) {
-                    debugLog('❌ Erro: Brick Builder não inicializado');
-                    alert('Erro: Sistema de pagamento não inicializado. Tente novamente.');
-                    return;
-                }
-                
-                debugLog('✅ Sistema de pagamento OK - Aguardando pagamento...');
-                // Payment will be handled by Mercado Pago brick
-
-            } catch (error) {
-                debugLog('💥 Erro no registro: ' + error.message);
-                console.error('Erro no registro:', error);
-                alert('Erro no registro: ' + error.message);
-            }
-        }
-
-        // Create user account (after payment)
-        async function createUserAccount(userData, paymentId) {
-            debugLog('👤 Criando conta de usuário...');
+            const email = document.getElementById('forgotEmail').value;
             
+            if (!email) {
+                showError('Por favor, digite seu email');
+                return;
+            }
+
             try {
-                // Create auth user
-                debugLog('🔐 Criando usuário de autenticação...');
-                const { data: authData, error: authError } = await supabase.auth.signUp({
-                    email: userData.email,
-                    password: userData.password
+                const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                    redirectTo: window.location.origin + '/reset-password.html'
                 });
 
-                if (authError) {
-                    debugLog('❌ Erro na autenticação: ' + authError.message);
-                    throw authError;
-                }
+                if (error) throw error;
 
-                debugLog('✅ Usuário de auth criado: ' + authData.user.id);
-
-                // Create school
-                debugLog('🏫 Criando escola...');
-                const { data: schoolData, error: schoolError } = await supabase
-                    .from('schools')
-                    .insert([{
-                        name: userData.schoolName,
-                        plan_type: userData.planType,
-                        plan_status: 'active',
-                        payment_id: paymentId,
-                        next_billing_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
-                    }])
-                    .select()
-                    .single();
-
-                if (schoolError) {
-                    debugLog('❌ Erro ao criar escola: ' + schoolError.message);
-                    throw schoolError;
-                }
-
-                debugLog('✅ Escola criada: ' + schoolData.id);
-
-                // Create user profile
-                debugLog('👤 Criando perfil de usuário...');
-                const { error: userError } = await supabase
-                    .from('users')
-                    .insert([{
-                        id: authData.user.id,
-                        email: userData.email,
-                        name: userData.name,
-                        user_type: userData.userType,
-                        school_id: schoolData.id,
-                        is_active: true
-                    }]);
-
-                if (userError) {
-                    debugLog('❌ Erro ao criar perfil: ' + userError.message);
-                    throw userError;
-                }
-
-                debugLog('✅ Conta criada com sucesso!');
+                showSuccess('Instruções de recuperação enviadas para seu email');
+                closeForgotPassword();
 
             } catch (error) {
-                debugLog('💥 Erro ao criar conta: ' + error.message);
-                console.error('Erro ao criar conta:', error);
-                throw error;
+                console.error('Erro ao enviar email de recuperação:', error);
+                showError('Erro ao enviar email de recuperação');
             }
-        }
+        });
 
-        // Redirect to dashboard (legacy function - keeping for compatibility)
-        function redirectToDashboard() {
-            debugLog('🚀 Redirecionando para dashboard...');
-            
-            // Get user type and redirect accordingly
-            supabase.auth.getUser().then(({ data: { user } }) => {
-                if (user) {
-                    debugLog('👤 Usuário logado: ' + user.email);
-                    
-                    // If it's the owner, use selected profile
-                    if (user.email === 'artebr.firme@gmail.com' && selectedProfile) {
-                        debugLog('👑 Proprietário - usando perfil selecionado: ' + selectedProfile);
-                        redirectToProfileDashboard(selectedProfile);
-                        return;
-                    }
-                    
-                    supabase
-                        .from('users')
-                        .select('user_type')
-                        .eq('id', user.id)
-                        .single()
-                        .then(({ data }) => {
-                            if (data) {
-                                debugLog('👥 Tipo de usuário: ' + data.user_type);
-                                redirectToProfileDashboard(data.user_type);
-                            } else {
-                                debugLog('❌ Dados do usuário não encontrados');
-                                // Fallback based on selected profile or default
-                                const fallbackProfile = selectedProfile || 'professor';
-                                redirectToProfileDashboard(fallbackProfile);
-                            }
-                        })
-                        .catch(error => {
-                            debugLog('❌ Erro ao buscar tipo de usuário: ' + error.message);
-                            // Fallback based on selected profile or default
-                            const fallbackProfile = selectedProfile || 'professor';
-                            redirectToProfileDashboard(fallbackProfile);
-                        });
-                } else {
-                    debugLog('❌ Usuário não encontrado');
-                    const fallbackProfile = selectedProfile || 'professor';
-                    redirectToProfileDashboard(fallbackProfile);
-                }
-            });
-        }
+        // Close modal when clicking outside
+        document.getElementById('forgotPasswordModal').addEventListener('click', (e) => {
+            if (e.target.id === 'forgotPasswordModal') {
+                closeForgotPassword();
+            }
+        });
+
+        // Enter key handling
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeForgotPassword();
+            }
+        });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98113085b006f190',t:'MTc1ODIwMjEzOC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98118ab2b277ce20',t:'MTc1ODIwNTgzMi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
 
 
