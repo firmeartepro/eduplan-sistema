@@ -154,17 +154,34 @@
         // Função de verificação de autenticação
         async function checkAdminSession() {
             const { data: { session }, error } = await supabase.auth.getSession();
+            if (error || !session) {
+                window.location.href = './index.html';
+                return;
+            }
 
-            if (error || !session || session.user.email !== 'artebr.firme@gmail.com') {
-                // Se não houver sessão ou o email não for o do admin, redireciona
+            try {
+                const { data, error } = await supabase
+                    .from('users')
+                    .select('user_type')
+                    .eq('id', session.user.id)
+                    .single();
+
+                if (error || data.user_type !== 'admin') {
+                    // Se não encontrar o tipo de usuário ou ele não for admin, desloga
+                    await supabase.auth.signOut();
+                    window.location.href = './index.html';
+                }
+            } catch (err) {
+                console.error('Erro ao buscar tipo de usuário:', err);
+                await supabase.auth.signOut();
                 window.location.href = './index.html';
             }
         }
 
         // Executa a verificação ao carregar a página
-        checkAdminSession();
+        document.addEventListener('DOMContentLoaded', checkAdminSession);
 
-        // Funções para os botões (reutilizadas do seu código original)
+        // Funções para os botões
         function accessProfessor() {
             window.location.href = 'dashboard.html';
         }
