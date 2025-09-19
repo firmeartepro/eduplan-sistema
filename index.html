@@ -55,8 +55,11 @@
                     </div>
                     <a href="#" id="forgot-password-link" class="font-medium text-purple-600 hover:text-purple-500">Esqueceu a senha?</a>
                 </div>
-                <button type="submit" class="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded-full font-bold transition-colors">
+                <button type="submit" onclick="signInWithPassword(event)" class="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded-full font-bold transition-colors">
                     Entrar
+                </button>
+                <button type="button" onclick="signInWithMagicLink()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-full font-bold transition-colors mt-2">
+                    Entrar com Link Mágico
                 </button>
             </form>
         </div>
@@ -77,8 +80,153 @@
     </div>
     
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./main.js"></script>
+    <script>
+        // Configuração do Supabase
+        const SUPABASE_URL = 'https://srqqheacsglhyyhvfchg.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNycXFoZWFjc2dsaHl5aHZmY2hnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgxNTMxMDMsImV4cCI6MjA3MzcyOTEwM30.ZOKVDK1FEyDM-lcPrw4-0xbVDxYLftek3NHYcmjc_7w';
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+        // Toast Messages
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('message-toast');
+            const messageEl = document.getElementById('toast-message');
+            const icon = document.getElementById('toast-icon');
+            const icons = {
+                success: '<i class="fas fa-check-circle text-green-500"></i>',
+                error: '<i class="fas fa-times-circle text-red-500"></i>',
+                info: '<i class="fas fa-info-circle text-blue-500"></i>'
+            };
+            icon.innerHTML = icons[type] || icons.info;
+            messageEl.textContent = message;
+            toast.classList.remove('translate-x-full');
+            setTimeout(() => {
+                toast.classList.add('translate-x-full');
+            }, 3000);
+        }
+
+        // Função para verificar a autenticação e redirecionar
+        async function checkAuthAndRedirect() {
+            const { data: { session }, error } = await supabase.auth.getSession();
+            if (error) {
+                console.error('Erro ao obter a sessão:', error);
+                return;
+            }
+            if (session) {
+                if (session.user.email === 'artebr.firme@gmail.com') {
+                    window.location.href = './admin.html';
+                } else {
+                    try {
+                        const { data, error } = await supabase
+                            .from('users')
+                            .select('user_type')
+                            .eq('id', session.user.id)
+                            .single();
+                        if (error) {
+                            console.error('Erro ao buscar tipo de usuário:', error);
+                            window.location.href = './index.html';
+                            return;
+                        }
+                        const userType = data.user_type;
+                        if (userType === 'professor') {
+                            window.location.href = './dashboard.html';
+                        } else if (userType === 'coordenadora') {
+                            window.location.href = './coordenacao.html';
+                        } else if (userType === 'diretora') {
+                            window.location.href = './direcao.html';
+                        } else {
+                            window.location.href = './dashboard.html';
+                        }
+                    } catch (err) {
+                        console.error('Erro ao processar o redirecionamento:', err);
+                        window.location.href = './index.html';
+                    }
+                }
+            }
+        }
+        checkAuthAndRedirect();
+
+        // Login por senha
+        async function signInWithPassword(e) {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+            if (error) {
+                showToast(`Erro no login: ${error.message}`, 'error');
+            } else {
+                showToast('Login bem-sucedido!', 'success');
+                checkAuthAndRedirect();
+            }
+        }
+
+        // Login por "Link Mágico"
+        async function signInWithMagicLink() {
+            const email = document.getElementById('email').value;
+            if (!email) {
+                showToast('Por favor, digite seu email.', 'error');
+                return;
+            }
+            const { error } = await supabase.auth.signInWithOtp({
+                email: email,
+                options: {
+                    emailRedirectTo: 'https://sua-url-vercel-aqui.vercel.app' // Substitua pela sua URL da Vercel
+                }
+            });
+            if (error) {
+                showToast(`Erro ao enviar link: ${error.message}`, 'error');
+            } else {
+                showToast('Link de login enviado para o seu e-mail!', 'success');
+            }
+        }
+
+        // Forgot password logic
+        const forgotPasswordModal = document.getElementById('forgotPasswordModal');
+        const forgotPasswordLink = document.getElementById('forgot-password-link');
+        const cancelForgotBtn = document.getElementById('cancel-forgot');
+        const forgotPasswordForm = document.getElementById('forgot-password-form');
+
+        function showForgotPassword() {
+            forgotPasswordModal.classList.remove('hidden');
+            forgotPasswordModal.classList.add('flex');
+        }
+
+        function closeForgotPassword() {
+            forgotPasswordModal.classList.remove('flex');
+            forgotPasswordModal.classList.add('hidden');
+        }
+
+        forgotPasswordLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            showForgotPassword();
+        });
+
+        cancelForgotBtn.addEventListener('click', closeForgotPassword);
+        forgotPasswordForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('forgot-email').value;
+            const { error } = await supabase.auth.resetPasswordForEmail(email);
+            if (error) {
+                showToast(`Erro ao enviar email de recuperação: ${error.message}`, 'error');
+            } else {
+                showToast('Verifique seu email para as instruções de recuperação!', 'success');
+                closeForgotPassword();
+            }
+        });
+
+        // Close modal when clicking outside
+        document.getElementById('forgotPasswordModal').addEventListener('click', (e) => {
+            if (e.target.id === 'forgotPasswordModal') {
+                closeForgotPassword();
+            }
+        });
+
+        // Enter key handling
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeForgotPassword();
+            }
+        });
+    </script>
 </body>
 </html>
 
