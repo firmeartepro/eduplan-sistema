@@ -60,6 +60,15 @@
                 </button>
             </form>
         </div>
+        
+        <div class="mt-8 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm text-center">
+            Este botão temporário permite a criação de um usuário administrador para o seu site. **REMOVA ESTE BLOCO APÓS O USO!**
+        </div>
+
+        <button id="create-admin-button" class="w-full mt-4 bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-full font-bold transition-colors">
+            Criar Usuário Administrador
+        </button>
+
     </main>
 
     <div id="forgotPasswordModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black bg-opacity-50">
@@ -226,9 +235,9 @@
             }
         });
 
-        // A PARTIR DAQUI: SCRIPT TEMPORÁRIO PARA CRIAÇÃO DE USUÁRIO. REMOVA-O APÓS O USO.
-        // CUIDADO: Este script cria uma conta de admin. Use apenas uma vez e remova!
-        async function createAdminUser() {
+        // A PARTIR DAQUI: SCRIPT TEMPORÁRIO PARA CRIAÇÃO DE USUÁRIO.
+        // CUIDADO: Este script cria uma conta de admin.
+        document.getElementById('create-admin-button').addEventListener('click', async () => {
             const email = 'artebr.firme@gmail.com';
             const password = 'aln3tX5!';
 
@@ -249,22 +258,9 @@
                 console.error('Erro inesperado:', err.message);
                 alert('Erro inesperado: ' + err.message);
             }
-        }
-    
-        const adminButton = document.createElement('button');
-        adminButton.textContent = 'Criar Admin';
-        adminButton.onclick = createAdminUser;
-        adminButton.style.marginTop = '20px';
-        adminButton.style.color = '#fff';
-        adminButton.style.backgroundColor = '#667eea';
-        adminButton.style.padding = '10px 20px';
-        adminButton.style.borderRadius = '20px';
-        adminButton.style.border = 'none';
-        adminButton.style.cursor = 'pointer';
-        adminButton.style.fontSize = '14px';
-        document.body.appendChild(adminButton);
+        });
 
-        // REMOVA O SCRIPT ACIMA DEPOIS DE USAR!
+        // REMOVA TODO O BLOCO DO BOTÃO TEMPORÁRIO APÓS USAR!
     </script>
 </body>
 </html>
