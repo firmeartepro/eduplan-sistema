@@ -104,7 +104,7 @@
             }, 3000);
         }
 
-        // Função para verificar se o usuário está autenticado e redirecionar com base no user_type
+        // Função para verificar se o usuário está autenticado e redirecionar
         async function checkAuthAndRedirect() {
             const { data: { session }, error } = await supabase.auth.getSession();
 
@@ -114,34 +114,40 @@
             }
 
             if (session) {
-                try {
-                    const { data, error } = await supabase
-                        .from('users')
-                        .select('user_type')
-                        .eq('id', session.user.id)
-                        .single();
+                // Checa se o usuário logado é o administrador (pelo email)
+                if (session.user.email === 'artebr.firme@gmail.com') {
+                    window.location.href = './admin.html';
+                } else {
+                    // Para os outros usuários, busca o tipo e redireciona
+                    try {
+                        const { data, error } = await supabase
+                            .from('users')
+                            .select('user_type')
+                            .eq('id', session.user.id)
+                            .single();
 
-                    if (error) {
-                        console.error('Erro ao buscar tipo de usuário:', error);
+                        if (error) {
+                            console.error('Erro ao buscar tipo de usuário:', error);
+                            window.location.href = './index.html';
+                            return;
+                        }
+
+                        const userType = data.user_type;
+
+                        if (userType === 'professor') {
+                            window.location.href = './dashboard.html';
+                        } else if (userType === 'coordenadora') {
+                            window.location.href = './coordenacao.html';
+                        } else if (userType === 'diretora') {
+                            window.location.href = './direcao.html';
+                        } else {
+                            window.location.href = './dashboard.html';
+                        }
+
+                    } catch (err) {
+                        console.error('Erro ao processar o redirecionamento:', err);
                         window.location.href = './index.html';
-                        return;
                     }
-
-                    const userType = data.user_type;
-
-                    if (userType === 'professor') {
-                        window.location.href = './dashboard.html';
-                    } else if (userType === 'coordenadora') {
-                        window.location.href = './coordenacao.html';
-                    } else if (userType === 'diretora') {
-                        window.location.href = './direcao.html';
-                    } else {
-                        window.location.href = './dashboard.html';
-                    }
-
-                } catch (err) {
-                    console.error('Erro ao processar o redirecionamento:', err);
-                    window.location.href = './index.html';
                 }
             }
         }
@@ -165,9 +171,6 @@
                 showToast(`Erro no login: ${error.message}`, 'error');
             } else {
                 showToast('Login bem-sucedido!', 'success');
-                // Redirecionamento após o login
-                // O redirecionamento será tratado pela função checkAuthAndRedirect()
-                // A página irá recarregar e a função será chamada, levando o usuário para o painel correto.
                 window.location.reload(); 
             }
         });
