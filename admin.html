@@ -9,6 +9,23 @@
     <h1>Login Bem-sucedido!</h1>
     <p>Esta é a página de administrador. Se você está vendo isso, o redirecionamento funcionou.</p>
 </body>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+    const SUPABASE_URL = 'https://sua-url-supabase.supabase.co'; // Substitua pela sua URL
+    const SUPABASE_KEY = 'sua-chave-anon-publica'; // Substitua pela sua chave anon pública
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    async function checkAdminSession() {
+        const { data: { session }, error } = await supabase.auth.getSession();
+
+        if (error || !session || session.user.email !== 'artebr.firme@gmail.com') {
+            console.log('Não é um administrador logado. Redirecionando para a página de login.');
+            window.location.href = './index.html';
+        }
+    }
+
+    checkAdminSession();
+</script>
 </html>
 
 
