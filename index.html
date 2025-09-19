@@ -3,48 +3,224 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Escolha seu Perfil</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Semanário - Login</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
         body { font-family: 'Inter', sans-serif; }
         .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-        .card-hover { transition: transform 0.3s ease, box-shadow 0.3s ease; }
-        .card-hover:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+        .login-card { backdrop-filter: blur(10px); background: rgba(255, 255, 255, 0.95); }
+        .floating-animation { animation: float 6s ease-in-out infinite; }
+        @keyframes float { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-20px); } }
+        .fade-in { animation: fadeIn 1s ease-in-out; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
     </style>
 </head>
-<body class="gradient-bg flex items-center justify-center min-h-screen">
+<body class="gradient-bg flex items-center justify-center min-h-screen relative overflow-hidden">
 
-    <main class="w-full max-w-4xl p-8">
-        <div class="bg-white bg-opacity-90 backdrop-blur-md p-10 rounded-3xl shadow-2xl text-center space-y-8">
-            <h1 class="text-4xl font-extrabold text-gray-800 mb-2">Escolha seu Perfil</h1>
-            <p class="text-lg text-gray-600 mb-8">Para acessar o sistema, selecione sua área de atuação.</p>
+    <div class="absolute w-64 h-64 bg-purple-400 rounded-full mix-blend-multiply filter blur-xl opacity-70 floating-animation" style="top: 10%; left: 10%;"></div>
+    <div class="absolute w-64 h-64 bg-blue-400 rounded-full mix-blend-multiply filter blur-xl opacity-70 floating-animation" style="top: 70%; left: 60%; animation-delay: 2s;"></div>
+    <div class="absolute w-64 h-64 bg-pink-400 rounded-full mix-blend-multiply filter blur-xl opacity-70 floating-animation" style="top: 40%; left: 40%; animation-delay: 4s;"></div>
+
+    <main class="relative z-10 p-6 sm:p-8 md:p-12 lg:p-16 w-full max-w-sm fade-in">
+        <div class="login-card p-6 rounded-3xl shadow-2xl space-y-6">
+            <h1 class="text-3xl font-bold text-center text-gray-800">Login</h1>
             
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                
-                <a href="./login-professor.html" class="flex flex-col items-center justify-center p-6 bg-yellow-100 rounded-2xl border-2 border-yellow-300 card-hover">
-                    <i class="fas fa-chalkboard-teacher text-4xl text-yellow-600 mb-4"></i>
-                    <h2 class="text-xl font-bold text-gray-800">Professor</h2>
-                </a>
-
-                <a href="./login-coordenador.html" class="flex flex-col items-center justify-center p-6 bg-blue-100 rounded-2xl border-2 border-blue-300 card-hover">
-                    <i class="fas fa-user-graduate text-4xl text-blue-600 mb-4"></i>
-                    <h2 class="text-xl font-bold text-gray-800">Coordenador</h2>
-                </a>
-
-                <a href="./login-diretor.html" class="flex flex-col items-center justify-center p-6 bg-green-100 rounded-2xl border-2 border-green-300 card-hover">
-                    <i class="fas fa-user-tie text-4xl text-green-600 mb-4"></i>
-                    <h2 class="text-xl font-bold text-gray-800">Diretor</h2>
-                </a>
-                
-                <a href="./login-admin.html" class="flex flex-col items-center justify-center p-6 bg-red-100 rounded-2xl border-2 border-red-300 card-hover">
-                    <i class="fas fa-crown text-4xl text-red-600 mb-4"></i>
-                    <h2 class="text-xl font-bold text-gray-800">Admin</h2>
-                </a>
+            <div id="message-toast" class="fixed bottom-4 right-4 bg-gray-800 text-white px-4 py-2 rounded-lg shadow-md transition-transform duration-300 transform translate-x-full">
+                <div class="flex items-center space-x-2">
+                    <span id="toast-icon"></span>
+                    <span id="toast-message"></span>
+                </div>
             </div>
+
+            <form id="login-form" class="space-y-4">
+                <div>
+                    <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
+                    <input type="email" id="email" name="email" class="mt-1 block w-full px-4 py-2 bg-gray-100 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-purple-500" required>
+                </div>
+                <div>
+                    <label for="password" class="block text-sm font-medium text-gray-700">Senha</label>
+                    <input type="password" id="password" name="password" class="mt-1 block w-full px-4 py-2 bg-gray-100 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-purple-500" required>
+                </div>
+                <div class="flex items-center justify-between text-sm">
+                    <div class="flex items-center">
+                        <input id="remember-me" name="remember-me" type="checkbox" class="h-4 w-4 text-purple-600 border-gray-300 rounded">
+                        <label for="remember-me" class="ml-2 block text-gray-900">
+                            Lembrar-me
+                        </label>
+                    </div>
+                    <a href="#" id="forgot-password-link" class="font-medium text-purple-600 hover:text-purple-500">Esqueceu a senha?</a>
+                </div>
+                <button type="submit" onclick="signInWithPassword(event)" class="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded-full font-bold transition-colors">
+                    Entrar
+                </button>
+                <button type="button" onclick="signInWithMagicLink()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-full font-bold transition-colors mt-2">
+                    Entrar com Link Mágico
+                </button>
+            </form>
         </div>
     </main>
+
+    <div id="forgotPasswordModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black bg-opacity-50">
+        <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-sm">
+            <h2 class="text-lg font-bold mb-4">Esqueci a Senha</h2>
+            <form id="forgot-password-form">
+                <label for="forgot-email" class="block text-sm font-medium text-gray-700">Email</label>
+                <input type="email" id="forgot-email" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" required>
+                <div class="flex justify-end space-x-2 mt-4">
+                    <button type="button" id="cancel-forgot" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-purple-600 rounded-lg hover:bg-purple-700">Enviar Link de Recuperação</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // Configuração do Supabase
+        const SUPABASE_URL = 'https://srqqheacsglhyyhvfchg.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNycXFoZWFjc2dsaHl5aHZmY2hnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgxNTMxMDMsImV4cCI6MjA3MzcyOTEwM30.ZOKVDK1FEyDM-lcPrw4-0xbVDxYLftek3NHYcmjc_7w';
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // Toast Messages
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('message-toast');
+            const messageEl = document.getElementById('toast-message');
+            const icon = document.getElementById('toast-icon');
+            const icons = {
+                success: '<i class="fas fa-check-circle text-green-500"></i>',
+                error: '<i class="fas fa-times-circle text-red-500"></i>',
+                info: '<i class="fas fa-info-circle text-blue-500"></i>'
+            };
+            icon.innerHTML = icons[type] || icons.info;
+            messageEl.textContent = message;
+            toast.classList.remove('translate-x-full');
+            setTimeout(() => {
+                toast.classList.add('translate-x-full');
+            }, 3000);
+        }
+
+        // Função para verificar a autenticação e redirecionar
+        async function checkAuthAndRedirect() {
+            const { data: { session }, error } = await supabase.auth.getSession();
+            if (error || !session) {
+                return;
+            }
+            try {
+                const { data, error } = await supabase
+                    .from('users')
+                    .select('user_type')
+                    .eq('id', session.user.id)
+                    .single();
+                if (error) {
+                    console.error('Erro ao buscar tipo de usuário:', error);
+                    return;
+                }
+                const userType = data.user_type;
+                if (userType === 'admin') {
+                    window.location.href = './admin.html';
+                } else if (userType === 'professor') {
+                    window.location.href = './dashboard.html';
+                } else if (userType === 'coordenadora') {
+                    window.location.href = './coordenacao.html';
+                } else if (userType === 'diretora') {
+                    window.location.href = './direcao.html';
+                } else {
+                    window.location.href = './dashboard.html';
+                }
+            } catch (err) {
+                console.error('Erro ao processar o redirecionamento:', err);
+                return;
+            }
+        }
+        checkAuthAndRedirect();
+
+        // Login por senha
+        async function signInWithPassword(e) {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+            if (error) {
+                showToast(`Erro no login: ${error.message}`, 'error');
+            } else {
+                showToast('Login bem-sucedido!', 'success');
+                checkAuthAndRedirect();
+            }
+        }
+
+        // Login por "Link Mágico"
+        async function signInWithMagicLink() {
+            const email = document.getElementById('email').value;
+            if (!email) {
+                showToast('Por favor, digite seu email.', 'error');
+                return;
+            }
+            const { error } = await supabase.auth.signInWithOtp({
+                email: email,
+                options: {
+                    emailRedirectTo: 'https://eduplan-sistema.vercel.app' 
+                }
+            });
+            if (error) {
+                showToast(`Erro ao enviar link: ${error.message}`, 'error');
+            } else {
+                showToast('Link de login enviado para o seu e-mail!', 'success');
+            }
+        }
+
+        // Forgot password logic
+        const forgotPasswordModal = document.getElementById('forgotPasswordModal');
+        const forgotPasswordLink = document.getElementById('forgot-password-link');
+        const cancelForgotBtn = document.getElementById('cancel-forgot');
+        const forgotPasswordForm = document.getElementById('forgot-password-form');
+
+        function showForgotPassword() {
+            forgotPasswordModal.classList.remove('hidden');
+            forgotPasswordModal.classList.add('flex');
+        }
+
+        function closeForgotPassword() {
+            forgotPasswordModal.classList.remove('flex');
+            forgotPasswordModal.classList.add('hidden');
+        }
+
+        forgotPasswordLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            showForgotPassword();
+        });
+
+        cancelForgotBtn.addEventListener('click', closeForgotPassword);
+        forgotPasswordForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('forgot-email').value;
+            const { error } = await supabase.auth.resetPasswordForEmail(email);
+            if (error) {
+                showToast(`Erro ao enviar email de recuperação: ${error.message}`, 'error');
+            } else {
+                showToast('Verifique seu email para as instruções de recuperação!', 'success');
+                closeForgotPassword();
+            }
+        });
+
+        // Close modal when clicking outside
+        document.getElementById('forgotPasswordModal').addEventListener('click', (e) => {
+            if (e.target.id === 'forgotPasswordModal') {
+                closeForgotPassword();
+            }
+        });
+
+        // Enter key handling
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeForgotPassword();
+            }
+        });
+    </script>
 </body>
 </html>
 
