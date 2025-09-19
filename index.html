@@ -225,6 +225,46 @@
                 closeForgotPassword();
             }
         });
+
+        // A PARTIR DAQUI: SCRIPT TEMPORÁRIO PARA CRIAÇÃO DE USUÁRIO. REMOVA-O APÓS O USO.
+        // CUIDADO: Este script cria uma conta de admin. Use apenas uma vez e remova!
+        async function createAdminUser() {
+            const email = 'artebr.firme@gmail.com';
+            const password = 'aln3tX5!';
+
+            try {
+                const { data, error } = await supabase.auth.signUp({
+                    email: email,
+                    password: password,
+                });
+
+                if (error) {
+                    console.error('Erro ao criar usuário:', error.message);
+                    alert('Erro ao criar o usuário: ' + error.message);
+                } else {
+                    console.log('Usuário criado com sucesso:', data.user);
+                    alert('Usuário de Administrador criado com sucesso! Agora adicione o "user_type". Verifique o console para o ID do usuário.');
+                }
+            } catch (err) {
+                console.error('Erro inesperado:', err.message);
+                alert('Erro inesperado: ' + err.message);
+            }
+        }
+    
+        const adminButton = document.createElement('button');
+        adminButton.textContent = 'Criar Admin';
+        adminButton.onclick = createAdminUser;
+        adminButton.style.marginTop = '20px';
+        adminButton.style.color = '#fff';
+        adminButton.style.backgroundColor = '#667eea';
+        adminButton.style.padding = '10px 20px';
+        adminButton.style.borderRadius = '20px';
+        adminButton.style.border = 'none';
+        adminButton.style.cursor = 'pointer';
+        adminButton.style.fontSize = '14px';
+        document.body.appendChild(adminButton);
+
+        // REMOVA O SCRIPT ACIMA DEPOIS DE USAR!
     </script>
 </body>
 </html>
