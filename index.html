@@ -108,46 +108,61 @@
         async function checkAuthAndRedirect() {
             const { data: { session }, error } = await supabase.auth.getSession();
 
+            // --- INÍCIO DO CÓDIGO DE DEBUG ---
+            console.log("--- DEBUG: Verificação de Autenticação ---");
             if (error) {
-                console.error('Erro ao obter a sessão:', error);
+                console.error('DEBUG: Erro ao obter a sessão:', error.message);
                 return;
             }
 
-            if (session) {
-                // Checa se o usuário logado é o administrador (pelo email)
-                if (session.user.email === 'artebr.firme@gmail.com') {
-                    window.location.href = './admin.html';
-                } else {
-                    // Para os outros usuários, busca o tipo e redireciona
-                    try {
-                        const { data, error } = await supabase
-                            .from('users')
-                            .select('user_type')
-                            .eq('id', session.user.id)
-                            .single();
+            if (!session) {
+                console.log('DEBUG: Nenhuma sessão ativa. Permanecendo na página de login.');
+                return;
+            }
 
-                        if (error) {
-                            console.error('Erro ao buscar tipo de usuário:', error);
-                            window.location.href = './index.html';
-                            return;
-                        }
+            console.log('DEBUG: Sessão encontrada. Usuário autenticado.');
+            console.log('DEBUG: Email do usuário:', session.user.email);
+            // --- FIM DO CÓDIGO DE DEBUG ---
 
-                        const userType = data.user_type;
 
-                        if (userType === 'professor') {
-                            window.location.href = './dashboard.html';
-                        } else if (userType === 'coordenadora') {
-                            window.location.href = './coordenacao.html';
-                        } else if (userType === 'diretora') {
-                            window.location.href = './direcao.html';
-                        } else {
-                            window.location.href = './dashboard.html';
-                        }
+            if (session.user.email === 'artebr.firme@gmail.com') {
+                console.log("DEBUG: E-mail do administrador correspondente. Redirecionando para admin.html.");
+                window.location.href = './admin.html';
+            } else {
+                // Para os outros usuários, busca o tipo e redireciona
+                try {
+                    const { data, error } = await supabase
+                        .from('users')
+                        .select('user_type')
+                        .eq('id', session.user.id)
+                        .single();
 
-                    } catch (err) {
-                        console.error('Erro ao processar o redirecionamento:', err);
+                    if (error) {
+                        console.error('DEBUG: Erro ao buscar tipo de usuário:', error);
                         window.location.href = './index.html';
+                        return;
                     }
+
+                    const userType = data.user_type;
+                    console.log("DEBUG: Tipo de usuário encontrado:", userType);
+
+                    if (userType === 'professor') {
+                        console.log("DEBUG: Redirecionando para dashboard.html");
+                        window.location.href = './dashboard.html';
+                    } else if (userType === 'coordenadora') {
+                        console.log("DEBUG: Redirecionando para coordenacao.html");
+                        window.location.href = './coordenacao.html';
+                    } else if (userType === 'diretora') {
+                        console.log("DEBUG: Redirecionando para direcao.html");
+                        window.location.href = './direcao.html';
+                    } else {
+                        console.log("DEBUG: Tipo de usuário desconhecido. Redirecionando para dashboard.html.");
+                        window.location.href = './dashboard.html';
+                    }
+
+                } catch (err) {
+                    console.error('DEBUG: Erro ao processar o redirecionamento:', err);
+                    window.location.href = './index.html';
                 }
             }
         }
@@ -169,8 +184,10 @@
 
             if (error) {
                 showToast(`Erro no login: ${error.message}`, 'error');
+                console.error("DEBUG: Erro de login:", error.message);
             } else {
                 showToast('Login bem-sucedido!', 'success');
+                console.log("DEBUG: Login bem-sucedido. Chamando a verificação de autenticação para redirecionamento.");
                 checkAuthAndRedirect(); 
             }
         });
