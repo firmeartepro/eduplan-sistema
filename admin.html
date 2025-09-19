@@ -145,7 +145,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        // Configuração do Supabase (reutilizada do index.html para consistência)
+        // Configuração do Supabase
         const SUPABASE_URL = 'https://srqqheacsglhyyhvfchg.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNycXFoZWFjc2dsaHl5aHZmY2hnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgxNTMxMDMsImV4cCI6MjA3MzcyOTEwM30.ZOKVDK1FEyDM-lcPrw4-0xbVDxYLftek3NHYcmjc_7w';
         
@@ -155,19 +155,9 @@
         async function checkAdminSession() {
             const { data: { session }, error } = await supabase.auth.getSession();
 
-            if (error || !session) {
-                // Se não houver sessão, redireciona para a página de login
-                console.log("Nenhuma sessão encontrada. Redirecionando.");
+            if (error || !session || session.user.email !== 'artebr.firme@gmail.com') {
+                // Se não houver sessão ou o email não for o do admin, redireciona
                 window.location.href = './index.html';
-                return;
-            }
-
-            // Opcional: verifica se o usuário é o administrador (pelo email)
-            if (session.user.email !== 'artebr.firme@gmail.com') {
-                console.log("Usuário não é o administrador. Redirecionando.");
-                await supabase.auth.signOut();
-                window.location.href = './index.html';
-                return;
             }
         }
 
@@ -176,17 +166,14 @@
 
         // Funções para os botões (reutilizadas do seu código original)
         function accessProfessor() {
-            // Lógica de acesso como Professor
             window.location.href = 'dashboard.html';
         }
 
         function accessCoordenador() {
-            // Lógica de acesso como Coordenador
             window.location.href = 'coordenacao.html';
         }
 
         function accessDiretor() {
-            // Lógica de acesso como Diretor
             window.location.href = 'direcao.html';
         }
 
