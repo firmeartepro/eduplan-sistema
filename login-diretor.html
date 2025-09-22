@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Diretor</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .gradient-bg { background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%); }
+        .login-card { backdrop-filter: blur(10px); background: rgba(255, 255, 255, 0.95); }
+        .floating-animation { animation: float 6s ease-in-out infinite; }
+        @keyframes float { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-20px); } }
+        .fade-in { animation: fadeIn 1s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="gradient-bg flex items-center justify-center min-h-screen relative overflow-hidden">
+    <div class="absolute w-64 h-64 bg-yellow-400 rounded-full mix-blend-multiply filter blur-xl opacity-70 floating-animation" style="top: 10%; left: 10%;"></div>
+    <div class="absolute w-64 h-64 bg-orange-400 rounded-full mix-blend-multiply filter blur-xl opacity-70 floating-animation" style="top: 70%; left: 60%; animation-delay: 2s;"></div>
+    <main class="relative z-10 p-6 sm:p-8 md:p-12 lg:p-16 w-full max-w-sm fade-in">
+        <div class="login-card p-6 rounded-3xl shadow-2xl space-y-6">
+            <h1 class="text-3xl font-bold text-center text-gray-800">Login Diretor</h1>
+            <form id="login-form" class="space-y-4">
+                <div>
+                    <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
+                    <input type="email" id="email" name="email" class="mt-1 block w-full px-4 py-2 bg-gray-100 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-orange-500" required>
+                </div>
+                <div>
+                    <label for="password" class="block text-sm font-medium text-gray-700">Senha</label>
+                    <input type="password" id="password" name="password" class="mt-1 block w-full px-4 py-2 bg-gray-100 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-orange-500" required>
+                </div>
+                <button type="submit" class="w-full bg-orange-600 hover:bg-orange-700 text-white py-2 px-4 rounded-full font-bold transition-colors">
+                    Entrar
+                </button>
+            </form>
+        </div>
+    </main>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const SUPABASE_URL = 'https://srqqheacsglhyyhvfchg.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNycXFoZWFjc2dsaHl5aHZmY2hnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgxNTMxMDMsImV4cCI6MjA3MzcyOTEwM30.ZOKVDK1FEyDM-lcPrw4-0xbVDxYLftek3NHYcmjc_7w';
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        async function signInWithPassword(e) {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const { error } = await supabase.auth.signInWithPassword({ email, password });
+            if (error) {
+                alert(`Erro no login: ${error.message}`);
+            } else {
+                window.location.href = './direcao.html';
+            }
+        }
+        document.getElementById('login-form').addEventListener('submit', signInWithPassword);
+    </script>
+</body>
+</html>
