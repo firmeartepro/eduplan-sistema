@@ -12,6 +12,11 @@
         .gradient-bg { background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); }
         .card-hover { transition: all 0.3s ease; }
         .card-hover:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        .tab-button.active {
+            border-bottom-width: 2px;
+            border-color: #ef4444;
+            color: #ef4444;
+        }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
@@ -98,67 +103,130 @@
         </div>
 
         <div class="bg-white rounded-xl shadow-sm p-8">
-            <h3 class="text-2xl font-bold text-gray-900 mb-6 text-center">
-                <i class="fas fa-tools mr-3 text-red-600"></i>
-                Ferramentas Administrativas
-            </h3>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div class="bg-gradient-to-br from-red-500 to-red-600 rounded-lg p-6 text-white text-center card-hover">
-                    <i class="fas fa-school text-3xl mb-4"></i>
-                    <h4 class="font-bold text-lg mb-2">Gestão de Escolas</h4>
-                    <p class="text-red-100 text-sm mb-4">Cadastrar e gerenciar escolas do sistema</p>
-                    <button class="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-4 py-2 rounded-lg text-sm transition-colors">
-                        Em Desenvolvimento
-                    </button>
-                </div>
+            <div class="flex justify-center border-b border-gray-200 mb-6">
+                <button id="tab-gerenciamento" class="tab-button active px-4 py-2 font-medium text-gray-600 hover:text-red-500 transition-colors">
+                    Gestão de Usuários
+                </button>
+                <button id="tab-outros" class="tab-button px-4 py-2 font-medium text-gray-600 hover:text-red-500 transition-colors">
+                    Outras Ferramentas
+                </button>
+            </div>
 
-                <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-6 text-white text-center card-hover">
-                    <i class="fas fa-users text-3xl mb-4"></i>
-                    <h4 class="font-bold text-lg mb-2">Gestão de Usuários</h4>
-                    <p class="text-blue-100 text-sm mb-4">Cadastrar professores, coordenadores e diretores</p>
-                    <button class="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-4 py-2 rounded-lg text-sm transition-colors">
-                        Em Desenvolvimento
-                    </button>
+            <div id="content-gerenciamento" class="fade-in">
+                <h3 class="text-2xl font-bold text-gray-900 mb-6 text-center">
+                    <i class="fas fa-users-cog mr-3 text-red-600"></i>
+                    Gerenciamento de Usuários
+                </h3>
+                <div id="message-toast" class="fixed bottom-4 right-4 bg-gray-800 text-white px-4 py-2 rounded-lg shadow-md transition-transform duration-300 transform translate-x-full">
+                    <div class="flex items-center space-x-2">
+                        <span id="toast-icon"></span>
+                        <span id="toast-message"></span>
+                    </div>
                 </div>
-
-                <div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg p-6 text-white text-center card-hover">
-                    <i class="fas fa-envelope text-3xl mb-4"></i>
-                    <h4 class="font-bold text-lg mb-2">Recados das Escolas</h4>
-                    <p class="text-purple-100 text-sm mb-4">Visualizar solicitações das diretorias</p>
-                    <button class="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-4 py-2 rounded-lg text-sm transition-colors">
-                        Em Desenvolvimento
-                    </button>
+                <div class="bg-gray-50 p-6 rounded-lg shadow-inner">
+                    <form id="create-user-form" class="space-y-4">
+                        <div>
+                            <label for="new-email" class="block text-sm font-medium text-gray-700">Email</label>
+                            <input type="email" id="new-email" name="new-email" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500" required>
+                        </div>
+                        <div>
+                            <label for="new-password" class="block text-sm font-medium text-gray-700">Senha</label>
+                            <input type="password" id="new-password" name="new-password" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500" required>
+                        </div>
+                        <div>
+                            <label for="user-type" class="block text-sm font-medium text-gray-700">Tipo de Usuário</label>
+                            <select id="user-type" name="user-type" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500" required>
+                                <option value="" disabled selected>Selecione a função</option>
+                                <option value="admin">Administrador</option>
+                                <option value="professor">Professor</option>
+                                <option value="coordenadora">Coordenador(a)</option>
+                                <option value="diretora">Diretor(a)</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white py-3 px-6 rounded-lg font-bold transition-colors">
+                            Criar Novo Usuário
+                        </button>
+                    </form>
                 </div>
+            </div>
 
-                <div class="bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-lg p-6 text-white text-center card-hover">
-                    <i class="fas fa-calendar-times text-3xl mb-4"></i>
-                    <h4 class="font-bold text-lg mb-2">Vencimentos</h4>
-                    <p class="text-yellow-100 text-sm mb-4">Controlar vencimentos de escolas e usuários</p>
-                    <button class="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-4 py-2 rounded-lg text-sm transition-colors">
-                        Em Desenvolvimento
-                    </button>
+            <div id="content-outros" class="hidden fade-in">
+                <h3 class="text-2xl font-bold text-gray-900 mb-6 text-center">
+                    <i class="fas fa-tools mr-3 text-red-600"></i>
+                    Outras Ferramentas Administrativas
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div class="bg-gradient-to-br from-red-500 to-red-600 rounded-lg p-6 text-white text-center card-hover">
+                        <i class="fas fa-school text-3xl mb-4"></i>
+                        <h4 class="font-bold text-lg mb-2">Gestão de Escolas</h4>
+                        <p class="text-red-100 text-sm mb-4">Cadastrar e gerenciar escolas do sistema</p>
+                        <button class="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-4 py-2 rounded-lg text-sm transition-colors">
+                            Em Desenvolvimento
+                        </button>
+                    </div>
+
+                    <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-6 text-white text-center card-hover">
+                        <i class="fas fa-users text-3xl mb-4"></i>
+                        <h4 class="font-bold text-lg mb-2">Visualizar Usuários</h4>
+                        <p class="text-blue-100 text-sm mb-4">Visualizar e gerenciar todos os usuários</p>
+                        <button class="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-4 py-2 rounded-lg text-sm transition-colors">
+                            Em Desenvolvimento
+                        </button>
+                    </div>
+
+                    <div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg p-6 text-white text-center card-hover">
+                        <i class="fas fa-envelope text-3xl mb-4"></i>
+                        <h4 class="font-bold text-lg mb-2">Recados das Escolas</h4>
+                        <p class="text-purple-100 text-sm mb-4">Visualizar solicitações das diretorias</p>
+                        <button class="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-4 py-2 rounded-lg text-sm transition-colors">
+                            Em Desenvolvimento
+                        </button>
+                    </div>
+
+                    <div class="bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-lg p-6 text-white text-center card-hover">
+                        <i class="fas fa-calendar-times text-3xl mb-4"></i>
+                        <h4 class="font-bold text-lg mb-2">Vencimentos</h4>
+                        <p class="text-yellow-100 text-sm mb-4">Controlar vencimentos de escolas e usuários</p>
+                        <button class="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-4 py-2 rounded-lg text-sm transition-colors">
+                            Em Desenvolvimento
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
     </main>
-
+    
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        // Configuração do Supabase
         const SUPABASE_URL = 'https://srqqheacsglhyyhvfchg.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNycXFoZWFjc2dsaHl5aHZmY2hnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgxNTMxMDMsImV4cCI6MjA3MzcyOTEwM30.ZOKVDK1FEyDM-lcPrw4-0xbVDxYLftek3NHYcmjc_7w';
-        
         const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // Função de verificação de autenticação
-        async function checkAdminSession() {
-            const { data: { session }, error } = await supabase.auth.getSession();
-            if (error || !session) {
+        // Toast Messages
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('message-toast');
+            const messageEl = document.getElementById('toast-message');
+            const icon = document.getElementById('toast-icon');
+            const icons = {
+                success: '<i class="fas fa-check-circle text-green-500"></i>',
+                error: '<i class="fas fa-times-circle text-red-500"></i>',
+                info: '<i class="fas fa-info-circle text-blue-500"></i>'
+            };
+            icon.innerHTML = icons[type] || icons.info;
+            messageEl.textContent = message;
+            toast.classList.remove('translate-x-full');
+            setTimeout(() => {
+                toast.classList.add('translate-x-full');
+            }, 3000);
+        }
+
+        // Correção do problema de redirecionamento: usamos o listener
+        supabase.auth.onAuthStateChange(async (event, session) => {
+            if (!session) {
+                // Se não houver sessão, redireciona para a página de login
                 window.location.href = './index.html';
                 return;
             }
-
             try {
                 const { data, error } = await supabase
                     .from('users')
@@ -167,7 +235,7 @@
                     .single();
 
                 if (error || data.user_type !== 'admin') {
-                    // Se não encontrar o tipo de usuário ou ele não for admin, desloga
+                    // Se não for admin, desloga
                     await supabase.auth.signOut();
                     window.location.href = './index.html';
                 }
@@ -176,24 +244,69 @@
                 await supabase.auth.signOut();
                 window.location.href = './index.html';
             }
-        }
+        });
 
-        // Executa a verificação ao carregar a página
-        document.addEventListener('DOMContentLoaded', checkAdminSession);
+        // Lógica para criar um novo usuário (recurso funcional)
+        document.getElementById('create-user-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('new-email').value;
+            const password = document.getElementById('new-password').value;
+            const userType = document.getElementById('user-type').value;
 
-        // Funções para os botões
-        function accessProfessor() {
-            window.location.href = 'dashboard.html';
-        }
+            try {
+                // Cadastra o usuário no sistema de autenticação do Supabase
+                const { data: authData, error: authError } = await supabase.auth.signUp({
+                    email: email,
+                    password: password
+                });
 
-        function accessCoordenador() {
-            window.location.href = 'coordenacao.html';
-        }
+                if (authError) {
+                    showToast(`Erro ao criar usuário: ${authError.message}`, 'error');
+                    return;
+                }
 
-        function accessDiretor() {
-            window.location.href = 'direcao.html';
-        }
+                // Insere os dados de perfil na tabela 'users'
+                const { data: userProfileData, error: userProfileError } = await supabase
+                    .from('users')
+                    .insert([{
+                        id: authData.user.id,
+                        user_type: userType,
+                        email: email // Adiciona o email aqui para futuras consultas
+                    }]);
 
+                if (userProfileError) {
+                    showToast(`Erro ao salvar perfil do usuário: ${userProfileError.message}`, 'error');
+                    return;
+                }
+
+                showToast(`Usuário ${email} criado com sucesso!`, 'success');
+                document.getElementById('create-user-form').reset(); // Limpa o formulário
+            } catch (err) {
+                showToast(`Ocorreu um erro inesperado: ${err.message}`, 'error');
+            }
+        });
+
+        // Lógica de Tabs para navegação
+        const tabs = document.querySelectorAll('.tab-button');
+        const contents = {
+            'tab-gerenciamento': document.getElementById('content-gerenciamento'),
+            'tab-outros': document.getElementById('content-outros')
+        };
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                for (let id in contents) {
+                    contents[id].classList.add('hidden');
+                }
+                contents[tab.id].classList.remove('hidden');
+            });
+        });
+
+        // Funções de navegação e logout
+        function accessProfessor() { window.location.href = 'dashboard.html'; }
+        function accessCoordenador() { window.location.href = 'coordenacao.html'; }
+        function accessDiretor() { window.location.href = 'direcao.html'; }
         async function logout() {
             if (confirm('Tem certeza que deseja sair?')) {
                 const { error } = await supabase.auth.signOut();
