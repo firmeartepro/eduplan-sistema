@@ -107,8 +107,11 @@
                 <button id="tab-gerenciamento" class="tab-button active px-4 py-2 font-medium text-gray-600 hover:text-red-500 transition-colors">
                     Gestão de Usuários
                 </button>
-                <button id="tab-outros" class="tab-button px-4 py-2 font-medium text-gray-600 hover:text-red-500 transition-colors">
-                    Outras Ferramentas
+                <button id="tab-vencimentos" class="tab-button px-4 py-2 font-medium text-gray-600 hover:text-red-500 transition-colors">
+                    Vencimentos
+                </button>
+                <button id="tab-mensagens" class="tab-button px-4 py-2 font-medium text-gray-600 hover:text-red-500 transition-colors">
+                    Recados das Escolas
                 </button>
             </div>
 
@@ -123,7 +126,9 @@
                         <span id="toast-message"></span>
                     </div>
                 </div>
-                <div class="bg-gray-50 p-6 rounded-lg shadow-inner">
+                
+                <div class="bg-gray-50 p-6 rounded-lg shadow-inner mb-6">
+                    <h4 class="text-xl font-semibold mb-4">Criar Novo Usuário</h4>
                     <form id="create-user-form" class="space-y-4">
                         <div>
                             <label for="new-email" class="block text-sm font-medium text-gray-700">Email</label>
@@ -143,56 +148,80 @@
                                 <option value="diretora">Diretor(a)</option>
                             </select>
                         </div>
+                        <div>
+                            <label for="subscription-plan" class="block text-sm font-medium text-gray-700">Plano de Assinatura</label>
+                            <select id="subscription-plan" name="subscription-plan" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500" required>
+                                <option value="" disabled selected>Selecione o plano</option>
+                                <option value="gratuito">Gratuito</option>
+                                <option value="anual">Anual</option>
+                                <option value="mensal">Mensal</option>
+                            </select>
+                        </div>
                         <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white py-3 px-6 rounded-lg font-bold transition-colors">
                             Criar Novo Usuário
                         </button>
                     </form>
                 </div>
-            </div>
-
-            <div id="content-outros" class="hidden fade-in">
-                <h3 class="text-2xl font-bold text-gray-900 mb-6 text-center">
-                    <i class="fas fa-tools mr-3 text-red-600"></i>
-                    Outras Ferramentas Administrativas
-                </h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <div class="bg-gradient-to-br from-red-500 to-red-600 rounded-lg p-6 text-white text-center card-hover">
-                        <i class="fas fa-school text-3xl mb-4"></i>
-                        <h4 class="font-bold text-lg mb-2">Gestão de Escolas</h4>
-                        <p class="text-red-100 text-sm mb-4">Cadastrar e gerenciar escolas do sistema</p>
-                        <button class="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-4 py-2 rounded-lg text-sm transition-colors">
-                            Em Desenvolvimento
-                        </button>
-                    </div>
-
-                    <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-6 text-white text-center card-hover">
-                        <i class="fas fa-users text-3xl mb-4"></i>
-                        <h4 class="font-bold text-lg mb-2">Visualizar Usuários</h4>
-                        <p class="text-blue-100 text-sm mb-4">Visualizar e gerenciar todos os usuários</p>
-                        <button class="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-4 py-2 rounded-lg text-sm transition-colors">
-                            Em Desenvolvimento
-                        </button>
-                    </div>
-
-                    <div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg p-6 text-white text-center card-hover">
-                        <i class="fas fa-envelope text-3xl mb-4"></i>
-                        <h4 class="font-bold text-lg mb-2">Recados das Escolas</h4>
-                        <p class="text-purple-100 text-sm mb-4">Visualizar solicitações das diretorias</p>
-                        <button class="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-4 py-2 rounded-lg text-sm transition-colors">
-                            Em Desenvolvimento
-                        </button>
-                    </div>
-
-                    <div class="bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-lg p-6 text-white text-center card-hover">
-                        <i class="fas fa-calendar-times text-3xl mb-4"></i>
-                        <h4 class="font-bold text-lg mb-2">Vencimentos</h4>
-                        <p class="text-yellow-100 text-sm mb-4">Controlar vencimentos de escolas e usuários</p>
-                        <button class="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-4 py-2 rounded-lg text-sm transition-colors">
-                            Em Desenvolvimento
-                        </button>
+                
+                <div class="bg-white p-6 rounded-lg shadow-inner">
+                    <h4 class="text-xl font-semibold mb-4">Usuários Existentes</h4>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome/E-mail</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Função</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Plano</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vencimento</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="users-table-body" class="bg-white divide-y divide-gray-200">
+                                <tr><td colspan="5" class="text-center py-4">Carregando usuários...</td></tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
+
+            <div id="content-vencimentos" class="hidden fade-in">
+                <h3 class="text-2xl font-bold text-gray-900 mb-6 text-center">
+                    <i class="fas fa-calendar-times mr-3 text-red-600"></i>
+                    Vencimentos
+                </h3>
+                <div id="vencimentos-table-container" class="bg-white p-6 rounded-lg shadow-inner">
+                    <h4 class="text-xl font-semibold mb-4">Vencimentos Próximos</h4>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome/E-mail</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Plano</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vencimento</th>
+                                </tr>
+                            </thead>
+                            <tbody id="vencimentos-table-body" class="bg-white divide-y divide-gray-200">
+                                <tr><td colspan="3" class="text-center py-4">Carregando vencimentos...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="content-mensagens" class="hidden fade-in">
+                <h3 class="text-2xl font-bold text-gray-900 mb-6 text-center">
+                    <i class="fas fa-envelope mr-3 text-red-600"></i>
+                    Recados das Escolas
+                </h3>
+                <div id="mensagens-container" class="bg-white p-6 rounded-lg shadow-inner">
+                    <h4 class="text-xl font-semibold mb-4">Mensagens Recebidas</h4>
+                    <div id="mensagens-list" class="space-y-4">
+                        <p class="text-center text-gray-500">Carregando mensagens...</p>
+                    </div>
+                </div>
+            </div>
+
+            
         </div>
     </main>
     
@@ -202,7 +231,6 @@
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNycXFoZWFjc2dsaHl5aHZmY2hnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgxNTMxMDMsImV4cCI6MjA3MzcyOTEwM30.ZOKVDK1FEyDM-lcPrw4-0xbVDxYLftek3NHYcmjc_7w';
         const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // Toast Messages
         function showToast(message, type = 'info') {
             const toast = document.getElementById('message-toast');
             const messageEl = document.getElementById('toast-message');
@@ -220,41 +248,101 @@
             }, 3000);
         }
 
-        // Correção do problema de redirecionamento: usamos o listener
-        supabase.auth.onAuthStateChange(async (event, session) => {
-            if (!session) {
-                // Se não houver sessão, redireciona para a página de login
-                window.location.href = './index.html';
+        // Lógica para carregar todos os usuários
+        async function fetchUsers() {
+            const { data, error } = await supabase
+                .from('users')
+                .select('*');
+            if (error) {
+                console.error('Erro ao carregar usuários:', error);
+                document.getElementById('users-table-body').innerHTML = `<tr><td colspan="5" class="text-center py-4 text-red-500">Erro ao carregar usuários: ${error.message}</td></tr>`;
                 return;
             }
-            try {
-                const { data, error } = await supabase
-                    .from('users')
-                    .select('user_type')
-                    .eq('id', session.user.id)
-                    .single();
-
-                if (error || data.user_type !== 'admin') {
-                    // Se não for admin, desloga
-                    await supabase.auth.signOut();
-                    window.location.href = './index.html';
-                }
-            } catch (err) {
-                console.error('Erro ao buscar tipo de usuário:', err);
-                await supabase.auth.signOut();
-                window.location.href = './index.html';
+            const tableBody = document.getElementById('users-table-body');
+            tableBody.innerHTML = '';
+            data.forEach(user => {
+                const vencimento = user.subscription_end_date ? new Date(user.subscription_end_date).toLocaleDateString('pt-BR') : 'N/A';
+                const row = `
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${user.email}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${user.user_type}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${user.subscription_plan || 'N/A'}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${vencimento}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <button onclick="editUser('${user.id}')" class="text-indigo-600 hover:text-indigo-900 mr-2"><i class="fas fa-edit"></i></button>
+                            <button onclick="deleteUser('${user.id}')" class="text-red-600 hover:text-red-900"><i class="fas fa-trash-alt"></i></button>
+                        </td>
+                    </tr>
+                `;
+                tableBody.innerHTML += row;
+            });
+        }
+        
+        // Lógica para carregar vencimentos (simplificada, mostra todos por enquanto)
+        async function fetchVencimentos() {
+            const { data, error } = await supabase
+                .from('users')
+                .select('*')
+                .not('subscription_end_date', 'is', null)
+                .order('subscription_end_date', { ascending: true });
+            if (error) {
+                console.error('Erro ao carregar vencimentos:', error);
+                document.getElementById('vencimentos-table-body').innerHTML = `<tr><td colspan="3" class="text-center py-4 text-red-500">Erro ao carregar vencimentos: ${error.message}</td></tr>`;
+                return;
             }
-        });
+            const tableBody = document.getElementById('vencimentos-table-body');
+            tableBody.innerHTML = '';
+            data.forEach(user => {
+                const vencimento = new Date(user.subscription_end_date).toLocaleDateString('pt-BR');
+                const row = `
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${user.email}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${user.subscription_plan}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${vencimento}</td>
+                    </tr>
+                `;
+                tableBody.innerHTML += row;
+            });
+        }
 
-        // Lógica para criar um novo usuário (recurso funcional)
+        // Lógica para carregar mensagens
+        async function fetchMessages() {
+            const { data, error } = await supabase
+                .from('messages')
+                .select('*')
+                .order('created_at', { ascending: false });
+            if (error) {
+                console.error('Erro ao carregar mensagens:', error);
+                document.getElementById('mensagens-list').innerHTML = `<p class="text-red-500">Erro ao carregar mensagens: ${error.message}</p>`;
+                return;
+            }
+            const messagesList = document.getElementById('mensagens-list');
+            messagesList.innerHTML = '';
+            if (data.length === 0) {
+                messagesList.innerHTML = '<p class="text-center text-gray-500">Nenhuma mensagem encontrada.</p>';
+            } else {
+                data.forEach(message => {
+                    const messageElement = `
+                        <div class="p-4 border border-gray-200 rounded-lg">
+                            <p class="font-semibold text-gray-800">De: ${message.sender_email}</p>
+                            <p class="text-sm text-gray-500 mb-2">Data: ${new Date(message.created_at).toLocaleString('pt-BR')}</p>
+                            <p class="text-gray-700">${message.message_text}</p>
+                        </div>
+                    `;
+                    messagesList.innerHTML += messageElement;
+                });
+            }
+        }
+
+        // Lógica para criar um novo usuário
         document.getElementById('create-user-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const email = document.getElementById('new-email').value;
             const password = document.getElementById('new-password').value;
             const userType = document.getElementById('user-type').value;
+            const subscriptionPlan = document.getElementById('subscription-plan').value;
 
             try {
-                // Cadastra o usuário no sistema de autenticação do Supabase
                 const { data: authData, error: authError } = await supabase.auth.signUp({
                     email: email,
                     password: password
@@ -265,13 +353,24 @@
                     return;
                 }
 
-                // Insere os dados de perfil na tabela 'users'
+                // Define a data de vencimento com base no plano
+                let subscriptionEndDate = null;
+                if (subscriptionPlan === 'anual') {
+                    subscriptionEndDate = new Date();
+                    subscriptionEndDate.setFullYear(subscriptionEndDate.getFullYear() + 1);
+                } else if (subscriptionPlan === 'mensal') {
+                    subscriptionEndDate = new Date();
+                    subscriptionEndDate.setMonth(subscriptionEndDate.getMonth() + 1);
+                }
+
                 const { data: userProfileData, error: userProfileError } = await supabase
                     .from('users')
                     .insert([{
                         id: authData.user.id,
                         user_type: userType,
-                        email: email // Adiciona o email aqui para futuras consultas
+                        email: email,
+                        subscription_plan: subscriptionPlan,
+                        subscription_end_date: subscriptionEndDate
                     }]);
 
                 if (userProfileError) {
@@ -280,17 +379,20 @@
                 }
 
                 showToast(`Usuário ${email} criado com sucesso!`, 'success');
-                document.getElementById('create-user-form').reset(); // Limpa o formulário
+                document.getElementById('create-user-form').reset();
+                fetchUsers(); // Atualiza a lista de usuários
+                fetchVencimentos(); // Atualiza a lista de vencimentos
             } catch (err) {
                 showToast(`Ocorreu um erro inesperado: ${err.message}`, 'error');
             }
         });
 
-        // Lógica de Tabs para navegação
+        // Funções de navegação e logout
         const tabs = document.querySelectorAll('.tab-button');
         const contents = {
             'tab-gerenciamento': document.getElementById('content-gerenciamento'),
-            'tab-outros': document.getElementById('content-outros')
+            'tab-vencimentos': document.getElementById('content-vencimentos'),
+            'tab-mensagens': document.getElementById('content-mensagens')
         };
         tabs.forEach(tab => {
             tab.addEventListener('click', () => {
@@ -300,10 +402,14 @@
                     contents[id].classList.add('hidden');
                 }
                 contents[tab.id].classList.remove('hidden');
+
+                // Carrega dados específicos da aba
+                if (tab.id === 'tab-gerenciamento') fetchUsers();
+                if (tab.id === 'tab-vencimentos') fetchVencimentos();
+                if (tab.id === 'tab-mensagens') fetchMessages();
             });
         });
 
-        // Funções de navegação e logout
         function accessProfessor() { window.location.href = 'dashboard.html'; }
         function accessCoordenador() { window.location.href = 'coordenacao.html'; }
         function accessDiretor() { window.location.href = 'direcao.html'; }
@@ -318,6 +424,12 @@
                 }
             }
         }
+        
+        // Carrega a aba de Gerenciamento de Usuários por padrão
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchUsers();
+        });
+
     </script>
 </body>
 </html>
