@@ -3,796 +3,1353 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Coordenação - Semanário</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <title>Dashboard Coordenação - Semanário Digital</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-        body { font-family: 'Inter', sans-serif; }
-        .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-        .card-hover { transition: all 0.3s ease; }
+        .sidebar-item:hover { background: linear-gradient(135deg, #059669, #047857); }
         .card-hover:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
-        .status-realizado { background: linear-gradient(135deg, #10b981, #059669); }
-        .status-ressalvas { background: linear-gradient(135deg, #f59e0b, #d97706); }
-        .status-completar { background: linear-gradient(135deg, #ef4444, #dc2626); }
-        .status-procurar { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
-        .fade-in { animation: fadeIn 0.6s ease-in; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        .loading-spinner { animation: spin 1s linear infinite; }
-        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .plano-card { transition: all 0.3s ease; }
+        .plano-card:hover { transform: scale(1.02); }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 8px; }
+        .notification-badge { animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .gradient-bg { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+        .feedback-modal { backdrop-filter: blur(10px); }
+        .priority-high { border-left: 4px solid #ef4444; }
+        .priority-medium { border-left: 4px solid #f59e0b; }
+        .priority-low { border-left: 4px solid #10b981; }
     </style>
 </head>
-<body class="bg-gray-50 min-h-screen">
+<body class="bg-gradient-to-br from-slate-50 to-green-50 min-h-screen">
     <!-- Header -->
-    <header class="gradient-bg shadow-lg">
+    <header class="bg-white shadow-lg border-b-4 border-green-600">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center py-4">
                 <div class="flex items-center space-x-4">
-                    <div class="flex items-center space-x-3">
-                        <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
-                            <i class="fas fa-users text-indigo-600 text-xl"></i>
-                        </div>
-                        <div>
-                            <h1 class="text-xl font-bold text-white">Coordenação Pedagógica</h1>
-                            <p class="text-indigo-100 text-sm" id="schoolName">Carregando...</p>
-                        </div>
+                    <div class="bg-gradient-to-r from-green-600 to-emerald-600 p-3 rounded-xl shadow-lg">
+                        <i class="fas fa-users-cog text-white text-2xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-3xl font-bold text-gray-900">Dashboard Coordenação</h1>
+                        <p class="text-sm text-gray-600">Semanário Digital - <span id="user-name">Carregando...</span></p>
                     </div>
                 </div>
-                
                 <div class="flex items-center space-x-4">
-                    <div class="text-right">
-                        <p class="text-white font-medium" id="userName">Carregando...</p>
-                        <p class="text-indigo-100 text-sm">Coordenador(a)</p>
+                    <div class="bg-green-100 px-4 py-2 rounded-full">
+                        <span class="text-green-800 text-sm font-medium">
+                            <i class="fas fa-circle text-green-500 text-xs mr-2"></i>
+                            <span id="escola-name">Carregando...</span>
+                        </span>
                     </div>
-                    <button onclick="logout()" class="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-4 py-2 rounded-lg transition-all duration-200">
-                        <i class="fas fa-sign-out-alt mr-2"></i>
-                        Sair
-                    </button>
+                    <div class="relative">
+                        <button onclick="showNotifications()" class="bg-green-500 text-white p-2 rounded-full hover:bg-green-600 transition-colors">
+                            <i class="fas fa-bell"></i>
+                            <span id="notification-count" class="absolute -top-1 -right-1 bg-red-500 text-xs text-white rounded-full px-1 notification-badge">0</span>
+                        </button>
+                    </div>
+                    <div class="relative">
+                        <button onclick="showUserMenu()" class="flex items-center space-x-2 bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded-lg transition-colors">
+                            <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                                <i class="fas fa-user text-white text-sm"></i>
+                            </div>
+                            <i class="fas fa-chevron-down text-gray-600"></i>
+                        </button>
+                        <div id="user-menu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border z-50">
+                            <a href="#" onclick="showProfile()" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
+                                <i class="fas fa-user mr-2"></i>Meu Perfil
+                            </a>
+                            <a href="#" onclick="logout()" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
+                                <i class="fas fa-sign-out-alt mr-2"></i>Sair
+                            </a>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </header>
 
-    <!-- Main Content -->
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <!-- Stats Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <div class="bg-white rounded-xl shadow-sm p-6 card-hover fade-in">
-                <div class="flex items-center">
-                    <div class="p-3 rounded-full bg-blue-100">
-                        <i class="fas fa-chalkboard-teacher text-blue-600 text-xl"></i>
-                    </div>
-                    <div class="ml-4">
-                        <p class="text-sm font-medium text-gray-600">Total Professores</p>
-                        <p class="text-2xl font-bold text-gray-900" id="totalProfessores">0</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-white rounded-xl shadow-sm p-6 card-hover fade-in">
-                <div class="flex items-center">
-                    <div class="p-3 rounded-full bg-green-100">
-                        <i class="fas fa-check-circle text-green-600 text-xl"></i>
-                    </div>
-                    <div class="ml-4">
-                        <p class="text-sm font-medium text-gray-600">Semanários OK</p>
-                        <p class="text-2xl font-bold text-gray-900" id="semanarios-ok">0</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-white rounded-xl shadow-sm p-6 card-hover fade-in">
-                <div class="flex items-center">
-                    <div class="p-3 rounded-full bg-yellow-100">
-                        <i class="fas fa-exclamation-triangle text-yellow-600 text-xl"></i>
-                    </div>
-                    <div class="ml-4">
-                        <p class="text-sm font-medium text-gray-600">Com Ressalvas</p>
-                        <p class="text-2xl font-bold text-gray-900" id="semanarios-ressalvas">0</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-white rounded-xl shadow-sm p-6 card-hover fade-in">
-                <div class="flex items-center">
-                    <div class="p-3 rounded-full bg-red-100">
-                        <i class="fas fa-times-circle text-red-600 text-xl"></i>
-                    </div>
-                    <div class="ml-4">
-                        <p class="text-sm font-medium text-gray-600">Pendentes</p>
-                        <p class="text-2xl font-bold text-gray-900" id="semanarios-pendentes">0</p>
-                    </div>
-                </div>
+    <div class="flex">
+        <!-- Sidebar -->
+        <div class="w-64 bg-white shadow-xl h-screen sticky top-0">
+            <div class="p-6">
+                <nav class="space-y-2">
+                    <button onclick="showSection('dashboard')" class="sidebar-item w-full flex items-center px-4 py-3 text-left text-white rounded-lg transition-all duration-200 bg-green-500">
+                        <i class="fas fa-home mr-3"></i>Dashboard
+                    </button>
+                    <button onclick="showSection('planos-pendentes')" class="sidebar-item w-full flex items-center px-4 py-3 text-left text-gray-700 rounded-lg transition-all duration-200">
+                        <i class="fas fa-clock mr-3"></i>Planos Pendentes
+                        <span id="pendentes-badge" class="ml-auto bg-red-500 text-white text-xs px-2 py-1 rounded-full">0</span>
+                    </button>
+                    <button onclick="showSection('todos-planos')" class="sidebar-item w-full flex items-center px-4 py-3 text-left text-gray-700 rounded-lg transition-all duration-200">
+                        <i class="fas fa-file-alt mr-3"></i>Todos os Planos
+                    </button>
+                    <button onclick="showSection('professores')" class="sidebar-item w-full flex items-center px-4 py-3 text-left text-gray-700 rounded-lg transition-all duration-200">
+                        <i class="fas fa-chalkboard-teacher mr-3"></i>Professores
+                    </button>
+                    <button onclick="showSection('relatorios')" class="sidebar-item w-full flex items-center px-4 py-3 text-left text-gray-700 rounded-lg transition-all duration-200">
+                        <i class="fas fa-chart-bar mr-3"></i>Relatórios
+                    </button>
+                    <button onclick="showSection('calendario')" class="sidebar-item w-full flex items-center px-4 py-3 text-left text-gray-700 rounded-lg transition-all duration-200">
+                        <i class="fas fa-calendar mr-3"></i>Calendário
+                    </button>
+                    <button onclick="showSection('bncc')" class="sidebar-item w-full flex items-center px-4 py-3 text-left text-gray-700 rounded-lg transition-all duration-200">
+                        <i class="fas fa-book mr-3"></i>BNCC
+                    </button>
+                    <button onclick="showSection('configuracoes')" class="sidebar-item w-full flex items-center px-4 py-3 text-left text-gray-700 rounded-lg transition-all duration-200">
+                        <i class="fas fa-cog mr-3"></i>Configurações
+                    </button>
+                </nav>
             </div>
         </div>
 
-        <!-- Filters -->
-        <div class="bg-white rounded-xl shadow-sm p-6 mb-8 fade-in">
-            <div class="flex flex-col sm:flex-row gap-4 items-center justify-between">
-                <div class="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Semana</label>
-                        <select id="semanaFilter" class="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
-                            <option value="">Todas as semanas</option>
-                        </select>
+        <!-- Main Content -->
+        <div class="flex-1 p-8">
+            <!-- Dashboard Section -->
+            <div id="dashboard-section" class="section active">
+                <div class="mb-8">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-2">Visão Geral da Coordenação</h2>
+                    <p class="text-gray-600">Acompanhe o desempenho pedagógico da sua escola</p>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-green-500 card-hover transition-all duration-300">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">Professores Ativos</p>
+                                <p id="total-professores" class="text-3xl font-bold text-gray-900">-</p>
+                                <p class="text-xs text-green-600 mt-1">
+                                    <i class="fas fa-user-check mr-1"></i>Na escola
+                                </p>
+                            </div>
+                            <div class="bg-green-100 p-4 rounded-full">
+                                <i class="fas fa-chalkboard-teacher text-green-600 text-xl"></i>
+                            </div>
+                        </div>
                     </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                        <select id="statusFilter" class="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
-                            <option value="">Todos os status</option>
-                            <option value="realizado">Realizado com sucesso</option>
-                            <option value="ressalvas">Com ressalvas</option>
-                            <option value="completar">Favor completar</option>
-                            <option value="procurar">Procure a coordenação</option>
-                            <option value="sem-devolutiva">Sem devolutiva</option>
-                        </select>
+
+                    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-blue-500 card-hover transition-all duration-300">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">Planos Esta Semana</p>
+                                <p id="planos-semana" class="text-3xl font-bold text-gray-900">-</p>
+                                <p class="text-xs text-blue-600 mt-1">
+                                    <i class="fas fa-calendar-week mr-1"></i>Criados
+                                </p>
+                            </div>
+                            <div class="bg-blue-100 p-4 rounded-full">
+                                <i class="fas fa-file-alt text-blue-600 text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-yellow-500 card-hover transition-all duration-300">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">Aguardando Análise</p>
+                                <p id="planos-pendentes-count" class="text-3xl font-bold text-gray-900">-</p>
+                                <p class="text-xs text-yellow-600 mt-1">
+                                    <i class="fas fa-hourglass-half mr-1"></i>Pendentes
+                                </p>
+                            </div>
+                            <div class="bg-yellow-100 p-4 rounded-full">
+                                <i class="fas fa-clock text-yellow-600 text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-purple-500 card-hover transition-all duration-300">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">Taxa Aprovação</p>
+                                <p id="taxa-aprovacao" class="text-3xl font-bold text-gray-900">-</p>
+                                <p class="text-xs text-purple-600 mt-1">
+                                    <i class="fas fa-percentage mr-1"></i>Este mês
+                                </p>
+                            </div>
+                            <div class="bg-purple-100 p-4 rounded-full">
+                                <i class="fas fa-chart-line text-purple-600 text-xl"></i>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <button onclick="loadPlanejamentos()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors">
-                    <i class="fas fa-sync-alt mr-2"></i>
-                    Atualizar
-                </button>
+
+                <!-- Quick Actions & Alerts -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                    <div class="bg-white rounded-xl shadow-lg p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                            <i class="fas fa-exclamation-triangle text-yellow-500 mr-2"></i>Alertas Prioritários
+                        </h3>
+                        <div id="alertas-container" class="space-y-3 max-h-64 overflow-y-auto">
+                            <div class="flex items-center justify-center py-8 text-gray-500">
+                                <i class="fas fa-spinner fa-spin mr-2"></i>Carregando alertas...
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-lg p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                            <i class="fas fa-rocket text-green-500 mr-2"></i>Ações Rápidas
+                        </h3>
+                        <div class="grid grid-cols-2 gap-4">
+                            <button onclick="showSection('planos-pendentes')" class="bg-yellow-500 hover:bg-yellow-600 text-white p-4 rounded-lg text-center transition-colors">
+                                <i class="fas fa-clock text-2xl mb-2"></i>
+                                <p class="text-sm font-medium">Revisar Planos</p>
+                            </button>
+                            <button onclick="showSection('relatorios')" class="bg-blue-500 hover:bg-blue-600 text-white p-4 rounded-lg text-center transition-colors">
+                                <i class="fas fa-chart-bar text-2xl mb-2"></i>
+                                <p class="text-sm font-medium">Gerar Relatório</p>
+                            </button>
+                            <button onclick="showSection('professores')" class="bg-green-500 hover:bg-green-600 text-white p-4 rounded-lg text-center transition-colors">
+                                <i class="fas fa-users text-2xl mb-2"></i>
+                                <p class="text-sm font-medium">Gerenciar Professores</p>
+                            </button>
+                            <button onclick="showSection('calendario')" class="bg-purple-500 hover:bg-purple-600 text-white p-4 rounded-lg text-center transition-colors">
+                                <i class="fas fa-calendar text-2xl mb-2"></i>
+                                <p class="text-sm font-medium">Ver Calendário</p>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Performance Chart -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                        <i class="fas fa-chart-area text-blue-500 mr-2"></i>Performance Semanal
+                    </h3>
+                    <div id="performance-chart" class="h-64 flex items-center justify-center text-gray-500">
+                        <div class="text-center">
+                            <i class="fas fa-chart-line text-4xl mb-4"></i>
+                            <p>Gráfico de performance em desenvolvimento</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Planos Pendentes Section -->
+            <div id="planos-pendentes-section" class="section hidden">
+                <div class="mb-8">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-900 mb-2">Planos Aguardando Análise</h2>
+                            <p class="text-gray-600">Revise e forneça feedback para os planos de aula</p>
+                        </div>
+                        <div class="flex space-x-2">
+                            <select id="filter-urgencia" onchange="filterPlanosPendentes()" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                                <option value="">Todas as urgências</option>
+                                <option value="alta">Alta prioridade</option>
+                                <option value="media">Média prioridade</option>
+                                <option value="baixa">Baixa prioridade</option>
+                            </select>
+                            <button onclick="aprovarTodosSelecionados()" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                                <i class="fas fa-check-double mr-2"></i>Aprovar Selecionados
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filters -->
+                <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Professor</label>
+                            <select id="filter-professor-pendente" onchange="filterPlanosPendentes()" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                                <option value="">Todos os professores</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Componente</label>
+                            <select id="filter-componente-pendente" onchange="filterPlanosPendentes()" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                                <option value="">Todos</option>
+                                <option value="Língua Portuguesa">Língua Portuguesa</option>
+                                <option value="Matemática">Matemática</option>
+                                <option value="Ciências">Ciências</option>
+                                <option value="História">História</option>
+                                <option value="Geografia">Geografia</option>
+                                <option value="Arte">Arte</option>
+                                <option value="Educação Física">Educação Física</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Data da Aula</label>
+                            <input type="date" id="filter-data-pendente" onchange="filterPlanosPendentes()" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Buscar</label>
+                            <input type="text" id="search-pendentes" onkeyup="filterPlanosPendentes()" placeholder="Título do plano..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Planos Pendentes Grid -->
+                <div id="planos-pendentes-grid" class="space-y-4">
+                    <div class="flex items-center justify-center py-16 text-gray-500">
+                        <i class="fas fa-spinner fa-spin mr-2"></i>Carregando planos pendentes...
+                    </div>
+                </div>
+            </div>
+
+            <!-- Todos os Planos Section -->
+            <div id="todos-planos-section" class="section hidden">
+                <div class="mb-8">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-900 mb-2">Todos os Planos de Aula</h2>
+                            <p class="text-gray-600">Visualize e gerencie todos os planos da escola</p>
+                        </div>
+                        <button onclick="exportarPlanos()" class="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg font-medium transition-colors shadow-lg">
+                            <i class="fas fa-download mr-2"></i>Exportar Relatório
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Advanced Filters -->
+                <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+                    <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Professor</label>
+                            <select id="filter-professor-todos" onchange="filterTodosPlanos()" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                                <option value="">Todos</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                            <select id="filter-status-todos" onchange="filterTodosPlanos()" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                                <option value="">Todos</option>
+                                <option value="rascunho">Rascunho</option>
+                                <option value="finalizado">Finalizado</option>
+                                <option value="aprovado">Aprovado</option>
+                                <option value="rejeitado">Rejeitado</option>
+                                <option value="aplicado">Aplicado</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Período</label>
+                            <select id="filter-periodo" onchange="filterTodosPlanos()" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                                <option value="">Todos</option>
+                                <option value="hoje">Hoje</option>
+                                <option value="semana">Esta semana</option>
+                                <option value="mes">Este mês</option>
+                                <option value="trimestre">Este trimestre</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Componente</label>
+                            <select id="filter-componente-todos" onchange="filterTodosPlanos()" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                                <option value="">Todos</option>
+                                <option value="Língua Portuguesa">Língua Portuguesa</option>
+                                <option value="Matemática">Matemática</option>
+                                <option value="Ciências">Ciências</option>
+                                <option value="História">História</option>
+                                <option value="Geografia">Geografia</option>
+                                <option value="Arte">Arte</option>
+                                <option value="Educação Física">Educação Física</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Buscar</label>
+                            <input type="text" id="search-todos" onkeyup="filterTodosPlanos()" placeholder="Título, professor..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Planos Table -->
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Plano</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Professor</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Componente</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data Aula</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="todos-planos-tbody" class="bg-white divide-y divide-gray-200">
+                                <tr>
+                                    <td colspan="6" class="px-6 py-12 text-center text-gray-500">
+                                        <i class="fas fa-spinner fa-spin mr-2"></i>Carregando planos...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Professores Section -->
+            <div id="professores-section" class="section hidden">
+                <div class="mb-8">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-900 mb-2">Gestão de Professores</h2>
+                            <p class="text-gray-600">Acompanhe o desempenho e produtividade dos professores</p>
+                        </div>
+                        <button onclick="adicionarProfessor()" class="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg font-medium transition-colors shadow-lg">
+                            <i class="fas fa-user-plus mr-2"></i>Adicionar Professor
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Professores Grid -->
+                <div id="professores-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div class="flex items-center justify-center py-16 text-gray-500 col-span-full">
+                        <i class="fas fa-spinner fa-spin mr-2"></i>Carregando professores...
+                    </div>
+                </div>
+            </div>
+
+            <!-- Other sections placeholders -->
+            <div id="relatorios-section" class="section hidden">
+                <div class="mb-8">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-2">Relatórios Pedagógicos</h2>
+                    <p class="text-gray-600">Gere relatórios detalhados sobre o desempenho pedagógico</p>
+                </div>
+                <div class="text-center py-16 text-gray-500">
+                    <i class="fas fa-chart-bar text-4xl mb-4"></i>
+                    <p>Seção em desenvolvimento...</p>
+                </div>
+            </div>
+
+            <div id="calendario-section" class="section hidden">
+                <div class="mb-8">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-2">Calendário Pedagógico</h2>
+                    <p class="text-gray-600">Visualize todos os planos organizados por data</p>
+                </div>
+                <div class="text-center py-16 text-gray-500">
+                    <i class="fas fa-calendar text-4xl mb-4"></i>
+                    <p>Seção em desenvolvimento...</p>
+                </div>
+            </div>
+
+            <div id="bncc-section" class="section hidden">
+                <div class="mb-8">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-2">Consulta BNCC</h2>
+                    <p class="text-gray-600">Consulte habilidades e competências da BNCC</p>
+                </div>
+                <div class="text-center py-16 text-gray-500">
+                    <i class="fas fa-book text-4xl mb-4"></i>
+                    <p>Seção em desenvolvimento...</p>
+                </div>
+            </div>
+
+            <div id="configuracoes-section" class="section hidden">
+                <div class="mb-8">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-2">Configurações da Escola</h2>
+                    <p class="text-gray-600">Gerencie configurações pedagógicas da escola</p>
+                </div>
+                <div class="text-center py-16 text-gray-500">
+                    <i class="fas fa-cog text-4xl mb-4"></i>
+                    <p>Seção em desenvolvimento...</p>
+                </div>
             </div>
         </div>
+    </div>
 
-        <!-- Planejamentos List -->
-        <div class="bg-white rounded-xl shadow-sm fade-in">
+    <!-- Feedback Modal -->
+    <div id="feedback-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 feedback-modal z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div class="p-6 border-b border-gray-200">
-                <h2 class="text-xl font-bold text-gray-900">
-                    <i class="fas fa-calendar-week mr-2 text-indigo-600"></i>
-                    Semanários dos Professores
-                </h2>
-            </div>
-            
-            <div id="loadingPlanejamentos" class="flex items-center justify-center py-12">
-                <div class="text-center">
-                    <i class="fas fa-spinner loading-spinner text-3xl text-indigo-600 mb-4"></i>
-                    <p class="text-gray-600">Carregando semanários...</p>
-                </div>
-            </div>
-
-            <div id="planejamentosList" class="hidden">
-                <!-- Planejamentos will be loaded here -->
-            </div>
-
-            <div id="noPlanejamentos" class="hidden p-12 text-center">
-                <i class="fas fa-calendar-times text-4xl text-gray-400 mb-4"></i>
-                <h3 class="text-lg font-medium text-gray-900 mb-2">Nenhum semanário encontrado</h3>
-                <p class="text-gray-600">Não há semanários para os filtros selecionados.</p>
-            </div>
-        </div>
-    </main>
-
-    <!-- Devolutiva Modal -->
-    <div id="devolutivaModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div class="p-6 border-b border-gray-200">
-                <div class="flex justify-between items-center">
-                    <h3 class="text-xl font-bold text-gray-900">Dar Devolutiva</h3>
-                    <button onclick="closeDevolutivaModal()" class="text-gray-500 hover:text-gray-700">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-xl font-semibold text-gray-900">
+                        <i class="fas fa-comment-alt text-green-500 mr-2"></i>Fornecer Feedback
+                    </h3>
+                    <button onclick="closeFeedbackModal()" class="text-gray-400 hover:text-gray-600">
                         <i class="fas fa-times text-xl"></i>
                     </button>
                 </div>
             </div>
-            
             <div class="p-6">
-                <!-- Planejamento Info -->
-                <div class="bg-gray-50 rounded-lg p-4 mb-6">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div id="plano-details" class="mb-6 p-4 bg-gray-50 rounded-lg">
+                    <!-- Plano details will be loaded here -->
+                </div>
+                <form onsubmit="submitFeedback(event)">
+                    <div class="space-y-4">
                         <div>
-                            <p class="text-sm text-gray-600">Professor</p>
-                            <p class="font-medium" id="modalProfessor">-</p>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Decisão</label>
+                            <div class="flex space-x-4">
+                                <label class="flex items-center">
+                                    <input type="radio" name="decisao" value="aprovado" class="mr-2 text-green-500">
+                                    <span class="text-green-600 font-medium">
+                                        <i class="fas fa-check mr-1"></i>Aprovar
+                                    </span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="radio" name="decisao" value="rejeitado" class="mr-2 text-red-500">
+                                    <span class="text-red-600 font-medium">
+                                        <i class="fas fa-times mr-1"></i>Rejeitar
+                                    </span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="radio" name="decisao" value="revisao" class="mr-2 text-yellow-500">
+                                    <span class="text-yellow-600 font-medium">
+                                        <i class="fas fa-edit mr-1"></i>Solicitar Revisão
+                                    </span>
+                                </label>
+                            </div>
                         </div>
                         <div>
-                            <p class="text-sm text-gray-600">Turma</p>
-                            <p class="font-medium" id="modalTurma">-</p>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Comentários</label>
+                            <textarea id="feedback-comentarios" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500" placeholder="Forneça feedback detalhado sobre o plano..."></textarea>
                         </div>
                         <div>
-                            <p class="text-sm text-gray-600">Semana</p>
-                            <p class="font-medium" id="modalSemana">-</p>
-                        </div>
-                        <div>
-                            <p class="text-sm text-gray-600">Tema</p>
-                            <p class="font-medium" id="modalTema">-</p>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Sugestões de Melhoria</label>
+                            <textarea id="feedback-sugestoes" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500" placeholder="Sugestões específicas para melhorar o plano..."></textarea>
                         </div>
                     </div>
-                </div>
-
-                <!-- Status Options -->
-                <div class="mb-6">
-                    <label class="block text-sm font-medium text-gray-700 mb-3">Status da Devolutiva</label>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <label class="flex items-center p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-green-300 transition-colors">
-                            <input type="radio" name="devolutivaStatus" value="realizado" class="sr-only">
-                            <div class="flex items-center w-full">
-                                <div class="w-4 h-4 rounded-full border-2 border-gray-300 mr-3 flex items-center justify-center">
-                                    <div class="w-2 h-2 rounded-full bg-green-500 hidden"></div>
-                                </div>
-                                <div>
-                                    <p class="font-medium text-gray-900">Realizado com sucesso</p>
-                                    <p class="text-sm text-gray-600">Semanário completo e adequado</p>
-                                </div>
-                            </div>
-                        </label>
-
-                        <label class="flex items-center p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-yellow-300 transition-colors">
-                            <input type="radio" name="devolutivaStatus" value="ressalvas" class="sr-only">
-                            <div class="flex items-center w-full">
-                                <div class="w-4 h-4 rounded-full border-2 border-gray-300 mr-3 flex items-center justify-center">
-                                    <div class="w-2 h-2 rounded-full bg-yellow-500 hidden"></div>
-                                </div>
-                                <div>
-                                    <p class="font-medium text-gray-900">Com ressalvas</p>
-                                    <p class="text-sm text-gray-600">Precisa de alguns ajustes</p>
-                                </div>
-                            </div>
-                        </label>
-
-                        <label class="flex items-center p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-red-300 transition-colors">
-                            <input type="radio" name="devolutivaStatus" value="completar" class="sr-only">
-                            <div class="flex items-center w-full">
-                                <div class="w-4 h-4 rounded-full border-2 border-gray-300 mr-3 flex items-center justify-center">
-                                    <div class="w-2 h-2 rounded-full bg-red-500 hidden"></div>
-                                </div>
-                                <div>
-                                    <p class="font-medium text-gray-900">Favor completar o semanário</p>
-                                    <p class="text-sm text-gray-600">Informações incompletas</p>
-                                </div>
-                            </div>
-                        </label>
-
-                        <label class="flex items-center p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-purple-300 transition-colors">
-                            <input type="radio" name="devolutivaStatus" value="procurar" class="sr-only">
-                            <div class="flex items-center w-full">
-                                <div class="w-4 h-4 rounded-full border-2 border-gray-300 mr-3 flex items-center justify-center">
-                                    <div class="w-2 h-2 rounded-full bg-purple-500 hidden"></div>
-                                </div>
-                                <div>
-                                    <p class="font-medium text-gray-900">Procure a coordenação</p>
-                                    <p class="text-sm text-gray-600">Necessário conversa presencial</p>
-                                </div>
-                            </div>
-                        </label>
+                    <div class="flex space-x-4 mt-6">
+                        <button type="button" onclick="closeFeedbackModal()" class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 px-4 py-2 rounded-lg font-medium transition-colors">
+                            Cancelar
+                        </button>
+                        <button type="submit" class="flex-1 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                            <i class="fas fa-paper-plane mr-2"></i>Enviar Feedback
+                        </button>
                     </div>
-                </div>
-
-                <!-- Comentários -->
-                <div class="mb-6">
-                    <label for="devolutivaComentario" class="block text-sm font-medium text-gray-700 mb-2">
-                        Comentários (opcional)
-                    </label>
-                    <textarea 
-                        id="devolutivaComentario" 
-                        rows="4" 
-                        class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                        placeholder="Adicione observações, sugestões ou orientações específicas..."
-                    ></textarea>
-                </div>
-
-                <!-- Actions -->
-                <div class="flex space-x-3">
-                    <button 
-                        onclick="closeDevolutivaModal()" 
-                        class="flex-1 border border-gray-300 text-gray-700 py-3 px-4 rounded-lg hover:bg-gray-50 transition-colors"
-                    >
-                        Cancelar
-                    </button>
-                    <button 
-                        onclick="salvarDevolutiva()" 
-                        id="salvarDevolutivaBtn"
-                        class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-3 px-4 rounded-lg transition-colors"
-                    >
-                        <span id="salvarDevolutivaText">Salvar Devolutiva</span>
-                        <span id="salvarDevolutivaLoading" class="hidden">
-                            <i class="fas fa-spinner loading-spinner mr-2"></i>
-                            Salvando...
-                        </span>
-                    </button>
-                </div>
+                </form>
             </div>
         </div>
     </div>
 
-    <!-- Toast Notification -->
-    <div id="toast" class="fixed top-4 right-4 bg-white border border-gray-200 rounded-lg shadow-lg p-4 transform translate-x-full transition-transform duration-300 z-50">
-        <div class="flex items-center">
-            <div id="toastIcon" class="mr-3"></div>
-            <div>
-                <p id="toastMessage" class="font-medium text-gray-900"></p>
-            </div>
-        </div>
-    </div>
+    <!-- Toast Container -->
+    <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
 
     <script>
-        // Configuração do Supabase
-        const SUPABASE_URL = 'https://srqqheacsglhyyhvfchg.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNycXFoZWFjc2dsaHl5aHZmY2hnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgxNTMxMDMsImV4cCI6MjA3MzcyOTEwM30.ZOKVDK1FEyDM-lcPrw4-0xbVDxYLftek3NHYcmjc_7w';
+        // Supabase Configuration
+        const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+        const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
         
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-        let currentUser = null;
-        let currentSchoolId = null;
-        let currentPlanejamento = null;
-
-        // Initialize
-        document.addEventListener('DOMContentLoaded', async () => {
-            await checkAuth();
-            await loadUserData();
-            await loadWeekOptions();
-            await loadPlanejamentos();
-            setupEventListeners();
-        });
-
-        // Check authentication
-        async function checkAuth() {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (!session) {
-                window.location.href = './index.html';
-                return;
-            }
-            currentUser = session.user;
+        let supabase;
+        try {
+            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        } catch (error) {
+            console.warn('Supabase not configured. Using demo mode.');
         }
 
-        // Load user data
+        // Global variables
+        let currentUser = null;
+        let currentSection = 'dashboard';
+        let planosPendentes = [];
+        let todosPlanos = [];
+        let professores = [];
+        let currentPlanoForFeedback = null;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            loadUserData();
+            loadDashboard();
+            
+            if (!supabase) {
+                showToast('Executando em modo demo. Configure o Supabase para usar dados reais.', 'info');
+            }
+        });
+
+        // Section Management
+        function showSection(sectionName) {
+            // Hide all sections
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.add('hidden');
+                section.classList.remove('active');
+            });
+            
+            // Remove active class from all sidebar items
+            document.querySelectorAll('.sidebar-item').forEach(item => {
+                item.classList.remove('bg-green-500', 'text-white');
+                item.classList.add('text-gray-700');
+            });
+            
+            // Show selected section
+            document.getElementById(sectionName + '-section').classList.remove('hidden');
+            document.getElementById(sectionName + '-section').classList.add('active');
+            
+            // Add active class to selected sidebar item
+            event.target.classList.add('bg-green-500', 'text-white');
+            event.target.classList.remove('text-gray-700');
+            
+            currentSection = sectionName;
+            
+            // Load section-specific data
+            loadSectionData(sectionName);
+        }
+
+        // Load section data
+        function loadSectionData(sectionName) {
+            switch(sectionName) {
+                case 'dashboard':
+                    loadDashboard();
+                    break;
+                case 'planos-pendentes':
+                    loadPlanosPendentes();
+                    break;
+                case 'todos-planos':
+                    loadTodosPlanos();
+                    break;
+                case 'professores':
+                    loadProfessores();
+                    break;
+            }
+        }
+
+        // User Management
         async function loadUserData() {
             try {
-                const { data: userData, error } = await supabase
-                    .from('users')
-                    .select(`
-                        name, 
-                        user_type, 
-                        school_id,
-                        schools (name)
-                    `)
-                    .eq('id', currentUser.id)
-                    .single();
-
-                if (error) throw error;
-
-                if (userData.user_type !== 'coordenacao') {
-                    showToast('Acesso negado', 'error');
-                    setTimeout(() => window.location.href = './index.html', 2000);
+                if (!supabase) {
+                    currentUser = {
+                        id: 'demo-coord',
+                        nome: 'Coordenador Demo',
+                        email: 'demo@coordenacao.com',
+                        tipo_usuario: 'coordenador',
+                        escola_id: 'escola-demo'
+                    };
+                    document.getElementById('user-name').textContent = currentUser.nome;
+                    document.getElementById('escola-name').textContent = 'Escola Demo';
                     return;
                 }
 
-                currentSchoolId = userData.school_id;
-                document.getElementById('userName').textContent = userData.name || 'Coordenador';
-                document.getElementById('schoolName').textContent = userData.schools?.name || 'Escola';
+                // In a real app, you'd get this from authentication
+                const { data: user } = await supabase.auth.getUser();
+                if (user) {
+                    const { data: userData } = await supabase
+                        .from('usuarios')
+                        .select('*, escolas(nome)')
+                        .eq('id', user.id)
+                        .single();
+                    
+                    currentUser = userData;
+                    document.getElementById('user-name').textContent = userData.nome;
+                    document.getElementById('escola-name').textContent = userData.escolas?.nome || 'Escola';
+                }
 
             } catch (error) {
-                console.error('Erro ao carregar dados do usuário:', error);
+                console.error('Error loading user data:', error);
                 showToast('Erro ao carregar dados do usuário', 'error');
             }
         }
 
-        // Load week options
-        async function loadWeekOptions() {
-            const select = document.getElementById('semanaFilter');
-            const currentWeek = getCurrentWeek();
-            
-            // Add current and next weeks
-            for (let i = -2; i <= 10; i++) {
-                const week = getWeekNumber(currentWeek + i);
-                const option = document.createElement('option');
-                option.value = week;
-                option.textContent = `Semana ${week}`;
-                if (i === 0) option.selected = true;
-                select.appendChild(option);
+        // Dashboard Functions
+        async function loadDashboard() {
+            try {
+                if (!supabase) {
+                    loadDemoStats();
+                    loadDemoAlertas();
+                    return;
+                }
+
+                const { data: stats } = await supabase.rpc('obter_estatisticas_coordenacao', {
+                    p_escola_id: currentUser.escola_id
+                });
+
+                if (stats) {
+                    document.getElementById('total-professores').textContent = stats.total_professores || 0;
+                    document.getElementById('planos-semana').textContent = stats.planos_semana || 0;
+                    document.getElementById('planos-pendentes-count').textContent = stats.planos_pendentes || 0;
+                    document.getElementById('taxa-aprovacao').textContent = (stats.taxa_aprovacao || 0) + '%';
+                    
+                    // Update badges
+                    document.getElementById('pendentes-badge').textContent = stats.planos_pendentes || 0;
+                    document.getElementById('notification-count').textContent = stats.alertas_count || 0;
+                }
+
+                loadAlertas();
+
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+                loadDemoStats();
+                loadDemoAlertas();
             }
         }
 
-        // Get current week number
-        function getCurrentWeek() {
-            const now = new Date();
-            const start = new Date(now.getFullYear(), 0, 1);
-            const diff = now - start;
-            const oneWeek = 1000 * 60 * 60 * 24 * 7;
-            return Math.ceil(diff / oneWeek);
+        function loadDemoStats() {
+            document.getElementById('total-professores').textContent = '15';
+            document.getElementById('planos-semana').textContent = '42';
+            document.getElementById('planos-pendentes-count').textContent = '8';
+            document.getElementById('taxa-aprovacao').textContent = '92%';
+            document.getElementById('pendentes-badge').textContent = '8';
+            document.getElementById('notification-count').textContent = '3';
         }
 
-        // Get week number with year handling
-        function getWeekNumber(week) {
-            if (week < 1) return `${52 + week}`;
-            if (week > 52) return `${week - 52}`;
-            return week.toString().padStart(2, '0');
+        function loadDemoAlertas() {
+            document.getElementById('alertas-container').innerHTML = `
+                <div class="flex items-center p-3 bg-red-50 border border-red-200 rounded-lg priority-high">
+                    <div class="flex-1">
+                        <p class="font-medium text-red-900">Planos atrasados</p>
+                        <p class="text-sm text-red-700">3 planos com aulas para hoje ainda não foram aprovados</p>
+                        <p class="text-xs text-red-600 mt-1">Alta prioridade</p>
+                    </div>
+                    <button onclick="showSection('planos-pendentes')" class="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600">
+                        Ver
+                    </button>
+                </div>
+                <div class="flex items-center p-3 bg-yellow-50 border border-yellow-200 rounded-lg priority-medium">
+                    <div class="flex-1">
+                        <p class="font-medium text-yellow-900">Professor sem planos</p>
+                        <p class="text-sm text-yellow-700">Maria Silva não criou planos para esta semana</p>
+                        <p class="text-xs text-yellow-600 mt-1">Média prioridade</p>
+                    </div>
+                    <button onclick="showSection('professores')" class="bg-yellow-500 text-white px-3 py-1 rounded text-sm hover:bg-yellow-600">
+                        Contatar
+                    </button>
+                </div>
+            `;
         }
 
-        // Load planejamentos
-        async function loadPlanejamentos() {
-            const loadingDiv = document.getElementById('loadingPlanejamentos');
-            const listDiv = document.getElementById('planejamentosList');
-            const noDataDiv = document.getElementById('noPlanejamentos');
-
-            loadingDiv.classList.remove('hidden');
-            listDiv.classList.add('hidden');
-            noDataDiv.classList.add('hidden');
-
+        async function loadAlertas() {
             try {
-                let query = supabase
-                    .from('planejamentos')
-                    .select(`
-                        *,
-                        users (name),
-                        turmas (nome, ano, materia)
-                    `)
-                    .eq('users.school_id', currentSchoolId)
-                    .order('created_at', { ascending: false });
+                if (!supabase) return;
 
-                // Apply filters
-                const semanaFilter = document.getElementById('semanaFilter').value;
-                const statusFilter = document.getElementById('statusFilter').value;
+                const { data: alertas } = await supabase
+                    .from('alertas_coordenacao')
+                    .select('*')
+                    .eq('escola_id', currentUser.escola_id)
+                    .eq('resolvido', false)
+                    .order('prioridade', { ascending: false })
+                    .limit(5);
 
-                if (semanaFilter) {
-                    query = query.eq('semana', semanaFilter);
+                const alertasHtml = (alertas || []).map(alerta => {
+                    const priorityClass = alerta.prioridade === 'alta' ? 'priority-high bg-red-50 border-red-200' :
+                                        alerta.prioridade === 'media' ? 'priority-medium bg-yellow-50 border-yellow-200' :
+                                        'priority-low bg-green-50 border-green-200';
+                    
+                    const priorityColor = alerta.prioridade === 'alta' ? 'red' :
+                                        alerta.prioridade === 'media' ? 'yellow' : 'green';
+
+                    return `
+                        <div class="flex items-center p-3 border rounded-lg ${priorityClass}">
+                            <div class="flex-1">
+                                <p class="font-medium text-${priorityColor}-900">${alerta.titulo}</p>
+                                <p class="text-sm text-${priorityColor}-700">${alerta.descricao}</p>
+                                <p class="text-xs text-${priorityColor}-600 mt-1">${alerta.prioridade} prioridade</p>
+                            </div>
+                            <button onclick="resolverAlerta('${alerta.id}')" class="bg-${priorityColor}-500 text-white px-3 py-1 rounded text-sm hover:bg-${priorityColor}-600">
+                                Resolver
+                            </button>
+                        </div>
+                    `;
+                }).join('') || '<p class="text-gray-500 text-center py-4">Nenhum alerta pendente</p>';
+
+                document.getElementById('alertas-container').innerHTML = alertasHtml;
+
+            } catch (error) {
+                console.error('Error loading alerts:', error);
+            }
+        }
+
+        // Planos Pendentes Functions
+        async function loadPlanosPendentes() {
+            try {
+                if (!supabase) {
+                    loadDemoPlanosPendentes();
+                    return;
                 }
 
-                const { data: planejamentos, error } = await query;
+                const { data, error } = await supabase
+                    .from('planos_aula')
+                    .select(`
+                        *,
+                        usuarios(nome),
+                        feedbacks_coordenacao(*)
+                    `)
+                    .eq('escola_id', currentUser.escola_id)
+                    .eq('status', 'finalizado')
+                    .order('data_aula', { ascending: true });
 
                 if (error) throw error;
 
-                // Filter by status if needed
-                let filteredPlanejamentos = planejamentos;
-                if (statusFilter) {
-                    if (statusFilter === 'sem-devolutiva') {
-                        filteredPlanejamentos = planejamentos.filter(p => !p.devolutiva_status);
-                    } else {
-                        filteredPlanejamentos = planejamentos.filter(p => p.devolutiva_status === statusFilter);
-                    }
-                }
-
-                if (filteredPlanejamentos.length === 0) {
-                    noDataDiv.classList.remove('hidden');
-                } else {
-                    renderPlanejamentos(filteredPlanejamentos);
-                    listDiv.classList.remove('hidden');
-                }
-
-                updateStats(planejamentos);
+                planosPendentes = data || [];
+                displayPlanosPendentes(planosPendentes);
+                loadProfessoresFilter();
 
             } catch (error) {
-                console.error('Erro ao carregar planejamentos:', error);
-                showToast('Erro ao carregar semanários', 'error');
-                noDataDiv.classList.remove('hidden');
-            } finally {
-                loadingDiv.classList.add('hidden');
+                console.error('Error loading pending plans:', error);
+                loadDemoPlanosPendentes();
             }
         }
 
-        // Render planejamentos
-        function renderPlanejamentos(planejamentos) {
-            const container = document.getElementById('planejamentosList');
-            container.innerHTML = '';
+        function loadDemoPlanosPendentes() {
+            planosPendentes = [
+                {
+                    id: '1',
+                    titulo: 'Adição e Subtração',
+                    componente_curricular: 'Matemática',
+                    ano_escolar: '2º ano',
+                    data_aula: '2024-02-15',
+                    usuarios: { nome: 'Maria Silva' },
+                    created_at: new Date().toISOString(),
+                    urgencia: 'alta'
+                },
+                {
+                    id: '2',
+                    titulo: 'Leitura e Interpretação',
+                    componente_curricular: 'Língua Portuguesa',
+                    ano_escolar: '3º ano',
+                    data_aula: '2024-02-16',
+                    usuarios: { nome: 'João Santos' },
+                    created_at: new Date().toISOString(),
+                    urgencia: 'media'
+                }
+            ];
+            displayPlanosPendentes(planosPendentes);
+        }
 
-            planejamentos.forEach(planejamento => {
-                const statusInfo = getStatusInfo(planejamento.devolutiva_status);
-                
-                const div = document.createElement('div');
-                div.className = 'border-b border-gray-200 p-6 hover:bg-gray-50 transition-colors';
-                div.innerHTML = `
-                    <div class="flex items-center justify-between">
-                        <div class="flex-1">
-                            <div class="flex items-center space-x-4 mb-3">
-                                <div class="flex items-center space-x-2">
-                                    <i class="fas fa-user-tie text-gray-400"></i>
-                                    <span class="font-medium text-gray-900">${planejamento.users?.name || 'Professor'}</span>
+        function displayPlanosPendentes(planosList) {
+            const container = document.getElementById('planos-pendentes-grid');
+            
+            if (!planosList || planosList.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center text-gray-500 py-16">
+                        <i class="fas fa-check-circle text-4xl mb-4 text-green-500"></i>
+                        <p class="text-lg font-medium">Parabéns! Todos os planos foram analisados</p>
+                        <p class="text-sm">Não há planos aguardando feedback no momento</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = planosList.map(plano => {
+                const urgencia = getUrgencia(plano.data_aula);
+                const urgenciaClass = urgencia === 'alta' ? 'priority-high' : 
+                                   urgencia === 'media' ? 'priority-medium' : 'priority-low';
+                const urgenciaColor = urgencia === 'alta' ? 'red' : 
+                                    urgencia === 'media' ? 'yellow' : 'green';
+
+                return `
+                    <div class="bg-white rounded-xl shadow-lg p-6 ${urgenciaClass}">
+                        <div class="flex items-start justify-between mb-4">
+                            <div class="flex-1">
+                                <div class="flex items-center space-x-2 mb-2">
+                                    <input type="checkbox" class="plano-checkbox" value="${plano.id}">
+                                    <h3 class="text-lg font-semibold text-gray-900">${plano.titulo}</h3>
                                 </div>
-                                <div class="flex items-center space-x-2">
-                                    <i class="fas fa-users text-gray-400"></i>
-                                    <span class="text-gray-600">${planejamento.turmas?.nome || 'Turma'} - ${planejamento.turmas?.ano}º ano</span>
-                                </div>
-                                <div class="flex items-center space-x-2">
-                                    <i class="fas fa-book text-gray-400"></i>
-                                    <span class="text-gray-600">${getMateriaName(planejamento.turmas?.materia)}</span>
+                                <div class="space-y-1 text-sm text-gray-600">
+                                    <p><i class="fas fa-user mr-2"></i>${plano.usuarios?.nome || 'Professor'}</p>
+                                    <p><i class="fas fa-book mr-2"></i>${plano.componente_curricular} - ${plano.ano_escolar}</p>
+                                    <p><i class="fas fa-calendar mr-2"></i>Aula: ${formatDate(plano.data_aula)}</p>
+                                    <p><i class="fas fa-clock mr-2"></i>Criado: ${formatDate(plano.created_at)}</p>
                                 </div>
                             </div>
-                            
-                            <div class="flex items-center space-x-4 mb-3">
-                                <div class="flex items-center space-x-2">
-                                    <i class="fas fa-calendar text-gray-400"></i>
-                                    <span class="text-gray-600">Semana ${planejamento.semana}</span>
-                                </div>
-                                <div class="flex items-center space-x-2">
-                                    <i class="fas fa-lightbulb text-gray-400"></i>
-                                    <span class="text-gray-900 font-medium">${planejamento.tema}</span>
-                                </div>
+                            <div class="text-right">
+                                <span class="px-2 py-1 text-xs font-medium rounded-full bg-${urgenciaColor}-100 text-${urgenciaColor}-800">
+                                    ${urgencia} prioridade
+                                </span>
                             </div>
-
-                            ${statusInfo.html}
-                            
-                            ${planejamento.devolutiva_comentario ? `
-                                <div class="mt-3 p-3 bg-blue-50 rounded-lg">
-                                    <p class="text-sm text-blue-800">
-                                        <i class="fas fa-comment mr-2"></i>
-                                        ${planejamento.devolutiva_comentario}
-                                    </p>
-                                </div>
-                            ` : ''}
                         </div>
-                        
-                        <div class="flex items-center space-x-3">
-                            <button 
-                                onclick="viewPlanejamento('${planejamento.id}')"
-                                class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg transition-colors"
-                            >
-                                <i class="fas fa-eye mr-2"></i>
-                                Ver
+                        <div class="flex space-x-2">
+                            <button onclick="visualizarPlano('${plano.id}')" class="flex-1 bg-blue-500 text-white px-3 py-2 rounded-lg text-sm hover:bg-blue-600">
+                                <i class="fas fa-eye mr-1"></i>Visualizar
                             </button>
-                            <button 
-                                onclick="openDevolutivaModal('${planejamento.id}')"
-                                class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors"
-                            >
-                                <i class="fas fa-comment-dots mr-2"></i>
-                                ${planejamento.devolutiva_status ? 'Editar' : 'Dar'} Devolutiva
+                            <button onclick="aprovarRapido('${plano.id}')" class="flex-1 bg-green-500 text-white px-3 py-2 rounded-lg text-sm hover:bg-green-600">
+                                <i class="fas fa-check mr-1"></i>Aprovar
+                            </button>
+                            <button onclick="darFeedback('${plano.id}')" class="flex-1 bg-yellow-500 text-white px-3 py-2 rounded-lg text-sm hover:bg-yellow-600">
+                                <i class="fas fa-comment mr-1"></i>Feedback
                             </button>
                         </div>
                     </div>
                 `;
-                container.appendChild(div);
-            });
+            }).join('');
         }
 
-        // Get status info
-        function getStatusInfo(status) {
-            const statusMap = {
-                'realizado': {
-                    color: 'green',
-                    icon: 'check-circle',
-                    text: 'Realizado com sucesso',
-                    bgClass: 'bg-green-100 text-green-800'
-                },
-                'ressalvas': {
-                    color: 'yellow',
-                    icon: 'exclamation-triangle',
-                    text: 'Com ressalvas',
-                    bgClass: 'bg-yellow-100 text-yellow-800'
-                },
-                'completar': {
-                    color: 'red',
-                    icon: 'times-circle',
-                    text: 'Favor completar o semanário',
-                    bgClass: 'bg-red-100 text-red-800'
-                },
-                'procurar': {
-                    color: 'purple',
-                    icon: 'user-tie',
-                    text: 'Procure a coordenação',
-                    bgClass: 'bg-purple-100 text-purple-800'
-                }
-            };
-
-            if (!status) {
-                return {
-                    html: `<div class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-gray-100 text-gray-600">
-                        <i class="fas fa-clock mr-2"></i>
-                        Aguardando devolutiva
-                    </div>`
-                };
-            }
-
-            const info = statusMap[status];
-            return {
-                html: `<div class="inline-flex items-center px-3 py-1 rounded-full text-sm ${info.bgClass}">
-                    <i class="fas fa-${info.icon} mr-2"></i>
-                    ${info.text}
-                </div>`
-            };
-        }
-
-        // Get materia name
-        function getMateriaName(materia) {
-            const materias = {
-                'lingua-portuguesa': 'Língua Portuguesa',
-                'matematica': 'Matemática',
-                'ciencias': 'Ciências',
-                'historia': 'História',
-                'geografia': 'Geografia',
-                'arte': 'Arte',
-                'educacao-fisica': 'Educação Física',
-                'ensino-religioso': 'Ensino Religioso'
-            };
-            return materias[materia] || materia;
-        }
-
-        // Update stats
-        function updateStats(planejamentos) {
-            const stats = {
-                total: 0,
-                realizado: 0,
-                ressalvas: 0,
-                pendentes: 0
-            };
-
-            // Count unique professors
-            const professores = new Set();
-            planejamentos.forEach(p => {
-                if (p.users?.name) professores.add(p.users.name);
-            });
-            stats.total = professores.size;
-
-            // Count by status
-            planejamentos.forEach(p => {
-                if (p.devolutiva_status === 'realizado') stats.realizado++;
-                else if (p.devolutiva_status === 'ressalvas') stats.ressalvas++;
-                else if (!p.devolutiva_status || p.devolutiva_status === 'completar' || p.devolutiva_status === 'procurar') stats.pendentes++;
-            });
-
-            document.getElementById('totalProfessores').textContent = stats.total;
-            document.getElementById('semanarios-ok').textContent = stats.realizado;
-            document.getElementById('semanarios-ressalvas').textContent = stats.ressalvas;
-            document.getElementById('semanarios-pendentes').textContent = stats.pendentes;
-        }
-
-        // Open devolutiva modal
-        async function openDevolutivaModal(planejamentoId) {
-            try {
-                const { data: planejamento, error } = await supabase
-                    .from('planejamentos')
-                    .select(`
-                        *,
-                        users (name),
-                        turmas (nome, ano, materia)
-                    `)
-                    .eq('id', planejamentoId)
-                    .single();
-
-                if (error) throw error;
-
-                currentPlanejamento = planejamento;
-
-                // Fill modal data
-                document.getElementById('modalProfessor').textContent = planejamento.users?.name || 'Professor';
-                document.getElementById('modalTurma').textContent = `${planejamento.turmas?.nome} - ${planejamento.turmas?.ano}º ano`;
-                document.getElementById('modalSemana').textContent = `Semana ${planejamento.semana}`;
-                document.getElementById('modalTema').textContent = planejamento.tema;
-
-                // Set current status if exists
-                if (planejamento.devolutiva_status) {
-                    const radio = document.querySelector(`input[name="devolutivaStatus"][value="${planejamento.devolutiva_status}"]`);
-                    if (radio) {
-                        radio.checked = true;
-                        updateRadioSelection(radio);
-                    }
-                }
-
-                // Set comment
-                document.getElementById('devolutivaComentario').value = planejamento.devolutiva_comentario || '';
-
-                document.getElementById('devolutivaModal').classList.remove('hidden');
-
-            } catch (error) {
-                console.error('Erro ao carregar planejamento:', error);
-                showToast('Erro ao carregar dados do semanário', 'error');
-            }
-        }
-
-        // Close devolutiva modal
-        function closeDevolutivaModal() {
-            document.getElementById('devolutivaModal').classList.add('hidden');
-            document.getElementById('devolutivaComentario').value = '';
+        function getUrgencia(dataAula) {
+            const hoje = new Date();
+            const aula = new Date(dataAula);
+            const diffDays = Math.ceil((aula - hoje) / (1000 * 60 * 60 * 24));
             
-            // Reset radio buttons
-            document.querySelectorAll('input[name="devolutivaStatus"]').forEach(radio => {
-                radio.checked = false;
-                updateRadioSelection(radio);
-            });
-            
-            currentPlanejamento = null;
+            if (diffDays <= 0) return 'alta'; // Aula hoje ou passou
+            if (diffDays <= 2) return 'alta'; // Aula em até 2 dias
+            if (diffDays <= 7) return 'media'; // Aula na próxima semana
+            return 'baixa'; // Aula em mais de uma semana
         }
 
-        // Save devolutiva
-        async function salvarDevolutiva() {
-            const selectedStatus = document.querySelector('input[name="devolutivaStatus"]:checked');
-            const comentario = document.getElementById('devolutivaComentario').value.trim();
+        // Feedback Functions
+        function darFeedback(planoId) {
+            currentPlanoForFeedback = planosPendentes.find(p => p.id === planoId);
+            if (!currentPlanoForFeedback) return;
 
-            if (!selectedStatus) {
-                showToast('Por favor, selecione um status', 'error');
+            // Load plano details in modal
+            document.getElementById('plano-details').innerHTML = `
+                <h4 class="font-semibold text-gray-900 mb-2">${currentPlanoForFeedback.titulo}</h4>
+                <div class="grid grid-cols-2 gap-4 text-sm text-gray-600">
+                    <p><strong>Professor:</strong> ${currentPlanoForFeedback.usuarios?.nome}</p>
+                    <p><strong>Componente:</strong> ${currentPlanoForFeedback.componente_curricular}</p>
+                    <p><strong>Ano:</strong> ${currentPlanoForFeedback.ano_escolar}</p>
+                    <p><strong>Data da Aula:</strong> ${formatDate(currentPlanoForFeedback.data_aula)}</p>
+                </div>
+            `;
+
+            document.getElementById('feedback-modal').classList.remove('hidden');
+        }
+
+        function closeFeedbackModal() {
+            document.getElementById('feedback-modal').classList.add('hidden');
+            currentPlanoForFeedback = null;
+            document.querySelector('#feedback-modal form').reset();
+        }
+
+        async function submitFeedback(event) {
+            event.preventDefault();
+            
+            const decisao = document.querySelector('input[name="decisao"]:checked')?.value;
+            const comentarios = document.getElementById('feedback-comentarios').value;
+            const sugestoes = document.getElementById('feedback-sugestoes').value;
+
+            if (!decisao) {
+                showToast('Selecione uma decisão', 'error');
                 return;
             }
 
-            const btn = document.getElementById('salvarDevolutivaBtn');
-            const btnText = document.getElementById('salvarDevolutivaText');
-            const btnLoading = document.getElementById('salvarDevolutivaLoading');
+            try {
+                if (!supabase) {
+                    showToast(`Feedback ${decisao} enviado com sucesso! (Modo demo)`, 'success');
+                    closeFeedbackModal();
+                    loadPlanosPendentes();
+                    loadDashboard();
+                    return;
+                }
 
-            btn.disabled = true;
-            btnText.classList.add('hidden');
-            btnLoading.classList.remove('hidden');
+                // Insert feedback
+                const { error: feedbackError } = await supabase
+                    .from('feedbacks_coordenacao')
+                    .insert([{
+                        plano_id: currentPlanoForFeedback.id,
+                        coordenador_id: currentUser.id,
+                        decisao: decisao,
+                        comentarios: comentarios,
+                        sugestoes: sugestoes
+                    }]);
+
+                if (feedbackError) throw feedbackError;
+
+                // Update plan status
+                const newStatus = decisao === 'aprovado' ? 'aprovado' : 
+                                decisao === 'rejeitado' ? 'rejeitado' : 'revisao';
+
+                const { error: updateError } = await supabase
+                    .from('planos_aula')
+                    .update({ status: newStatus })
+                    .eq('id', currentPlanoForFeedback.id);
+
+                if (updateError) throw updateError;
+
+                showToast(`Feedback ${decisao} enviado com sucesso!`, 'success');
+                closeFeedbackModal();
+                loadPlanosPendentes();
+                loadDashboard();
+
+            } catch (error) {
+                console.error('Error submitting feedback:', error);
+                showToast('Erro ao enviar feedback: ' + error.message, 'error');
+            }
+        }
+
+        async function aprovarRapido(planoId) {
+            if (!confirm('Tem certeza que deseja aprovar este plano?')) return;
 
             try {
-                const { error } = await supabase
-                    .from('planejamentos')
-                    .update({
-                        devolutiva_status: selectedStatus.value,
-                        devolutiva_comentario: comentario || null,
-                        devolutiva_data: new Date().toISOString(),
-                        devolutiva_coordenador_id: currentUser.id
-                    })
-                    .eq('id', currentPlanejamento.id);
+                if (!supabase) {
+                    showToast('Plano aprovado com sucesso! (Modo demo)', 'success');
+                    loadPlanosPendentes();
+                    loadDashboard();
+                    return;
+                }
+
+                // Insert quick approval feedback
+                const { error: feedbackError } = await supabase
+                    .from('feedbacks_coordenacao')
+                    .insert([{
+                        plano_id: planoId,
+                        coordenador_id: currentUser.id,
+                        decisao: 'aprovado',
+                        comentarios: 'Aprovação rápida - plano está adequado'
+                    }]);
+
+                if (feedbackError) throw feedbackError;
+
+                // Update plan status
+                const { error: updateError } = await supabase
+                    .from('planos_aula')
+                    .update({ status: 'aprovado' })
+                    .eq('id', planoId);
+
+                if (updateError) throw updateError;
+
+                showToast('Plano aprovado com sucesso!', 'success');
+                loadPlanosPendentes();
+                loadDashboard();
+
+            } catch (error) {
+                console.error('Error approving plan:', error);
+                showToast('Erro ao aprovar plano: ' + error.message, 'error');
+            }
+        }
+
+        // Filter Functions
+        function filterPlanosPendentes() {
+            const professor = document.getElementById('filter-professor-pendente').value;
+            const componente = document.getElementById('filter-componente-pendente').value;
+            const data = document.getElementById('filter-data-pendente').value;
+            const urgencia = document.getElementById('filter-urgencia').value;
+            const search = document.getElementById('search-pendentes').value.toLowerCase();
+
+            let filtered = planosPendentes.filter(plano => {
+                const matchProfessor = !professor || plano.usuarios?.nome === professor;
+                const matchComponente = !componente || plano.componente_curricular === componente;
+                const matchData = !data || plano.data_aula === data;
+                const matchUrgencia = !urgencia || getUrgencia(plano.data_aula) === urgencia;
+                const matchSearch = !search || plano.titulo.toLowerCase().includes(search) || 
+                                  plano.usuarios?.nome.toLowerCase().includes(search);
+
+                return matchProfessor && matchComponente && matchData && matchUrgencia && matchSearch;
+            });
+
+            displayPlanosPendentes(filtered);
+        }
+
+        async function loadProfessoresFilter() {
+            try {
+                if (!supabase) {
+                    const selects = ['filter-professor-pendente', 'filter-professor-todos'];
+                    selects.forEach(selectId => {
+                        const select = document.getElementById(selectId);
+                        if (select) {
+                            select.innerHTML = `
+                                <option value="">Todos os professores</option>
+                                <option value="Maria Silva">Maria Silva</option>
+                                <option value="João Santos">João Santos</option>
+                            `;
+                        }
+                    });
+                    return;
+                }
+
+                const { data: profs } = await supabase
+                    .from('usuarios')
+                    .select('nome')
+                    .eq('escola_id', currentUser.escola_id)
+                    .eq('tipo_usuario', 'professor')
+                    .order('nome');
+
+                const options = (profs || []).map(p => 
+                    `<option value="${p.nome}">${p.nome}</option>`
+                ).join('');
+
+                const selects = ['filter-professor-pendente', 'filter-professor-todos'];
+                selects.forEach(selectId => {
+                    const select = document.getElementById(selectId);
+                    if (select) {
+                        select.innerHTML = `
+                            <option value="">Todos os professores</option>
+                            ${options}
+                        `;
+                    }
+                });
+
+            } catch (error) {
+                console.error('Error loading professors filter:', error);
+            }
+        }
+
+        // Todos os Planos Functions
+        async function loadTodosPlanos() {
+            try {
+                if (!supabase) {
+                    loadDemoTodosPlanos();
+                    return;
+                }
+
+                const { data, error } = await supabase
+                    .from('planos_aula')
+                    .select(`
+                        *,
+                        usuarios(nome)
+                    `)
+                    .eq('escola_id', currentUser.escola_id)
+                    .order('created_at', { ascending: false });
 
                 if (error) throw error;
 
-                showToast('Devolutiva salva com sucesso!', 'success');
-                closeDevolutivaModal();
-                await loadPlanejamentos();
+                todosPlanos = data || [];
+                displayTodosPlanos(todosPlanos);
 
             } catch (error) {
-                console.error('Erro ao salvar devolutiva:', error);
-                showToast('Erro ao salvar devolutiva', 'error');
-            } finally {
-                btn.disabled = false;
-                btnText.classList.remove('hidden');
-                btnLoading.classList.add('hidden');
+                console.error('Error loading all plans:', error);
+                loadDemoTodosPlanos();
             }
         }
 
-        // View planejamento (placeholder)
-        function viewPlanejamento(id) {
-            // This could open a detailed view modal
-            showToast('Funcionalidade em desenvolvimento', 'info');
-        }
-
-        // Setup event listeners
-        function setupEventListeners() {
-            // Filter changes
-            document.getElementById('semanaFilter').addEventListener('change', loadPlanejamentos);
-            document.getElementById('statusFilter').addEventListener('change', loadPlanejamentos);
-
-            // Radio button styling
-            document.querySelectorAll('input[name="devolutivaStatus"]').forEach(radio => {
-                radio.addEventListener('change', function() {
-                    document.querySelectorAll('input[name="devolutivaStatus"]').forEach(r => updateRadioSelection(r));
-                });
-            });
-
-            // Modal close on outside click
-            document.getElementById('devolutivaModal').addEventListener('click', function(e) {
-                if (e.target.id === 'devolutivaModal') {
-                    closeDevolutivaModal();
+        function loadDemoTodosPlanos() {
+            todosPlanos = [
+                {
+                    id: '1',
+                    titulo: 'Adição e Subtração',
+                    componente_curricular: 'Matemática',
+                    ano_escolar: '2º ano',
+                    data_aula: '2024-02-15',
+                    status: 'aprovado',
+                    usuarios: { nome: 'Maria Silva' },
+                    created_at: new Date().toISOString()
                 }
-            });
+            ];
+            displayTodosPlanos(todosPlanos);
         }
 
-        // Update radio selection styling
-        function updateRadioSelection(radio) {
-            const label = radio.closest('label');
-            const dot = label.querySelector('.w-2.h-2');
+        function displayTodosPlanos(planosList) {
+            const tbody = document.getElementById('todos-planos-tbody');
             
-            if (radio.checked) {
-                label.classList.add('border-indigo-500', 'bg-indigo-50');
-                dot.classList.remove('hidden');
-            } else {
-                label.classList.remove('border-indigo-500', 'bg-indigo-50');
-                dot.classList.add('hidden');
+            if (!planosList || planosList.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="px-6 py-12 text-center text-gray-500">
+                            <i class="fas fa-file-alt text-4xl mb-4"></i>
+                            <p>Nenhum plano encontrado</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = planosList.map(plano => {
+                const statusColors = {
+                    'rascunho': 'bg-gray-100 text-gray-800',
+                    'finalizado': 'bg-blue-100 text-blue-800',
+                    'aprovado': 'bg-green-100 text-green-800',
+                    'rejeitado': 'bg-red-100 text-red-800',
+                    'revisao': 'bg-yellow-100 text-yellow-800',
+                    'aplicado': 'bg-purple-100 text-purple-800'
+                };
+
+                return `
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4">
+                            <div>
+                                <p class="font-medium text-gray-900">${plano.titulo}</p>
+                                <p class="text-sm text-gray-500">${plano.ano_escolar}</p>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-900">${plano.usuarios?.nome || 'N/A'}</td>
+                        <td class="px-6 py-4 text-sm text-gray-900">${plano.componente_curricular}</td>
+                        <td class="px-6 py-4 text-sm text-gray-900">${formatDate(plano.data_aula)}</td>
+                        <td class="px-6 py-4">
+                            <span class="px-2 py-1 text-xs font-medium rounded-full ${statusColors[plano.status] || 'bg-gray-100 text-gray-800'}">
+                                ${plano.status}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-sm space-x-2">
+                            <button onclick="visualizarPlano('${plano.id}')" class="text-blue-600 hover:text-blue-800">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            ${plano.status === 'finalizado' ? `
+                                <button onclick="darFeedback('${plano.id}')" class="text-green-600 hover:text-green-800">
+                                    <i class="fas fa-comment"></i>
+                                </button>
+                            ` : ''}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Professores Functions
+        async function loadProfessores() {
+            try {
+                if (!supabase) {
+                    loadDemoProfessores();
+                    return;
+                }
+
+                const { data, error } = await supabase
+                    .from('usuarios')
+                    .select(`
+                        *,
+                        planos_aula(count)
+                    `)
+                    .eq('escola_id', currentUser.escola_id)
+                    .eq('tipo_usuario', 'professor')
+                    .order('nome');
+
+                if (error) throw error;
+
+                professores = data || [];
+                displayProfessores(professores);
+
+            } catch (error) {
+                console.error('Error loading teachers:', error);
+                loadDemoProfessores();
             }
         }
 
-        // Show toast notification
+        function loadDemoProfessores() {
+            professores = [
+                {
+                    id: '1',
+                    nome: 'Maria Silva',
+                    email: 'maria@escola.com',
+                    planos_count: 12,
+                    last_login: new Date().toISOString()
+                },
+                {
+                    id: '2',
+                    nome: 'João Santos',
+                    email: 'joao@escola.com',
+                    planos_count: 8,
+                    last_login: new Date().toISOString()
+                }
+            ];
+            displayProfessores(professores);
+        }
+
+        function displayProfessores(professList) {
+            const container = document.getElementById('professores-grid');
+            
+            if (!professList || professList.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-full text-center text-gray-500 py-16">
+                        <i class="fas fa-user-plus text-4xl mb-4"></i>
+                        <p>Nenhum professor cadastrado</p>
+                        <button onclick="adicionarProfessor()" class="mt-4 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600">
+                            Adicionar Primeiro Professor
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = professList.map(professor => `
+                <div class="bg-white rounded-xl shadow-lg p-6 card-hover transition-all duration-300">
+                    <div class="flex items-center space-x-4 mb-4">
+                        <div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
+                            <i class="fas fa-user text-white text-xl"></i>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="text-lg font-semibold text-gray-900">${professor.nome}</h3>
+                            <p class="text-sm text-gray-600">${professor.email}</p>
+                        </div>
+                    </div>
+                    <div class="space-y-2 text-sm text-gray-600 mb-4">
+                        <p><i class="fas fa-file-alt mr-2"></i>Planos criados: ${professor.planos_count || 0}</p>
+                        <p><i class="fas fa-clock mr-2"></i>Último acesso: ${formatDate(professor.last_login)}</p>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button onclick="verPerfilProfessor('${professor.id}')" class="flex-1 bg-blue-500 text-white px-3 py-2 rounded-lg text-sm hover:bg-blue-600">
+                            <i class="fas fa-eye mr-1"></i>Ver Perfil
+                        </button>
+                        <button onclick="enviarMensagem('${professor.id}')" class="flex-1 bg-green-500 text-white px-3 py-2 rounded-lg text-sm hover:bg-green-600">
+                            <i class="fas fa-envelope mr-1"></i>Mensagem
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Utility Functions
         function showToast(message, type = 'info') {
-            const toast = document.getElementById('toast');
-            const icon = document.getElementById('toastIcon');
-            const messageEl = document.getElementById('toastMessage');
-
-            const icons = {
-                success: '<i class="fas fa-check-circle text-green-500"></i>',
-                error: '<i class="fas fa-exclamation-circle text-red-500"></i>',
-                info: '<i class="fas fa-info-circle text-blue-500"></i>'
-            };
-
-            icon.innerHTML = icons[type] || icons.info;
-            messageEl.textContent = message;
-
-            toast.classList.remove('translate-x-full');
+            const toast = document.createElement('div');
+            const bgColor = type === 'success' ? 'bg-green-500' : type === 'error' ? 'bg-red-500' : 'bg-blue-500';
+            const icon = type === 'success' ? 'fa-check' : type === 'error' ? 'fa-times' : 'fa-info';
+            
+            toast.className = `${bgColor} text-white px-6 py-4 rounded-lg shadow-lg flex items-center space-x-3 transform transition-all duration-300 translate-x-full`;
+            toast.innerHTML = `
+                <i class="fas ${icon}"></i>
+                <span>${message}</span>
+            `;
+            
+            document.getElementById('toast-container').appendChild(toast);
+            
+            setTimeout(() => toast.classList.remove('translate-x-full'), 100);
             setTimeout(() => {
                 toast.classList.add('translate-x-full');
-            }, 3000);
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
         }
 
-        // Logout
-        async function logout() {
-            await supabase.auth.signOut();
-            window.location.href = './index.html';
+        function formatDate(dateString) {
+            if (!dateString) return 'N/A';
+            
+            const date = new Date(dateString);
+            const now = new Date();
+            const diff = now - date;
+            
+            if (diff < 60000) return 'Agora mesmo';
+            if (diff < 3600000) return `Há ${Math.floor(diff / 60000)} minutos`;
+            if (diff < 86400000) return `Há ${Math.floor(diff / 3600000)} horas`;
+            if (diff < 604800000) return `Há ${Math.floor(diff / 86400000)} dias`;
+            
+            return date.toLocaleDateString('pt-BR');
         }
+
+        // Placeholder functions
+        function showNotifications() {
+            showToast('Função de notificações em desenvolvimento', 'info');
+        }
+
+        function showUserMenu() {
+            const menu = document.getElementById('user-menu');
+            menu.classList.toggle('hidden');
+        }
+
+        function showProfile() {
+            showToast('Função de perfil em desenvolvimento', 'info');
+        }
+
+        function logout() {
+            if (confirm('Tem certeza que deseja sair?')) {
+                window.location.href = 'login.html';
+            }
+        }
+
+        function visualizarPlano(planoId) {
+            showToast('Função de visualização em desenvolvimento', 'info');
+        }
+
+        function aprovarTodosSelecionados() {
+            const selected = document.querySelectorAll('.plano-checkbox:checked');
+            if (selected.length === 0) {
+                showToast('Selecione pelo menos um plano', 'error');
+                return;
+            }
+            
+            if (confirm(`Aprovar ${selected.length} plano(s) selecionado(s)?`)) {
+                showToast(`${selected.length} plano(s) aprovado(s) com sucesso!`, 'success');
+                loadPlanosPendentes();
+                loadDashboard();
+            }
+        }
+
+        function filterTodosPlanos() {
+            // Implementation for filtering all plans
+            showToast('Filtros em desenvolvimento', 'info');
+        }
+
+        function exportarPlanos() {
+            showToast('Função de exportação em desenvolvimento', 'info');
+        }
+
+        function adicionarProfessor() {
+            showToast('Função de adicionar professor em desenvolvimento', 'info');
+        }
+
+        function verPerfilProfessor(professorId) {
+            showToast('Função de perfil do professor em desenvolvimento', 'info');
+        }
+
+        function enviarMensagem(professorId) {
+            showToast('Função de mensagem em desenvolvimento', 'info');
+        }
+
+        function resolverAlerta(alertaId) {
+            showToast('Alerta resolvido com sucesso!', 'success');
+            loadDashboard();
+        }
+
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', function(event) {
+            if (!event.target.closest('.relative')) {
+                document.getElementById('user-menu').classList.add('hidden');
+            }
+        });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'981195a506caf1e6',t:'MTc1ODIwNjI4MC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98419b78c4b0f17b',t:'MTc1ODcwOTgzNi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
 
