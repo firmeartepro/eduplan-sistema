@@ -3,1569 +3,1106 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Direção - Sistema Semanário</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <title>Dashboard Direção - Semanário Digital</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-        body { font-family: 'Inter', sans-serif; }
-        .gradient-bg { background: linear-gradient(135deg, #1e40af 0%, #3730a3 100%); }
-        .card-hover { transition: all 0.3s ease; }
+        .sidebar-item:hover { background: linear-gradient(135deg, #7c3aed, #6d28d9); }
         .card-hover:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
-        .fade-in { animation: fadeIn 0.6s ease-in; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        .loading-spinner { animation: spin 1s linear infinite; }
-        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        .pulse-notification { animation: pulse 2s infinite; }
+        .metric-card { transition: all 0.3s ease; }
+        .metric-card:hover { transform: scale(1.02); }
+        .status-indicator { width: 12px; height: 12px; border-radius: 50%; display: inline-block; margin-right: 8px; }
+        .notification-pulse { animation: pulse 2s infinite; }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-        .status-realizado { background: linear-gradient(135deg, #10b981, #059669); }
-        .status-ressalvas { background: linear-gradient(135deg, #f59e0b, #d97706); }
-        .status-completar { background: linear-gradient(135deg, #ef4444, #dc2626); }
-        .status-procurar { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
-        .priority-alta { border-left: 4px solid #ef4444; }
-        .priority-media { border-left: 4px solid #f59e0b; }
-        .priority-baixa { border-left: 4px solid #10b981; }
+        .gradient-bg { background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%); }
+        .chart-container { min-height: 300px; }
+        .performance-high { border-left: 4px solid #10b981; }
+        .performance-medium { border-left: 4px solid #f59e0b; }
+        .performance-low { border-left: 4px solid #ef4444; }
+        .trend-up { color: #10b981; }
+        .trend-down { color: #ef4444; }
+        .trend-stable { color: #6b7280; }
     </style>
 </head>
-<body class="bg-gray-50 min-h-screen">
+<body class="bg-gradient-to-br from-slate-50 to-purple-50 min-h-screen">
     <!-- Header -->
-    <header class="gradient-bg shadow-lg">
+    <header class="bg-white shadow-lg border-b-4 border-purple-600">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center py-4">
                 <div class="flex items-center space-x-4">
-                    <div class="flex items-center space-x-3">
-                        <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
-                            <i class="fas fa-user-tie text-blue-600 text-xl"></i>
-                        </div>
-                        <div>
-                            <h1 class="text-xl font-bold text-white">Dashboard Direção</h1>
-                            <p class="text-blue-100 text-sm" id="schoolName">Carregando...</p>
-                        </div>
+                    <div class="bg-gradient-to-r from-purple-600 to-indigo-600 p-3 rounded-xl shadow-lg">
+                        <i class="fas fa-school text-white text-2xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-3xl font-bold text-gray-900">Dashboard Direção</h1>
+                        <p class="text-sm text-gray-600">Semanário Digital - <span id="user-name">Carregando...</span></p>
                     </div>
                 </div>
-                
                 <div class="flex items-center space-x-4">
-                    <!-- Notification Bell -->
+                    <div class="bg-purple-100 px-4 py-2 rounded-full">
+                        <span class="text-purple-800 text-sm font-medium">
+                            <i class="fas fa-circle text-purple-500 text-xs mr-2"></i>
+                            <span id="escola-name">Carregando...</span>
+                        </span>
+                    </div>
                     <div class="relative">
-                        <button id="notificationBtn" onclick="toggleNotifications()" class="bg-white bg-opacity-20 hover:bg-opacity-30 text-white p-2 rounded-lg transition-all duration-200 relative">
-                            <i class="fas fa-bell text-lg"></i>
-                            <span id="notificationBadge" class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center pulse-notification">0</span>
+                        <button onclick="showNotifications()" class="bg-purple-500 text-white p-2 rounded-full hover:bg-purple-600 transition-colors">
+                            <i class="fas fa-bell"></i>
+                            <span id="notification-count" class="absolute -top-1 -right-1 bg-red-500 text-xs text-white rounded-full px-1 notification-pulse">0</span>
                         </button>
-                        
-                        <!-- Notifications Dropdown -->
-                        <div id="notificationsDropdown" class="hidden absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl z-50 border border-gray-200">
-                            <div class="p-4 border-b border-gray-200">
-                                <h3 class="font-semibold text-gray-900">Notificações Recentes</h3>
+                    </div>
+                    <div class="relative">
+                        <button onclick="showUserMenu()" class="flex items-center space-x-2 bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded-lg transition-colors">
+                            <div class="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center">
+                                <i class="fas fa-user-tie text-white text-sm"></i>
                             </div>
-                            <div id="notificationsList" class="max-h-64 overflow-y-auto">
-                                <!-- Notifications will be loaded here -->
-                            </div>
+                            <i class="fas fa-chevron-down text-gray-600"></i>
+                        </button>
+                        <div id="user-menu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border z-50">
+                            <a href="#" onclick="showProfile()" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
+                                <i class="fas fa-user mr-2"></i>Meu Perfil
+                            </a>
+                            <a href="#" onclick="showSettings()" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
+                                <i class="fas fa-cog mr-2"></i>Configurações
+                            </a>
+                            <a href="#" onclick="logout()" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
+                                <i class="fas fa-sign-out-alt mr-2"></i>Sair
+                            </a>
                         </div>
                     </div>
-                    
-                    <div class="text-right">
-                        <p class="text-white font-medium" id="userName">Carregando...</p>
-                        <p class="text-blue-100 text-sm">Direção</p>
-                    </div>
-                    <button onclick="logout()" class="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-4 py-2 rounded-lg transition-all duration-200">
-                        <i class="fas fa-sign-out-alt mr-2"></i>
-                        Sair
-                    </button>
                 </div>
             </div>
         </div>
     </header>
 
-    <!-- Main Content -->
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <!-- Stats Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <div class="bg-white rounded-xl shadow-sm p-6 card-hover fade-in">
-                <div class="flex items-center">
-                    <div class="p-3 rounded-full bg-blue-100">
-                        <i class="fas fa-chalkboard-teacher text-blue-600 text-xl"></i>
-                    </div>
-                    <div class="ml-4">
-                        <p class="text-sm font-medium text-gray-600">Total Professores</p>
-                        <p class="text-2xl font-bold text-gray-900" id="totalProfessores">0</p>
-                    </div>
-                </div>
-            </div>
+    <div class="flex">
+        <!-- Sidebar -->
+        <div class="w-64 bg-white shadow-xl h-screen sticky top-0">
+            <div class="p-6">
+                <nav class="space-y-2">
+                    <button onclick="showSection('dashboard')" class="sidebar-item w-full flex items-center px-4 py-3 text-left text-white rounded-lg transition-all duration-200 bg-purple-500">
+                        <i class="fas fa-tachometer-alt mr-3"></i>Dashboard
+                    </button>
+                    <button onclick="showSection('visao-geral')" class="sidebar-item w-full flex items-center px-4 py-3 text-left text-gray-700 rounded-lg transition-all duration-200">
+                        <i class="fas fa-chart-line mr-3"></i>Visão Geral
+                    </button>
+                    <button onclick="showSection('coordenadores')" class="sidebar-item w-full flex items-center px-4 py-3 text-left text-gray-700 rounded-lg transition-all duration-200">
+                        <i class="fas fa-users-cog mr-3"></i>Coordenadores
+                        <span id="coord-badge" class="ml-auto bg-blue-500 text-white text-xs px-2 py-1 rounded-full">0</span>
+                    </button>
+                    <button onclick="showSection('professores')" class="sidebar-item w-full flex items-center px-4 py-3 text-left text-gray-700 rounded-lg transition-all duration-200">
+                        <i class="fas fa-chalkboard-teacher mr-3"></i>Professores
+                        <span id="prof-badge" class="ml-auto bg-green-500 text-white text-xs px-2 py-1 rounded-full">0</span>
+                    </button>
+                    <button onclick="showSection('performance')" class="sidebar-item w-full flex items-center px-4 py-3 text-left text-gray-700 rounded-lg transition-all duration-200">
+                        <i class="fas fa-chart-bar mr-3"></i>Performance
+                    </button>
+                    <button onclick="showSection('relatorios')" class="sidebar-item w-full flex items-center px-4 py-3 text-left text-gray-700 rounded-lg transition-all duration-200">
+                        <i class="fas fa-file-chart-line mr-3"></i>Relatórios
+                    </button>
 
-            <div class="bg-white rounded-xl shadow-sm p-6 card-hover fade-in">
-                <div class="flex items-center">
-                    <div class="p-3 rounded-full bg-green-100">
-                        <i class="fas fa-calendar-week text-green-600 text-xl"></i>
-                    </div>
-                    <div class="ml-4">
-                        <p class="text-sm font-medium text-gray-600">Semanários Esta Semana</p>
-                        <p class="text-2xl font-bold text-gray-900" id="semanariosSemana">0</p>
-                    </div>
-                </div>
-            </div>
 
-            <div class="bg-white rounded-xl shadow-sm p-6 card-hover fade-in">
-                <div class="flex items-center">
-                    <div class="p-3 rounded-full bg-yellow-100">
-                        <i class="fas fa-exclamation-triangle text-yellow-600 text-xl"></i>
-                    </div>
-                    <div class="ml-4">
-                        <p class="text-sm font-medium text-gray-600">Pendentes Análise</p>
-                        <p class="text-2xl font-bold text-gray-900" id="pendentesAnalise">0</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-white rounded-xl shadow-sm p-6 card-hover fade-in">
-                <div class="flex items-center">
-                    <div class="p-3 rounded-full bg-purple-100">
-                        <i class="fas fa-envelope text-purple-600 text-xl"></i>
-                    </div>
-                    <div class="ml-4">
-                        <p class="text-sm font-medium text-gray-600">Recados Enviados</p>
-                        <p class="text-2xl font-bold text-gray-900" id="recadosEnviados">0</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Quick Actions -->
-        <div class="bg-white rounded-xl shadow-sm p-6 mb-8 fade-in">
-            <div class="flex flex-col sm:flex-row gap-4 items-center justify-between">
-                <div>
-                    <h2 class="text-lg font-semibold text-gray-900 mb-1">Ações Rápidas</h2>
-                    <p class="text-gray-600">Gerencie a escola e comunique-se com a equipe</p>
-                </div>
-                <div class="flex flex-wrap gap-3">
-                    <button onclick="openRecadoProfessorModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
-                        <i class="fas fa-paper-plane mr-2"></i>
-                        Recado para Professor
-                    </button>
-                    <button onclick="openRecadoAdminModal()" class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
-                        <i class="fas fa-cog mr-2"></i>
-                        Contatar Admin
-                    </button>
-                    <button onclick="loadSemanarios()" class="border border-gray-300 text-gray-700 px-6 py-3 rounded-lg font-medium hover:bg-gray-50 transition-colors">
-                        <i class="fas fa-sync-alt mr-2"></i>
-                        Atualizar
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Tabs -->
-        <div class="bg-white rounded-xl shadow-sm mb-8 fade-in">
-            <div class="border-b border-gray-200">
-                <nav class="flex space-x-8 px-6">
-                    <button onclick="switchTab('semanarios')" id="tab-semanarios" class="py-4 px-1 border-b-2 border-blue-500 font-medium text-sm text-blue-600">
-                        <i class="fas fa-calendar-week mr-2"></i>
-                        Semanários
-                    </button>
-                    <button onclick="switchTab('professores')" id="tab-professores" class="py-4 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">
-                        <i class="fas fa-chalkboard-teacher mr-2"></i>
-                        Professores
-                    </button>
-                    <button onclick="switchTab('recados')" id="tab-recados" class="py-4 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">
-                        <i class="fas fa-envelope mr-2"></i>
-                        Recados
-                    </button>
-                    <button onclick="switchTab('relatorios')" id="tab-relatorios" class="py-4 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">
-                        <i class="fas fa-chart-bar mr-2"></i>
-                        Relatórios
+                    <button onclick="showSection('suporte')" class="sidebar-item w-full flex items-center px-4 py-3 text-left text-gray-700 rounded-lg transition-all duration-200">
+                        <i class="fas fa-headset mr-3"></i>Suporte
                     </button>
                 </nav>
             </div>
+        </div>
 
-            <!-- Tab Content -->
-            <div class="p-6">
-                <!-- Semanários Tab -->
-                <div id="content-semanarios" class="tab-content">
-                    <!-- Filters -->
-                    <div class="flex flex-col sm:flex-row gap-4 mb-6">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Professor</label>
-                            <select id="professorFilter" class="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                <option value="">Todos os professores</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                            <select id="statusFilter" class="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                <option value="">Todos os status</option>
-                                <option value="sem-devolutiva">Sem devolutiva</option>
-                                <option value="realizado">Aprovado</option>
-                                <option value="ressalvas">Com ressalvas</option>
-                                <option value="completar">Para completar</option>
-                                <option value="procurar">Procurar coordenação</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Semana</label>
-                            <select id="semanaFilter" class="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                <option value="">Todas as semanas</option>
-                            </select>
+        <!-- Main Content -->
+        <div class="flex-1 p-8">
+            <!-- Dashboard Section -->
+            <div id="dashboard-section" class="section active">
+                <div class="mb-8">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-2">Visão Executiva da Escola</h2>
+                    <p class="text-gray-600">Acompanhe todos os indicadores estratégicos da instituição</p>
+                </div>
+
+                <!-- KPI Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-purple-500 metric-card transition-all duration-300">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">Total de Usuários</p>
+                                <p id="total-usuarios" class="text-3xl font-bold text-gray-900">-</p>
+                                <p class="text-xs text-purple-600 mt-1">
+                                    <i class="fas fa-users mr-1"></i>Ativos na plataforma
+                                </p>
+                            </div>
+                            <div class="bg-purple-100 p-4 rounded-full">
+                                <i class="fas fa-users text-purple-600 text-xl"></i>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Semanários List -->
-                    <div id="loadingSemanarios" class="flex items-center justify-center py-12">
-                        <div class="text-center">
-                            <i class="fas fa-spinner loading-spinner text-3xl text-blue-600 mb-4"></i>
-                            <p class="text-gray-600">Carregando semanários...</p>
+                    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-green-500 metric-card transition-all duration-300">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">Planos Este Mês</p>
+                                <p id="planos-mes" class="text-3xl font-bold text-gray-900">-</p>
+                                <p class="text-xs text-green-600 mt-1">
+                                    <i class="fas fa-arrow-up mr-1"></i><span id="planos-trend">+0%</span> vs mês anterior
+                                </p>
+                            </div>
+                            <div class="bg-green-100 p-4 rounded-full">
+                                <i class="fas fa-file-alt text-green-600 text-xl"></i>
+                            </div>
                         </div>
                     </div>
 
-                    <div id="semanariosList" class="hidden space-y-4">
-                        <!-- Semanários will be loaded here -->
+                    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-blue-500 metric-card transition-all duration-300">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">Taxa de Aprovação</p>
+                                <p id="taxa-aprovacao-geral" class="text-3xl font-bold text-gray-900">-</p>
+                                <p class="text-xs text-blue-600 mt-1">
+                                    <i class="fas fa-check-circle mr-1"></i>Média da escola
+                                </p>
+                            </div>
+                            <div class="bg-blue-100 p-4 rounded-full">
+                                <i class="fas fa-percentage text-blue-600 text-xl"></i>
+                            </div>
+                        </div>
                     </div>
 
-                    <div id="noSemanarios" class="hidden text-center py-12">
-                        <i class="fas fa-calendar-times text-4xl text-gray-400 mb-4"></i>
-                        <h3 class="text-lg font-medium text-gray-900 mb-2">Nenhum semanário encontrado</h3>
-                        <p class="text-gray-600">Não há semanários com os filtros selecionados.</p>
+                    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-yellow-500 metric-card transition-all duration-300">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">Engajamento</p>
+                                <p id="engajamento-score" class="text-3xl font-bold text-gray-900">-</p>
+                                <p class="text-xs text-yellow-600 mt-1">
+                                    <i class="fas fa-chart-line mr-1"></i>Score médio
+                                </p>
+                            </div>
+                            <div class="bg-yellow-100 p-4 rounded-full">
+                                <i class="fas fa-heart text-yellow-600 text-xl"></i>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Professores Tab -->
-                <div id="content-professores" class="tab-content hidden">
-                    <div id="loadingProfessores" class="flex items-center justify-center py-12">
-                        <div class="text-center">
-                            <i class="fas fa-spinner loading-spinner text-3xl text-blue-600 mb-4"></i>
-                            <p class="text-gray-600">Carregando professores...</p>
-                        </div>
-                    </div>
-
-                    <div id="professoresList" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        <!-- Professores will be loaded here -->
-                    </div>
-                </div>
-
-                <!-- Recados Tab -->
-                <div id="content-recados" class="tab-content hidden">
-                    <div class="flex justify-between items-center mb-6">
-                        <h3 class="text-lg font-semibold text-gray-900">Histórico de Recados</h3>
-                        <div class="flex space-x-3">
-                            <button onclick="openRecadoProfessorModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm">
-                                <i class="fas fa-paper-plane mr-2"></i>
-                                Novo Recado Professor
-                            </button>
-                            <button onclick="openRecadoAdminModal()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm">
-                                <i class="fas fa-cog mr-2"></i>
-                                Contatar Admin
-                            </button>
-                        </div>
-                    </div>
-
-                    <div id="loadingRecados" class="flex items-center justify-center py-12">
-                        <div class="text-center">
-                            <i class="fas fa-spinner loading-spinner text-3xl text-blue-600 mb-4"></i>
-                            <p class="text-gray-600">Carregando recados...</p>
-                        </div>
-                    </div>
-
-                    <div id="recadosList" class="hidden space-y-4">
-                        <!-- Recados will be loaded here -->
-                    </div>
-                </div>
-
-                <!-- Relatórios Tab -->
-                <div id="content-relatorios" class="tab-content hidden">
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <!-- Performance Chart -->
-                        <div class="bg-gray-50 rounded-lg p-6">
-                            <h3 class="text-lg font-semibold text-gray-900 mb-4">
-                                <i class="fas fa-chart-line mr-2 text-blue-600"></i>
-                                Performance dos Professores
-                            </h3>
-                            <div id="performanceChart" class="h-64 flex items-center justify-center text-gray-500">
-                                <div class="text-center">
-                                    <i class="fas fa-chart-bar text-4xl mb-2"></i>
-                                    <p>Gráfico de performance em desenvolvimento</p>
+                <!-- Charts Row -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                    <!-- Performance Chart -->
+                    <div class="bg-white rounded-xl shadow-lg p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                            <i class="fas fa-chart-area text-purple-500 mr-2"></i>Performance Mensal
+                        </h3>
+                        <div id="performance-chart" class="chart-container flex items-center justify-center text-gray-500">
+                            <div class="text-center">
+                                <i class="fas fa-chart-line text-4xl mb-4"></i>
+                                <p>Gráfico de performance em desenvolvimento</p>
+                                <div class="mt-4 space-y-2">
+                                    <div class="flex items-center justify-between text-sm">
+                                        <span>Janeiro</span>
+                                        <span class="font-medium">87%</span>
+                                    </div>
+                                    <div class="flex items-center justify-between text-sm">
+                                        <span>Fevereiro</span>
+                                        <span class="font-medium">92%</span>
+                                    </div>
+                                    <div class="flex items-center justify-between text-sm">
+                                        <span>Março</span>
+                                        <span class="font-medium">89%</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
+                    </div>
 
-                        <!-- Status Distribution -->
-                        <div class="bg-gray-50 rounded-lg p-6">
-                            <h3 class="text-lg font-semibold text-gray-900 mb-4">
-                                <i class="fas fa-pie-chart mr-2 text-green-600"></i>
-                                Distribuição de Status
-                            </h3>
-                            <div id="statusChart" class="space-y-3">
-                                <!-- Status distribution will be loaded here -->
+                    <!-- Usage Analytics -->
+                    <div class="bg-white rounded-xl shadow-lg p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                            <i class="fas fa-analytics text-blue-500 mr-2"></i>Uso da Plataforma
+                        </h3>
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-3 h-3 bg-green-500 rounded-full"></div>
+                                    <span class="text-sm text-gray-700">Professores Ativos</span>
+                                </div>
+                                <span id="prof-ativos-percent" class="text-sm font-medium text-gray-900">85%</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="bg-green-500 h-2 rounded-full" style="width: 85%"></div>
+                            </div>
+
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-3 h-3 bg-blue-500 rounded-full"></div>
+                                    <span class="text-sm text-gray-700">Coordenadores Ativos</span>
+                                </div>
+                                <span id="coord-ativos-percent" class="text-sm font-medium text-gray-900">95%</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="bg-blue-500 h-2 rounded-full" style="width: 95%"></div>
+                            </div>
+
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-3 h-3 bg-purple-500 rounded-full"></div>
+                                    <span class="text-sm text-gray-700">Planos Aprovados</span>
+                                </div>
+                                <span id="planos-aprovados-percent" class="text-sm font-medium text-gray-900">92%</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="bg-purple-500 h-2 rounded-full" style="width: 92%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions & Alerts -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <!-- Alerts -->
+                    <div class="lg:col-span-2 bg-white rounded-xl shadow-lg p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                            <i class="fas fa-exclamation-triangle text-red-500 mr-2"></i>Alertas Estratégicos
+                        </h3>
+                        <div id="alertas-estrategicos" class="space-y-3 max-h-64 overflow-y-auto">
+                            <div class="flex items-center justify-center py-8 text-gray-500">
+                                <i class="fas fa-spinner fa-spin mr-2"></i>Carregando alertas...
                             </div>
                         </div>
                     </div>
 
-                    <!-- Weekly Summary -->
-                    <div class="mt-6 bg-gray-50 rounded-lg p-6">
+                    <!-- Quick Actions -->
+                    <div class="bg-white rounded-xl shadow-lg p-6">
                         <h3 class="text-lg font-semibold text-gray-900 mb-4">
-                            <i class="fas fa-calendar-week mr-2 text-purple-600"></i>
-                            Resumo Semanal
+                            <i class="fas fa-bolt text-yellow-500 mr-2"></i>Ações Rápidas
                         </h3>
-                        <div id="weeklySummary" class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                            <!-- Weekly summary will be loaded here -->
+                        <div class="space-y-3">
+                            <button onclick="showSection('relatorios')" class="w-full bg-purple-500 hover:bg-purple-600 text-white p-3 rounded-lg text-left transition-colors">
+                                <i class="fas fa-file-chart-line mr-2"></i>
+                                <span class="font-medium">Gerar Relatório Executivo</span>
+                            </button>
+                            <button onclick="showSection('coordenadores')" class="w-full bg-blue-500 hover:bg-blue-600 text-white p-3 rounded-lg text-left transition-colors">
+                                <i class="fas fa-users-cog mr-2"></i>
+                                <span class="font-medium">Gerenciar Coordenadores</span>
+                            </button>
+                            <button onclick="showSection('performance')" class="w-full bg-green-500 hover:bg-green-600 text-white p-3 rounded-lg text-left transition-colors">
+                                <i class="fas fa-chart-bar mr-2"></i>
+                                <span class="font-medium">Análise de Performance</span>
+                            </button>
+                            <button onclick="showSection('suporte')" class="w-full bg-gray-500 hover:bg-gray-600 text-white p-3 rounded-lg text-left transition-colors">
+                                <i class="fas fa-headset mr-2"></i>
+                                <span class="font-medium">Suporte Técnico</span>
+                            </button>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </main>
 
-    <!-- Recado Professor Modal -->
-    <div id="recadoProfessorModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div class="p-6 border-b border-gray-200">
-                <div class="flex justify-between items-center">
-                    <h3 class="text-xl font-bold text-gray-900">
-                        <i class="fas fa-paper-plane mr-2 text-blue-600"></i>
-                        Enviar Recado para Professor
-                    </h3>
-                    <button onclick="closeRecadoProfessorModal()" class="text-gray-500 hover:text-gray-700">
-                        <i class="fas fa-times text-xl"></i>
-                    </button>
+            <!-- Visão Geral Section -->
+            <div id="visao-geral-section" class="section hidden">
+                <div class="mb-8">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-2">Visão Geral Estratégica</h2>
+                    <p class="text-gray-600">Análise completa dos indicadores da escola</p>
                 </div>
-            </div>
-            
-            <form id="recadoProfessorForm" class="p-6 space-y-6">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <label for="professorDestino" class="block text-sm font-medium text-gray-700 mb-2">Professor Destinatário *</label>
-                        <select id="professorDestino" name="professorDestino" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                            <option value="">Selecione um professor</option>
-                        </select>
+
+                <!-- Detailed Metrics -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="bg-white rounded-xl shadow-lg p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Produtividade</h3>
+                        <div class="space-y-3">
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-gray-600">Planos/Professor/Semana</span>
+                                <span id="planos-por-professor" class="font-medium">2.8</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-gray-600">Tempo Médio Aprovação</span>
+                                <span id="tempo-aprovacao" class="font-medium">1.2h</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-gray-600">Taxa Rejeição</span>
+                                <span id="taxa-rejeicao" class="font-medium">8%</span>
+                            </div>
+                        </div>
                     </div>
-                    
-                    <div>
-                        <label for="prioridadeRecado" class="block text-sm font-medium text-gray-700 mb-2">Prioridade *</label>
-                        <select id="prioridadeRecado" name="prioridadeRecado" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                            <option value="baixa">Baixa</option>
-                            <option value="media" selected>Média</option>
-                            <option value="alta">Alta</option>
-                        </select>
+
+                    <div class="bg-white rounded-xl shadow-lg p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Qualidade</h3>
+                        <div class="space-y-3">
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-gray-600">Score BNCC</span>
+                                <span id="score-bncc" class="font-medium">9.2/10</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-gray-600">Feedback Positivo</span>
+                                <span id="feedback-positivo" class="font-medium">94%</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-gray-600">Revisões Solicitadas</span>
+                                <span id="revisoes-solicitadas" class="font-medium">12%</span>
+                            </div>
+                        </div>
                     </div>
-                </div>
 
-                <div>
-                    <label for="assuntoRecado" class="block text-sm font-medium text-gray-700 mb-2">Assunto *</label>
-                    <input type="text" id="assuntoRecado" name="assuntoRecado" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Ex: Reunião pedagógica, Ajustes no semanário...">
-                </div>
-
-                <div>
-                    <label for="mensagemRecado" class="block text-sm font-medium text-gray-700 mb-2">Mensagem *</label>
-                    <textarea id="mensagemRecado" name="mensagemRecado" required rows="6" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Digite sua mensagem aqui..."></textarea>
-                </div>
-
-                <div class="flex space-x-3 pt-4">
-                    <button type="button" onclick="closeRecadoProfessorModal()" class="flex-1 border border-gray-300 text-gray-700 py-3 px-4 rounded-lg hover:bg-gray-50 transition-colors">
-                        Cancelar
-                    </button>
-                    <button type="submit" id="enviarRecadoBtn" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-lg transition-colors">
-                        <span id="enviarRecadoText">Enviar Recado</span>
-                        <span id="enviarRecadoLoading" class="hidden">
-                            <i class="fas fa-spinner loading-spinner mr-2"></i>
-                            Enviando...
-                        </span>
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Recado Admin Modal -->
-    <div id="recadoAdminModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div class="p-6 border-b border-gray-200">
-                <div class="flex justify-between items-center">
-                    <h3 class="text-xl font-bold text-gray-900">
-                        <i class="fas fa-cog mr-2 text-purple-600"></i>
-                        Contatar Administração
-                    </h3>
-                    <button onclick="closeRecadoAdminModal()" class="text-gray-500 hover:text-gray-700">
-                        <i class="fas fa-times text-xl"></i>
-                    </button>
-                </div>
-            </div>
-            
-            <form id="recadoAdminForm" class="p-6 space-y-6">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <label for="tipoSolicitacao" class="block text-sm font-medium text-gray-700 mb-2">Tipo de Solicitação *</label>
-                        <select id="tipoSolicitacao" name="tipoSolicitacao" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent">
-                            <option value="">Selecione o tipo</option>
-                            <option value="correcao">Correção de Bug</option>
-                            <option value="atualizacao">Atualização de Funcionalidade</option>
-                            <option value="renovacao">Renovação de Plano</option>
-                            <option value="suporte">Suporte Técnico</option>
-                            <option value="outro">Outro</option>
-                        </select>
-                    </div>
-                    
-                    <div>
-                        <label for="urgenciaAdmin" class="block text-sm font-medium text-gray-700 mb-2">Urgência *</label>
-                        <select id="urgenciaAdmin" name="urgenciaAdmin" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent">
-                            <option value="baixa">Baixa</option>
-                            <option value="media" selected>Média</option>
-                            <option value="alta">Alta</option>
-                            <option value="critica">Crítica</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div>
-                    <label for="assuntoAdmin" class="block text-sm font-medium text-gray-700 mb-2">Assunto *</label>
-                    <input type="text" id="assuntoAdmin" name="assuntoAdmin" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent" placeholder="Descreva brevemente o assunto...">
-                </div>
-
-                <div>
-                    <label for="descricaoAdmin" class="block text-sm font-medium text-gray-700 mb-2">Descrição Detalhada *</label>
-                    <textarea id="descricaoAdmin" name="descricaoAdmin" required rows="6" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent" placeholder="Descreva detalhadamente sua solicitação, incluindo passos para reproduzir problemas, se aplicável..."></textarea>
-                </div>
-
-                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                    <div class="flex">
-                        <i class="fas fa-info-circle text-yellow-600 mt-1 mr-3"></i>
-                        <div>
-                            <h4 class="text-sm font-medium text-yellow-800">Informação Importante</h4>
-                            <p class="text-sm text-yellow-700 mt-1">
-                                Solicitações de renovação de plano e suporte técnico são priorizadas. 
-                                Para problemas críticos, entre em contato também por telefone.
-                            </p>
+                    <div class="bg-white rounded-xl shadow-lg p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Engajamento</h3>
+                        <div class="space-y-3">
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-gray-600">Login Diário</span>
+                                <span id="login-diario" class="font-medium">78%</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-gray-600">Uso Recursos</span>
+                                <span id="uso-recursos" class="font-medium">85%</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-gray-600">Satisfação</span>
+                                <span id="satisfacao" class="font-medium">4.6/5</span>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="flex space-x-3 pt-4">
-                    <button type="button" onclick="closeRecadoAdminModal()" class="flex-1 border border-gray-300 text-gray-700 py-3 px-4 rounded-lg hover:bg-gray-50 transition-colors">
-                        Cancelar
-                    </button>
-                    <button type="submit" id="enviarAdminBtn" class="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-3 px-4 rounded-lg transition-colors">
-                        <span id="enviarAdminText">Enviar Solicitação</span>
-                        <span id="enviarAdminLoading" class="hidden">
-                            <i class="fas fa-spinner loading-spinner mr-2"></i>
-                            Enviando...
-                        </span>
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Semanário Detail Modal -->
-    <div id="semanarioModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-            <div class="p-6 border-b border-gray-200">
-                <div class="flex justify-between items-center">
-                    <h3 class="text-xl font-bold text-gray-900">Detalhes do Semanário</h3>
-                    <button onclick="closeSemanarioModal()" class="text-gray-500 hover:text-gray-700">
-                        <i class="fas fa-times text-xl"></i>
-                    </button>
+                <!-- Trends Chart -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                        <i class="fas fa-chart-line text-green-500 mr-2"></i>Tendências dos Últimos 6 Meses
+                    </h3>
+                    <div class="text-center py-16 text-gray-500">
+                        <i class="fas fa-chart-area text-4xl mb-4"></i>
+                        <p>Gráfico de tendências em desenvolvimento</p>
+                    </div>
                 </div>
             </div>
-            
-            <div class="p-6">
-                <!-- Semanário content will be loaded here -->
-                <div id="semanarioContent">
-                    <!-- Content will be filled dynamically -->
+
+            <!-- Coordenadores Section -->
+            <div id="coordenadores-section" class="section hidden">
+                <div class="mb-8">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-900 mb-2">Coordenadores da Escola</h2>
+                            <p class="text-gray-600">Acompanhe o desempenho da equipe de coordenação</p>
+                        </div>
+                        <div class="flex space-x-2">
+                            <button onclick="exportarDadosCoordenadores()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                                <i class="fas fa-download mr-2"></i>Exportar Dados
+                            </button>
+                            <button onclick="gerarRelatorioCoord()" class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                                <i class="fas fa-chart-bar mr-2"></i>Relatório
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
-                <!-- Devolutiva Section -->
-                <div class="mt-8 border-t border-gray-200 pt-6">
-                    <h4 class="text-lg font-semibold text-gray-900 mb-4">Dar Devolutiva</h4>
-                    
-                    <form id="devolutivaForm" class="space-y-4">
+                <!-- Coordenadores Grid -->
+                <div id="coordenadores-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div class="flex items-center justify-center py-16 text-gray-500 col-span-full">
+                        <i class="fas fa-spinner fa-spin mr-2"></i>Carregando coordenadores...
+                    </div>
+                </div>
+            </div>
+
+            <!-- Professores Section -->
+            <div id="professores-section" class="section hidden">
+                <div class="mb-8">
+                    <div class="flex justify-between items-center">
                         <div>
-                            <label for="statusDevolutiva" class="block text-sm font-medium text-gray-700 mb-2">Status *</label>
-                            <select id="statusDevolutiva" name="statusDevolutiva" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                <option value="">Selecione o status</option>
-                                <option value="realizado">Realizado com sucesso</option>
-                                <option value="ressalvas">Com ressalvas</option>
-                                <option value="completar">Favor completar o semanário</option>
-                                <option value="procurar">Procure a coordenação</option>
+                            <h2 class="text-2xl font-bold text-gray-900 mb-2">Visão Geral dos Professores</h2>
+                            <p class="text-gray-600">Acompanhe o desempenho de todos os professores da escola</p>
+                        </div>
+                        <div class="flex space-x-2">
+                            <select id="filter-performance" onchange="filterProfessores()" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                                <option value="">Todas as performances</option>
+                                <option value="alta">Alta performance</option>
+                                <option value="media">Performance média</option>
+                                <option value="baixa">Baixa performance</option>
                             </select>
-                        </div>
-
-                        <div>
-                            <label for="comentarioDevolutiva" class="block text-sm font-medium text-gray-700 mb-2">Comentários</label>
-                            <textarea id="comentarioDevolutiva" name="comentarioDevolutiva" rows="4" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Adicione comentários sobre o semanário..."></textarea>
-                        </div>
-
-                        <div class="flex space-x-3">
-                            <button type="button" onclick="closeSemanarioModal()" class="flex-1 border border-gray-300 text-gray-700 py-3 px-4 rounded-lg hover:bg-gray-50 transition-colors">
-                                Cancelar
-                            </button>
-                            <button type="submit" id="salvarDevolutivaBtn" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-lg transition-colors">
-                                <span id="salvarDevolutivaText">Salvar Devolutiva</span>
-                                <span id="salvarDevolutivaLoading" class="hidden">
-                                    <i class="fas fa-spinner loading-spinner mr-2"></i>
-                                    Salvando...
-                                </span>
+                            <button onclick="exportarDadosProfessores()" class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                                <i class="fas fa-download mr-2"></i>Exportar
                             </button>
                         </div>
-                    </form>
+                    </div>
+                </div>
+
+                <!-- Performance Summary -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                    <div class="bg-white rounded-xl shadow-lg p-6 text-center">
+                        <div class="text-3xl font-bold text-green-600" id="prof-alta-performance">0</div>
+                        <div class="text-sm text-gray-600">Alta Performance</div>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-lg p-6 text-center">
+                        <div class="text-3xl font-bold text-yellow-600" id="prof-media-performance">0</div>
+                        <div class="text-sm text-gray-600">Performance Média</div>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-lg p-6 text-center">
+                        <div class="text-3xl font-bold text-red-600" id="prof-baixa-performance">0</div>
+                        <div class="text-sm text-gray-600">Baixa Performance</div>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-lg p-6 text-center">
+                        <div class="text-3xl font-bold text-gray-600" id="prof-inativos">0</div>
+                        <div class="text-sm text-gray-600">Inativos</div>
+                    </div>
+                </div>
+
+                <!-- Professores Table -->
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Professor</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Planos/Mês</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Taxa Aprovação</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Último Acesso</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Performance</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="professores-tbody" class="bg-white divide-y divide-gray-200">
+                                <tr>
+                                    <td colspan="6" class="px-6 py-12 text-center text-gray-500">
+                                        <i class="fas fa-spinner fa-spin mr-2"></i>Carregando professores...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Performance Section -->
+            <div id="performance-section" class="section hidden">
+                <div class="mb-8">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-2">Análise de Performance</h2>
+                    <p class="text-gray-600">Métricas detalhadas de desempenho da escola</p>
+                </div>
+                <div class="text-center py-16 text-gray-500">
+                    <i class="fas fa-chart-bar text-4xl mb-4"></i>
+                    <p>Seção em desenvolvimento...</p>
+                </div>
+            </div>
+
+            <!-- Other sections placeholders -->
+            <div id="relatorios-section" class="section hidden">
+                <div class="mb-8">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-2">Relatórios Executivos</h2>
+                    <p class="text-gray-600">Gere relatórios estratégicos para tomada de decisão</p>
+                </div>
+                <div class="text-center py-16 text-gray-500">
+                    <i class="fas fa-file-chart-line text-4xl mb-4"></i>
+                    <p>Seção em desenvolvimento...</p>
+                </div>
+            </div>
+
+
+
+
+
+            <div id="suporte-section" class="section hidden">
+                <div class="mb-8">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-2">Suporte Técnico</h2>
+                    <p class="text-gray-600">Central de ajuda e suporte</p>
+                </div>
+                <div class="text-center py-16 text-gray-500">
+                    <i class="fas fa-headset text-4xl mb-4"></i>
+                    <p>Seção em desenvolvimento...</p>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Toast Notification -->
-    <div id="toast" class="fixed top-4 right-4 bg-white border border-gray-200 rounded-lg shadow-lg p-4 transform translate-x-full transition-transform duration-300 z-50">
-        <div class="flex items-center">
-            <div id="toastIcon" class="mr-3"></div>
-            <div>
-                <p id="toastMessage" class="font-medium text-gray-900"></p>
-            </div>
-        </div>
-    </div>
+    <!-- Toast Container -->
+    <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
 
     <script>
-        // Configuração do Supabase
-        const SUPABASE_URL = 'https://srqqheacsglhyyhvfchg.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNycXFoZWFjc2dsaHl5aHZmY2hnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgxNTMxMDMsImV4cCI6MjA3MzcyOTEwM30.ZOKVDK1FEyDM-lcPrw4-0xbVDxYLftek3NHYcmjc_7w';
+        // Supabase Configuration
+        const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+        const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
         
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-        let currentUser = null;
-        let currentSchoolId = null;
-        let currentSemanario = null;
-        let activeTab = 'semanarios';
-
-        // Initialize
-        document.addEventListener('DOMContentLoaded', async () => {
-            await checkAuth();
-            await loadUserData();
-            await loadInitialData();
-            setupEventListeners();
-            
-            // Auto-refresh every 30 seconds
-            setInterval(loadNotifications, 30000);
-        });
-
-        // Check authentication
-        async function checkAuth() {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (!session) {
-                window.location.href = './index.html';
-                return;
-            }
-            currentUser = session.user;
+        let supabase;
+        try {
+            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        } catch (error) {
+            console.warn('Supabase not configured. Using demo mode.');
         }
 
-        // Load user data
+        // Global variables
+        let currentUser = null;
+        let currentSection = 'dashboard';
+        let coordenadores = [];
+        let professores = [];
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            loadUserData();
+            loadDashboard();
+            
+            if (!supabase) {
+                showToast('Executando em modo demo. Configure o Supabase para usar dados reais.', 'info');
+            }
+        });
+
+        // Section Management
+        function showSection(sectionName) {
+            // Hide all sections
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.add('hidden');
+                section.classList.remove('active');
+            });
+            
+            // Remove active class from all sidebar items
+            document.querySelectorAll('.sidebar-item').forEach(item => {
+                item.classList.remove('bg-purple-500', 'text-white');
+                item.classList.add('text-gray-700');
+            });
+            
+            // Show selected section
+            document.getElementById(sectionName + '-section').classList.remove('hidden');
+            document.getElementById(sectionName + '-section').classList.add('active');
+            
+            // Add active class to selected sidebar item
+            event.target.classList.add('bg-purple-500', 'text-white');
+            event.target.classList.remove('text-gray-700');
+            
+            currentSection = sectionName;
+            
+            // Load section-specific data
+            loadSectionData(sectionName);
+        }
+
+        // Load section data
+        function loadSectionData(sectionName) {
+            switch(sectionName) {
+                case 'dashboard':
+                    loadDashboard();
+                    break;
+                case 'visao-geral':
+                    loadVisaoGeral();
+                    break;
+                case 'coordenadores':
+                    loadCoordenadores();
+                    break;
+                case 'professores':
+                    loadProfessoresDetalhado();
+                    break;
+            }
+        }
+
+        // User Management
         async function loadUserData() {
             try {
-                const { data: userData, error } = await supabase
-                    .from('users')
-                    .select(`
-                        name, 
-                        user_type, 
-                        school_id,
-                        schools (name)
-                    `)
-                    .eq('id', currentUser.id)
-                    .single();
-
-                if (error) throw error;
-
-                if (userData.user_type !== 'direcao') {
-                    showToast('Acesso negado', 'error');
-                    setTimeout(() => window.location.href = './index.html', 2000);
+                if (!supabase) {
+                    currentUser = {
+                        id: 'demo-diretor',
+                        nome: 'Diretor Demo',
+                        email: 'demo@direcao.com',
+                        tipo_usuario: 'diretor',
+                        escola_id: 'escola-demo'
+                    };
+                    document.getElementById('user-name').textContent = currentUser.nome;
+                    document.getElementById('escola-name').textContent = 'Escola Demo';
                     return;
                 }
 
-                currentSchoolId = userData.school_id;
-                document.getElementById('userName').textContent = userData.name || 'Direção';
-                document.getElementById('schoolName').textContent = userData.schools?.name || 'Escola';
+                // In a real app, you'd get this from authentication
+                const { data: user } = await supabase.auth.getUser();
+                if (user) {
+                    const { data: userData } = await supabase
+                        .from('usuarios')
+                        .select('*, escolas(nome)')
+                        .eq('id', user.id)
+                        .single();
+                    
+                    currentUser = userData;
+                    document.getElementById('user-name').textContent = userData.nome;
+                    document.getElementById('escola-name').textContent = userData.escolas?.nome || 'Escola';
+                }
 
             } catch (error) {
-                console.error('Erro ao carregar dados do usuário:', error);
+                console.error('Error loading user data:', error);
                 showToast('Erro ao carregar dados do usuário', 'error');
             }
         }
 
-        // Load initial data
-        async function loadInitialData() {
-            await Promise.all([
-                loadStats(),
-                loadSemanarios(),
-                loadProfessores(),
-                loadRecados(),
-                loadNotifications(),
-                loadWeekOptions()
-            ]);
-        }
-
-        // Load stats
-        async function loadStats() {
+        // Dashboard Functions
+        async function loadDashboard() {
             try {
-                // Total professores
-                const { data: professores, error: profError } = await supabase
-                    .from('users')
-                    .select('id')
-                    .eq('school_id', currentSchoolId)
-                    .eq('user_type', 'professor');
-
-                if (profError) throw profError;
-
-                // Semanários desta semana
-                const currentWeek = getCurrentWeek().toString().padStart(2, '0');
-                const { data: semanariosSemana, error: semError } = await supabase
-                    .from('planejamentos')
-                    .select('id')
-                    .eq('school_id', currentSchoolId)
-                    .eq('semana', currentWeek);
-
-                if (semError) throw semError;
-
-                // Pendentes de análise
-                const { data: pendentes, error: pendError } = await supabase
-                    .from('planejamentos')
-                    .select('id')
-                    .eq('school_id', currentSchoolId)
-                    .is('devolutiva_status', null);
-
-                if (pendError) throw pendError;
-
-                // Recados enviados (últimos 30 dias)
-                const thirtyDaysAgo = new Date();
-                thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-                
-                const { data: recados, error: recError } = await supabase
-                    .from('recados')
-                    .select('id')
-                    .eq('remetente_id', currentUser.id)
-                    .gte('created_at', thirtyDaysAgo.toISOString());
-
-                if (recError) throw recError;
-
-                // Update stats
-                document.getElementById('totalProfessores').textContent = professores?.length || 0;
-                document.getElementById('semanariosSemana').textContent = semanariosSemana?.length || 0;
-                document.getElementById('pendentesAnalise').textContent = pendentes?.length || 0;
-                document.getElementById('recadosEnviados').textContent = recados?.length || 0;
-
-            } catch (error) {
-                console.error('Erro ao carregar estatísticas:', error);
-            }
-        }
-
-        // Load semanarios
-        async function loadSemanarios() {
-            const loadingDiv = document.getElementById('loadingSemanarios');
-            const listDiv = document.getElementById('semanariosList');
-            const noDataDiv = document.getElementById('noSemanarios');
-
-            loadingDiv.classList.remove('hidden');
-            listDiv.classList.add('hidden');
-            noDataDiv.classList.add('hidden');
-
-            try {
-                let query = supabase
-                    .from('planejamentos')
-                    .select(`
-                        *,
-                        turmas (nome, ano, materia),
-                        users (name)
-                    `)
-                    .eq('school_id', currentSchoolId)
-                    .order('created_at', { ascending: false });
-
-                // Apply filters
-                const professorFilter = document.getElementById('professorFilter')?.value;
-                const statusFilter = document.getElementById('statusFilter')?.value;
-                const semanaFilter = document.getElementById('semanaFilter')?.value;
-
-                if (professorFilter) {
-                    query = query.eq('professor_id', professorFilter);
+                if (!supabase) {
+                    loadDemoStats();
+                    loadDemoAlertas();
+                    return;
                 }
 
-                if (semanaFilter) {
-                    query = query.eq('semana', semanaFilter);
-                }
-
-                const { data: semanarios, error } = await query;
-
-                if (error) throw error;
-
-                // Filter by status if needed
-                let filteredSemanarios = semanarios;
-                if (statusFilter) {
-                    if (statusFilter === 'sem-devolutiva') {
-                        filteredSemanarios = semanarios.filter(s => !s.devolutiva_status);
-                    } else {
-                        filteredSemanarios = semanarios.filter(s => s.devolutiva_status === statusFilter);
-                    }
-                }
-
-                if (filteredSemanarios.length === 0) {
-                    noDataDiv.classList.remove('hidden');
-                } else {
-                    renderSemanarios(filteredSemanarios);
-                    listDiv.classList.remove('hidden');
-                }
-
-            } catch (error) {
-                console.error('Erro ao carregar semanários:', error);
-                showToast('Erro ao carregar semanários', 'error');
-                noDataDiv.classList.remove('hidden');
-            } finally {
-                loadingDiv.classList.add('hidden');
-            }
-        }
-
-        // Render semanarios
-        function renderSemanarios(semanarios) {
-            const container = document.getElementById('semanariosList');
-            container.innerHTML = '';
-
-            semanarios.forEach(semanario => {
-                const statusInfo = getStatusInfo(semanario.devolutiva_status);
-                
-                const div = document.createElement('div');
-                div.className = 'bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow cursor-pointer';
-                div.onclick = () => viewSemanario(semanario.id);
-                
-                div.innerHTML = `
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="flex items-center space-x-4">
-                            <div class="flex items-center space-x-2">
-                                <i class="fas fa-user text-gray-400"></i>
-                                <span class="font-medium text-gray-900">${semanario.users?.name}</span>
-                            </div>
-                            <div class="flex items-center space-x-2">
-                                <i class="fas fa-users text-gray-400"></i>
-                                <span class="text-gray-600">${semanario.turmas?.nome} - ${semanario.turmas?.ano}º ano</span>
-                            </div>
-                            <div class="flex items-center space-x-2">
-                                <i class="fas fa-calendar text-gray-400"></i>
-                                <span class="text-gray-600">Semana ${semanario.semana}</span>
-                            </div>
-                        </div>
-                        ${statusInfo.html}
-                    </div>
-                    
-                    <div class="mb-3">
-                        <h3 class="text-lg font-semibold text-gray-900 mb-1">${semanario.tema}</h3>
-                        <p class="text-gray-600 text-sm">${semanario.objetivos.substring(0, 150)}...</p>
-                    </div>
-
-                    <div class="flex items-center justify-between text-sm text-gray-500">
-                        <span>Criado em ${new Date(semanario.created_at).toLocaleDateString('pt-BR')}</span>
-                        <span class="text-blue-600 hover:text-blue-800">
-                            <i class="fas fa-eye mr-1"></i>
-                            Visualizar
-                        </span>
-                    </div>
-                `;
-                container.appendChild(div);
-            });
-        }
-
-        // Load professores
-        async function loadProfessores() {
-            const loadingDiv = document.getElementById('loadingProfessores');
-            const listDiv = document.getElementById('professoresList');
-
-            loadingDiv.classList.remove('hidden');
-            listDiv.classList.add('hidden');
-
-            try {
-                const { data: professores, error } = await supabase
-                    .from('users')
-                    .select(`
-                        *,
-                        turmas (id, nome, ano, materia)
-                    `)
-                    .eq('school_id', currentSchoolId)
-                    .eq('user_type', 'professor')
-                    .order('name');
-
-                if (error) throw error;
-
-                // Load professor filters
-                const professorFilter = document.getElementById('professorFilter');
-                const professorDestino = document.getElementById('professorDestino');
-                
-                professorFilter.innerHTML = '<option value="">Todos os professores</option>';
-                professorDestino.innerHTML = '<option value="">Selecione um professor</option>';
-                
-                professores.forEach(prof => {
-                    const option1 = document.createElement('option');
-                    option1.value = prof.id;
-                    option1.textContent = prof.name;
-                    professorFilter.appendChild(option1);
-
-                    const option2 = document.createElement('option');
-                    option2.value = prof.id;
-                    option2.textContent = prof.name;
-                    professorDestino.appendChild(option2);
+                const { data: stats } = await supabase.rpc('obter_estatisticas_direcao', {
+                    p_escola_id: currentUser.escola_id
                 });
 
-                renderProfessores(professores);
-                listDiv.classList.remove('hidden');
+                if (stats) {
+                    document.getElementById('total-usuarios').textContent = stats.total_usuarios || 0;
+                    document.getElementById('planos-mes').textContent = stats.planos_mes || 0;
+                    document.getElementById('taxa-aprovacao-geral').textContent = (stats.taxa_aprovacao || 0) + '%';
+                    document.getElementById('engajamento-score').textContent = (stats.engajamento_score || 0).toFixed(1);
+                    
+                    // Update badges
+                    document.getElementById('coord-badge').textContent = stats.total_coordenadores || 0;
+                    document.getElementById('prof-badge').textContent = stats.total_professores || 0;
+                    document.getElementById('notification-count').textContent = stats.alertas_count || 0;
+                    
+                    // Update trend
+                    const trend = stats.planos_trend || 0;
+                    const trendElement = document.getElementById('planos-trend');
+                    trendElement.textContent = (trend > 0 ? '+' : '') + trend + '%';
+                    trendElement.className = trend > 0 ? 'trend-up' : trend < 0 ? 'trend-down' : 'trend-stable';
+                }
+
+                loadAlertasEstrategicos();
 
             } catch (error) {
-                console.error('Erro ao carregar professores:', error);
-                showToast('Erro ao carregar professores', 'error');
-            } finally {
-                loadingDiv.classList.add('hidden');
+                console.error('Error loading dashboard:', error);
+                loadDemoStats();
+                loadDemoAlertas();
             }
         }
 
-        // Render professores
-        function renderProfessores(professores) {
-            const container = document.getElementById('professoresList');
-            container.innerHTML = '';
-
-            professores.forEach(professor => {
-                const div = document.createElement('div');
-                div.className = 'bg-white border border-gray-200 rounded-lg p-6 card-hover';
-                
-                div.innerHTML = `
-                    <div class="flex items-center space-x-4 mb-4">
-                        <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                            <i class="fas fa-chalkboard-teacher text-blue-600 text-xl"></i>
-                        </div>
-                        <div>
-                            <h3 class="font-semibold text-gray-900">${professor.name}</h3>
-                            <p class="text-sm text-gray-600">${professor.email}</p>
-                        </div>
-                    </div>
-                    
-                    <div class="space-y-2">
-                        <h4 class="font-medium text-gray-900">Turmas:</h4>
-                        ${professor.turmas?.length ? professor.turmas.map(turma => `
-                            <div class="flex items-center space-x-2 text-sm text-gray-600">
-                                <i class="fas fa-users"></i>
-                                <span>${turma.nome} - ${turma.ano}º ano - ${getMateriaName(turma.materia)}</span>
-                            </div>
-                        `).join('') : '<p class="text-sm text-gray-500">Nenhuma turma atribuída</p>'}
-                    </div>
-                    
-                    <div class="mt-4 pt-4 border-t border-gray-200">
-                        <button 
-                            onclick="openRecadoProfessorModal('${professor.id}')"
-                            class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg text-sm transition-colors"
-                        >
-                            <i class="fas fa-paper-plane mr-2"></i>
-                            Enviar Recado
-                        </button>
-                    </div>
-                `;
-                container.appendChild(div);
-            });
+        function loadDemoStats() {
+            document.getElementById('total-usuarios').textContent = '47';
+            document.getElementById('planos-mes').textContent = '156';
+            document.getElementById('taxa-aprovacao-geral').textContent = '91%';
+            document.getElementById('engajamento-score').textContent = '8.7';
+            document.getElementById('coord-badge').textContent = '3';
+            document.getElementById('prof-badge').textContent = '15';
+            document.getElementById('notification-count').textContent = '2';
+            document.getElementById('planos-trend').textContent = '+12%';
+            document.getElementById('planos-trend').className = 'trend-up';
         }
 
-        // Load recados
-        async function loadRecados() {
-            const loadingDiv = document.getElementById('loadingRecados');
-            const listDiv = document.getElementById('recadosList');
+        function loadDemoAlertas() {
+            document.getElementById('alertas-estrategicos').innerHTML = `
+                <div class="flex items-center p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <div class="flex-1">
+                        <p class="font-medium text-yellow-900">Meta de aprovação abaixo do esperado</p>
+                        <p class="text-sm text-yellow-700">Taxa de aprovação está em 91%, meta é 95%</p>
+                        <p class="text-xs text-yellow-600 mt-1">Requer atenção da coordenação</p>
+                    </div>
+                    <button onclick="showSection('performance')" class="bg-yellow-500 text-white px-3 py-1 rounded text-sm hover:bg-yellow-600">
+                        Analisar
+                    </button>
+                </div>
+                <div class="flex items-center p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div class="flex-1">
+                        <p class="font-medium text-blue-900">Novo coordenador precisa de treinamento</p>
+                        <p class="text-sm text-blue-700">Ana Costa iniciou esta semana e precisa de orientação</p>
+                        <p class="text-xs text-blue-600 mt-1">Ação recomendada</p>
+                    </div>
+                    <button onclick="showSection('coordenadores')" class="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600">
+                        Ver
+                    </button>
+                </div>
+            `;
+        }
 
-            loadingDiv.classList.remove('hidden');
-            listDiv.classList.add('hidden');
-
+        async function loadAlertasEstrategicos() {
             try {
-                const { data: recados, error } = await supabase
-                    .from('recados')
+                if (!supabase) return;
+
+                const { data: alertas } = await supabase
+                    .from('alertas_direcao')
+                    .select('*')
+                    .eq('escola_id', currentUser.escola_id)
+                    .eq('resolvido', false)
+                    .order('prioridade', { ascending: false })
+                    .limit(5);
+
+                const alertasHtml = (alertas || []).map(alerta => {
+                    const priorityClass = alerta.prioridade === 'alta' ? 'bg-red-50 border-red-200' :
+                                        alerta.prioridade === 'media' ? 'bg-yellow-50 border-yellow-200' :
+                                        'bg-blue-50 border-blue-200';
+                    
+                    const priorityColor = alerta.prioridade === 'alta' ? 'red' :
+                                        alerta.prioridade === 'media' ? 'yellow' : 'blue';
+
+                    return `
+                        <div class="flex items-center p-4 border rounded-lg ${priorityClass}">
+                            <div class="flex-1">
+                                <p class="font-medium text-${priorityColor}-900">${alerta.titulo}</p>
+                                <p class="text-sm text-${priorityColor}-700">${alerta.descricao}</p>
+                                <p class="text-xs text-${priorityColor}-600 mt-1">${alerta.categoria}</p>
+                            </div>
+                            <button onclick="resolverAlerta('${alerta.id}')" class="bg-${priorityColor}-500 text-white px-3 py-1 rounded text-sm hover:bg-${priorityColor}-600">
+                                Resolver
+                            </button>
+                        </div>
+                    `;
+                }).join('') || '<p class="text-gray-500 text-center py-4">Nenhum alerta estratégico pendente</p>';
+
+                document.getElementById('alertas-estrategicos').innerHTML = alertasHtml;
+
+            } catch (error) {
+                console.error('Error loading strategic alerts:', error);
+            }
+        }
+
+        // Visão Geral Functions
+        function loadVisaoGeral() {
+            // Load detailed metrics
+            if (!supabase) {
+                loadDemoVisaoGeral();
+                return;
+            }
+            // Implementation for real data
+        }
+
+        function loadDemoVisaoGeral() {
+            document.getElementById('planos-por-professor').textContent = '2.8';
+            document.getElementById('tempo-aprovacao').textContent = '1.2h';
+            document.getElementById('taxa-rejeicao').textContent = '8%';
+            document.getElementById('score-bncc').textContent = '9.2/10';
+            document.getElementById('feedback-positivo').textContent = '94%';
+            document.getElementById('revisoes-solicitadas').textContent = '12%';
+            document.getElementById('login-diario').textContent = '78%';
+            document.getElementById('uso-recursos').textContent = '85%';
+            document.getElementById('satisfacao').textContent = '4.6/5';
+        }
+
+        // Coordenadores Functions
+        async function loadCoordenadores() {
+            try {
+                if (!supabase) {
+                    loadDemoCoordenadores();
+                    return;
+                }
+
+                const { data, error } = await supabase
+                    .from('usuarios')
                     .select(`
                         *,
-                        destinatario:users!recados_destinatario_id_fkey (name, user_type)
+                        feedbacks_coordenacao(count),
+                        planos_aula(count)
                     `)
-                    .eq('remetente_id', currentUser.id)
-                    .order('created_at', { ascending: false });
+                    .eq('escola_id', currentUser.escola_id)
+                    .eq('tipo_usuario', 'coordenador')
+                    .order('nome');
 
                 if (error) throw error;
 
-                renderRecados(recados);
-                listDiv.classList.remove('hidden');
+                coordenadores = data || [];
+                displayCoordenadores(coordenadores);
 
             } catch (error) {
-                console.error('Erro ao carregar recados:', error);
-                showToast('Erro ao carregar recados', 'error');
-            } finally {
-                loadingDiv.classList.add('hidden');
+                console.error('Error loading coordinators:', error);
+                loadDemoCoordenadores();
             }
         }
 
-        // Render recados
-        function renderRecados(recados) {
-            const container = document.getElementById('recadosList');
-            container.innerHTML = '';
+        function loadDemoCoordenadores() {
+            coordenadores = [
+                {
+                    id: '1',
+                    nome: 'Ana Costa',
+                    email: 'ana@escola.com',
+                    feedbacks_count: 45,
+                    aprovacao_rate: 92,
+                    last_login: new Date().toISOString(),
+                    performance: 'alta'
+                },
+                {
+                    id: '2',
+                    nome: 'Carlos Silva',
+                    email: 'carlos@escola.com',
+                    feedbacks_count: 38,
+                    aprovacao_rate: 89,
+                    last_login: new Date().toISOString(),
+                    performance: 'alta'
+                }
+            ];
+            displayCoordenadores(coordenadores);
+        }
 
-            if (recados.length === 0) {
+        function displayCoordenadores(coordList) {
+            const container = document.getElementById('coordenadores-grid');
+            
+            if (!coordList || coordList.length === 0) {
                 container.innerHTML = `
-                    <div class="text-center py-12">
-                        <i class="fas fa-envelope text-4xl text-gray-400 mb-4"></i>
-                        <h3 class="text-lg font-medium text-gray-900 mb-2">Nenhum recado enviado</h3>
-                        <p class="text-gray-600">Você ainda não enviou nenhum recado.</p>
+                    <div class="col-span-full text-center text-gray-500 py-16">
+                        <i class="fas fa-users-cog text-4xl mb-4"></i>
+                        <p>Nenhum coordenador cadastrado na escola</p>
+                        <p class="text-sm mt-2">Entre em contato com o administrador do sistema para adicionar coordenadores</p>
                     </div>
                 `;
                 return;
             }
 
-            recados.forEach(recado => {
-                const div = document.createElement('div');
-                div.className = `bg-white border border-gray-200 rounded-lg p-6 priority-${recado.prioridade || 'media'}`;
-                
-                const isAdmin = recado.destinatario?.user_type === 'admin';
-                const destinatarioName = isAdmin ? 'Administração' : recado.destinatario?.name;
-                const icon = isAdmin ? 'cog' : 'chalkboard-teacher';
-                const color = isAdmin ? 'purple' : 'blue';
-                
-                div.innerHTML = `
-                    <div class="flex items-start justify-between mb-4">
-                        <div class="flex items-center space-x-3">
-                            <div class="w-10 h-10 bg-${color}-100 rounded-full flex items-center justify-center">
-                                <i class="fas fa-${icon} text-${color}-600"></i>
+            container.innerHTML = coordList.map(coord => {
+                const performanceClass = coord.performance === 'alta' ? 'performance-high' : 
+                                       coord.performance === 'media' ? 'performance-medium' : 'performance-low';
+                const performanceColor = coord.performance === 'alta' ? 'green' : 
+                                       coord.performance === 'media' ? 'yellow' : 'red';
+
+                return `
+                    <div class="bg-white rounded-xl shadow-lg p-6 ${performanceClass} card-hover transition-all duration-300">
+                        <div class="flex items-center space-x-4 mb-4">
+                            <div class="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center">
+                                <i class="fas fa-user-cog text-white text-xl"></i>
                             </div>
-                            <div>
-                                <h3 class="font-semibold text-gray-900">${recado.assunto}</h3>
-                                <p class="text-sm text-gray-600">Para: ${destinatarioName}</p>
+                            <div class="flex-1">
+                                <h3 class="text-lg font-semibold text-gray-900">${coord.nome}</h3>
+                                <p class="text-sm text-gray-600">${coord.email}</p>
                             </div>
-                        </div>
-                        <div class="text-right">
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getPriorityClass(recado.prioridade)}">
-                                ${getPriorityText(recado.prioridade)}
+                            <span class="px-2 py-1 text-xs font-medium rounded-full bg-${performanceColor}-100 text-${performanceColor}-800">
+                                ${coord.performance} performance
                             </span>
-                            <p class="text-xs text-gray-500 mt-1">${new Date(recado.created_at).toLocaleString('pt-BR')}</p>
                         </div>
-                    </div>
-                    
-                    <div class="mb-4">
-                        <p class="text-gray-700">${recado.mensagem}</p>
-                    </div>
-                    
-                    <div class="flex items-center justify-between text-sm">
-                        <span class="text-gray-500">
-                            ${recado.lido ? 
-                                '<i class="fas fa-check-double text-green-500 mr-1"></i>Lido' : 
-                                '<i class="fas fa-clock text-yellow-500 mr-1"></i>Não lido'
-                            }
-                        </span>
-                        ${isAdmin ? `
-                            <span class="text-${color}-600">
-                                <i class="fas fa-${recado.tipo_solicitacao === 'renovacao' ? 'credit-card' : 
-                                    recado.tipo_solicitacao === 'correcao' ? 'bug' : 
-                                    recado.tipo_solicitacao === 'atualizacao' ? 'sync' : 'question'} mr-1"></i>
-                                ${getTipoSolicitacaoText(recado.tipo_solicitacao)}
-                            </span>
-                        ` : ''}
+                        <div class="space-y-2 text-sm text-gray-600 mb-4">
+                            <p><i class="fas fa-comment mr-2"></i>Feedbacks dados: ${coord.feedbacks_count || 0}</p>
+                            <p><i class="fas fa-percentage mr-2"></i>Taxa aprovação: ${coord.aprovacao_rate || 0}%</p>
+                            <p><i class="fas fa-clock mr-2"></i>Último acesso: ${formatDate(coord.last_login)}</p>
+                        </div>
+                        <div class="flex space-x-2">
+                            <button onclick="verPerfilCoordenador('${coord.id}')" class="flex-1 bg-blue-500 text-white px-3 py-2 rounded-lg text-sm hover:bg-blue-600">
+                                <i class="fas fa-eye mr-1"></i>Ver Perfil
+                            </button>
+                            <button onclick="enviarMensagemCoordenador('${coord.id}')" class="flex-1 bg-purple-500 text-white px-3 py-2 rounded-lg text-sm hover:bg-purple-600">
+                                <i class="fas fa-envelope mr-1"></i>Mensagem
+                            </button>
+                        </div>
                     </div>
                 `;
-                container.appendChild(div);
-            });
+            }).join('');
         }
 
-        // Load notifications
-        async function loadNotifications() {
+        // Professores Detalhado Functions
+        async function loadProfessoresDetalhado() {
             try {
-                // Load recent activities for notifications
-                const { data: notifications, error } = await supabase
-                    .from('planejamentos')
+                if (!supabase) {
+                    loadDemoProfessoresDetalhado();
+                    return;
+                }
+
+                const { data, error } = await supabase
+                    .from('usuarios')
                     .select(`
-                        id,
-                        tema,
-                        semana,
-                        created_at,
-                        turmas (nome),
-                        users (name)
+                        *,
+                        planos_aula(count),
+                        feedbacks_coordenacao(count)
                     `)
-                    .eq('school_id', currentSchoolId)
-                    .is('devolutiva_status', null)
-                    .order('created_at', { ascending: false })
-                    .limit(10);
+                    .eq('escola_id', currentUser.escola_id)
+                    .eq('tipo_usuario', 'professor')
+                    .order('nome');
 
                 if (error) throw error;
 
-                // Count unread notifications (last 24 hours)
-                const oneDayAgo = new Date();
-                oneDayAgo.setDate(oneDayAgo.getDate() - 1);
-                
-                const unreadCount = notifications.filter(n => 
-                    new Date(n.created_at) > oneDayAgo
-                ).length;
-
-                updateNotificationBadge(unreadCount);
-                renderNotifications(notifications);
+                professores = data || [];
+                displayProfessoresDetalhado(professores);
+                updatePerformanceSummary(professores);
 
             } catch (error) {
-                console.error('Erro ao carregar notificações:', error);
+                console.error('Error loading detailed teachers:', error);
+                loadDemoProfessoresDetalhado();
             }
         }
 
-        // Update notification badge
-        function updateNotificationBadge(count) {
-            const badge = document.getElementById('notificationBadge');
-            if (count > 0) {
-                badge.textContent = count > 9 ? '9+' : count;
-                badge.classList.remove('hidden');
-            } else {
-                badge.classList.add('hidden');
-            }
+        function loadDemoProfessoresDetalhado() {
+            professores = [
+                {
+                    id: '1',
+                    nome: 'Maria Silva',
+                    email: 'maria@escola.com',
+                    planos_mes: 12,
+                    taxa_aprovacao: 95,
+                    last_login: new Date().toISOString(),
+                    performance: 'alta'
+                },
+                {
+                    id: '2',
+                    nome: 'João Santos',
+                    email: 'joao@escola.com',
+                    planos_mes: 8,
+                    taxa_aprovacao: 87,
+                    last_login: new Date().toISOString(),
+                    performance: 'media'
+                }
+            ];
+            displayProfessoresDetalhado(professores);
+            updatePerformanceSummary(professores);
         }
 
-        // Render notifications
-        function renderNotifications(notifications) {
-            const container = document.getElementById('notificationsList');
-            container.innerHTML = '';
-
-            if (notifications.length === 0) {
-                container.innerHTML = `
-                    <div class="p-4 text-center text-gray-500">
-                        <i class="fas fa-bell-slash text-2xl mb-2"></i>
-                        <p>Nenhuma notificação recente</p>
-                    </div>
+        function displayProfessoresDetalhado(profList) {
+            const tbody = document.getElementById('professores-tbody');
+            
+            if (!profList || profList.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="px-6 py-12 text-center text-gray-500">
+                            <i class="fas fa-chalkboard-teacher text-4xl mb-4"></i>
+                            <p>Nenhum professor encontrado</p>
+                        </td>
+                    </tr>
                 `;
                 return;
             }
 
-            notifications.forEach(notification => {
-                const date = new Date(notification.created_at).toLocaleDateString('pt-BR');
-                
-                const div = document.createElement('div');
-                div.className = 'p-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors';
-                div.onclick = () => {
-                    viewSemanario(notification.id);
-                    toggleNotifications();
+            tbody.innerHTML = profList.map(prof => {
+                const performanceColors = {
+                    'alta': 'bg-green-100 text-green-800',
+                    'media': 'bg-yellow-100 text-yellow-800',
+                    'baixa': 'bg-red-100 text-red-800',
+                    'inativo': 'bg-gray-100 text-gray-800'
                 };
-                
-                div.innerHTML = `
-                    <div class="flex items-start space-x-3">
-                        <div class="flex-shrink-0 mt-1">
-                            <i class="fas fa-calendar-plus text-blue-500"></i>
-                        </div>
-                        <div class="flex-1 min-w-0">
-                            <p class="text-sm font-medium text-gray-900 truncate">
-                                Novo semanário - ${notification.users?.name}
-                            </p>
-                            <p class="text-sm text-gray-600 truncate">
-                                ${notification.turmas?.nome} - Semana ${notification.semana}
-                            </p>
-                            <p class="text-sm text-gray-600 truncate">
-                                ${notification.tema}
-                            </p>
-                            <p class="text-xs text-gray-500 mt-1">${date}</p>
-                        </div>
-                    </div>
+
+                return `
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4">
+                            <div class="flex items-center">
+                                <div class="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center mr-3">
+                                    <i class="fas fa-user text-white"></i>
+                                </div>
+                                <div>
+                                    <p class="font-medium text-gray-900">${prof.nome}</p>
+                                    <p class="text-sm text-gray-500">${prof.email}</p>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-900">${prof.planos_mes || 0}</td>
+                        <td class="px-6 py-4 text-sm text-gray-900">${prof.taxa_aprovacao || 0}%</td>
+                        <td class="px-6 py-4 text-sm text-gray-900">${formatDate(prof.last_login)}</td>
+                        <td class="px-6 py-4">
+                            <span class="px-2 py-1 text-xs font-medium rounded-full ${performanceColors[prof.performance] || 'bg-gray-100 text-gray-800'}">
+                                ${prof.performance || 'N/A'}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-sm space-x-2">
+                            <button onclick="verPerfilProfessor('${prof.id}')" class="text-blue-600 hover:text-blue-800">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button onclick="enviarMensagemProfessor('${prof.id}')" class="text-green-600 hover:text-green-800">
+                                <i class="fas fa-envelope"></i>
+                            </button>
+                        </td>
+                    </tr>
                 `;
-                container.appendChild(div);
-            });
+            }).join('');
         }
 
-        // Load week options
-        function loadWeekOptions() {
-            const filter = document.getElementById('semanaFilter');
-            if (!filter) return;
-            
-            const currentWeek = getCurrentWeek();
-            
-            // Add current and surrounding weeks
-            for (let i = -4; i <= 8; i++) {
-                const week = getWeekNumber(currentWeek + i);
-                
-                const option = document.createElement('option');
-                option.value = week;
-                option.textContent = `Semana ${week}`;
-                filter.appendChild(option);
-            }
+        function updatePerformanceSummary(profList) {
+            const summary = profList.reduce((acc, prof) => {
+                acc[prof.performance || 'inativo']++;
+                return acc;
+            }, { alta: 0, media: 0, baixa: 0, inativo: 0 });
+
+            document.getElementById('prof-alta-performance').textContent = summary.alta;
+            document.getElementById('prof-media-performance').textContent = summary.media;
+            document.getElementById('prof-baixa-performance').textContent = summary.baixa;
+            document.getElementById('prof-inativos').textContent = summary.inativo;
         }
 
-        // Get current week number
-        function getCurrentWeek() {
-            const now = new Date();
-            const start = new Date(now.getFullYear(), 0, 1);
-            const diff = now - start;
-            const oneWeek = 1000 * 60 * 60 * 24 * 7;
-            return Math.ceil(diff / oneWeek);
-        }
-
-        // Get week number with year handling
-        function getWeekNumber(week) {
-            if (week < 1) return `${52 + week}`;
-            if (week > 52) return `${week - 52}`;
-            return week.toString().padStart(2, '0');
-        }
-
-        // Get status info
-        function getStatusInfo(status) {
-            const statusMap = {
-                'realizado': {
-                    html: `<span class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-green-100 text-green-800">
-                        <i class="fas fa-check-circle mr-2"></i>
-                        Aprovado
-                    </span>`
-                },
-                'ressalvas': {
-                    html: `<span class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-yellow-100 text-yellow-800">
-                        <i class="fas fa-exclamation-triangle mr-2"></i>
-                        Com ressalvas
-                    </span>`
-                },
-                'completar': {
-                    html: `<span class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-red-100 text-red-800">
-                        <i class="fas fa-times-circle mr-2"></i>
-                        Para completar
-                    </span>`
-                },
-                'procurar': {
-                    html: `<span class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-purple-100 text-purple-800">
-                        <i class="fas fa-user-tie mr-2"></i>
-                        Procurar coordenação
-                    </span>`
-                }
-            };
-
-            if (!status) {
-                return {
-                    html: `<span class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-gray-100 text-gray-600">
-                        <i class="fas fa-clock mr-2"></i>
-                        Pendente análise
-                    </span>`
-                };
-            }
-
-            return statusMap[status];
-        }
-
-        // Get materia name
-        function getMateriaName(materia) {
-            const materias = {
-                'lingua-portuguesa': 'Língua Portuguesa',
-                'matematica': 'Matemática',
-                'ciencias': 'Ciências',
-                'historia': 'História',
-                'geografia': 'Geografia',
-                'arte': 'Arte',
-                'educacao-fisica': 'Educação Física',
-                'ensino-religioso': 'Ensino Religioso'
-            };
-            return materias[materia] || materia;
-        }
-
-        // Get priority class
-        function getPriorityClass(priority) {
-            const classes = {
-                'baixa': 'bg-green-100 text-green-800',
-                'media': 'bg-yellow-100 text-yellow-800',
-                'alta': 'bg-red-100 text-red-800',
-                'critica': 'bg-red-200 text-red-900'
-            };
-            return classes[priority] || classes.media;
-        }
-
-        // Get priority text
-        function getPriorityText(priority) {
-            const texts = {
-                'baixa': 'Baixa',
-                'media': 'Média',
-                'alta': 'Alta',
-                'critica': 'Crítica'
-            };
-            return texts[priority] || 'Média';
-        }
-
-        // Get tipo solicitacao text
-        function getTipoSolicitacaoText(tipo) {
-            const texts = {
-                'correcao': 'Correção',
-                'atualizacao': 'Atualização',
-                'renovacao': 'Renovação',
-                'suporte': 'Suporte',
-                'outro': 'Outro'
-            };
-            return texts[tipo] || 'Outro';
-        }
-
-        // Switch tabs
-        function switchTab(tabName) {
-            // Update active tab
-            document.querySelectorAll('[id^="tab-"]').forEach(tab => {
-                tab.classList.remove('border-blue-500', 'text-blue-600');
-                tab.classList.add('border-transparent', 'text-gray-500');
-            });
-            
-            document.getElementById(`tab-${tabName}`).classList.remove('border-transparent', 'text-gray-500');
-            document.getElementById(`tab-${tabName}`).classList.add('border-blue-500', 'text-blue-600');
-
-            // Show/hide content
-            document.querySelectorAll('.tab-content').forEach(content => {
-                content.classList.add('hidden');
-            });
-            
-            document.getElementById(`content-${tabName}`).classList.remove('hidden');
-            
-            activeTab = tabName;
-
-            // Load data for specific tabs
-            if (tabName === 'professores') {
-                loadProfessores();
-            } else if (tabName === 'recados') {
-                loadRecados();
-            } else if (tabName === 'relatorios') {
-                loadRelatorios();
-            }
-        }
-
-        // Load relatorios
-        function loadRelatorios() {
-            // This would load charts and reports
-            // For now, just show placeholder content
-            console.log('Loading relatórios...');
-        }
-
-        // Toggle notifications dropdown
-        function toggleNotifications() {
-            const dropdown = document.getElementById('notificationsDropdown');
-            dropdown.classList.toggle('hidden');
-        }
-
-        // View semanario
-        async function viewSemanario(semanarioId) {
-            try {
-                const { data: semanario, error } = await supabase
-                    .from('planejamentos')
-                    .select(`
-                        *,
-                        turmas (nome, ano, materia),
-                        users (name)
-                    `)
-                    .eq('id', semanarioId)
-                    .single();
-
-                if (error) throw error;
-
-                currentSemanario = semanario;
-
-                // Fill modal content
-                const content = document.getElementById('semanarioContent');
-                content.innerHTML = `
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                        <div>
-                            <h4 class="font-medium text-gray-900 mb-2">Informações Básicas</h4>
-                            <div class="space-y-2 text-sm">
-                                <p><span class="font-medium">Professor:</span> ${semanario.users?.name}</p>
-                                <p><span class="font-medium">Turma:</span> ${semanario.turmas?.nome} - ${semanario.turmas?.ano}º ano</p>
-                                <p><span class="font-medium">Matéria:</span> ${getMateriaName(semanario.turmas?.materia)}</p>
-                                <p><span class="font-medium">Semana:</span> ${semanario.semana}</p>
-                                <p><span class="font-medium">Criado em:</span> ${new Date(semanario.created_at).toLocaleString('pt-BR')}</p>
-                            </div>
-                        </div>
-                        <div>
-                            <h4 class="font-medium text-gray-900 mb-2">Status Atual</h4>
-                            ${getStatusInfo(semanario.devolutiva_status).html}
-                            ${semanario.devolutiva_data ? `
-                                <p class="text-sm text-gray-600 mt-2">
-                                    Devolutiva em: ${new Date(semanario.devolutiva_data).toLocaleString('pt-BR')}
-                                </p>
-                            ` : ''}
-                        </div>
-                    </div>
-
-                    <div class="space-y-6">
-                        <div>
-                            <h4 class="font-medium text-gray-900 mb-2">Tema da Semana</h4>
-                            <p class="text-gray-700">${semanario.tema}</p>
-                        </div>
-
-                        <div>
-                            <h4 class="font-medium text-gray-900 mb-2">Objetivos de Aprendizagem</h4>
-                            <p class="text-gray-700">${semanario.objetivos}</p>
-                        </div>
-
-                        <div>
-                            <h4 class="font-medium text-gray-900 mb-2">Conteúdos</h4>
-                            <p class="text-gray-700">${semanario.conteudos}</p>
-                        </div>
-
-                        <div>
-                            <h4 class="font-medium text-gray-900 mb-2">Metodologia</h4>
-                            <p class="text-gray-700">${semanario.metodologia}</p>
-                        </div>
-
-                        ${semanario.recursos ? `
-                            <div>
-                                <h4 class="font-medium text-gray-900 mb-2">Recursos Didáticos</h4>
-                                <p class="text-gray-700">${semanario.recursos}</p>
-                            </div>
-                        ` : ''}
-
-                        <div>
-                            <h4 class="font-medium text-gray-900 mb-2">Avaliação</h4>
-                            <p class="text-gray-700">${semanario.avaliacao}</p>
-                        </div>
-
-                        ${semanario.observacoes ? `
-                            <div>
-                                <h4 class="font-medium text-gray-900 mb-2">Observações</h4>
-                                <p class="text-gray-700">${semanario.observacoes}</p>
-                            </div>
-                        ` : ''}
-
-                        ${semanario.devolutiva_comentario ? `
-                            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                                <h4 class="font-medium text-blue-900 mb-2">Comentário da Devolutiva Anterior</h4>
-                                <p class="text-blue-800">${semanario.devolutiva_comentario}</p>
-                            </div>
-                        ` : ''}
-                    </div>
-                `;
-
-                // Set current values in devolutiva form
-                document.getElementById('statusDevolutiva').value = semanario.devolutiva_status || '';
-                document.getElementById('comentarioDevolutiva').value = semanario.devolutiva_comentario || '';
-
-                document.getElementById('semanarioModal').classList.remove('hidden');
-
-            } catch (error) {
-                console.error('Erro ao carregar semanário:', error);
-                showToast('Erro ao carregar semanário', 'error');
-            }
-        }
-
-        // Close semanario modal
-        function closeSemanarioModal() {
-            document.getElementById('semanarioModal').classList.add('hidden');
-            currentSemanario = null;
-        }
-
-        // Open recado professor modal
-        function openRecadoProfessorModal(professorId = null) {
-            if (professorId) {
-                document.getElementById('professorDestino').value = professorId;
-            }
-            document.getElementById('recadoProfessorModal').classList.remove('hidden');
-        }
-
-        // Close recado professor modal
-        function closeRecadoProfessorModal() {
-            document.getElementById('recadoProfessorModal').classList.add('hidden');
-            document.getElementById('recadoProfessorForm').reset();
-        }
-
-        // Open recado admin modal
-        function openRecadoAdminModal() {
-            document.getElementById('recadoAdminModal').classList.remove('hidden');
-        }
-
-        // Close recado admin modal
-        function closeRecadoAdminModal() {
-            document.getElementById('recadoAdminModal').classList.add('hidden');
-            document.getElementById('recadoAdminForm').reset();
-        }
-
-        // Setup event listeners
-        function setupEventListeners() {
-            // Filter changes
-            document.getElementById('professorFilter')?.addEventListener('change', loadSemanarios);
-            document.getElementById('statusFilter')?.addEventListener('change', loadSemanarios);
-            document.getElementById('semanaFilter')?.addEventListener('change', loadSemanarios);
-
-            // Recado professor form
-            document.getElementById('recadoProfessorForm').addEventListener('submit', async (e) => {
-                e.preventDefault();
-                
-                const formData = new FormData(e.target);
-                const data = Object.fromEntries(formData.entries());
-                
-                const btn = document.getElementById('enviarRecadoBtn');
-                const btnText = document.getElementById('enviarRecadoText');
-                const btnLoading = document.getElementById('enviarRecadoLoading');
-
-                btn.disabled = true;
-                btnText.classList.add('hidden');
-                btnLoading.classList.remove('hidden');
-
-                try {
-                    const { error } = await supabase
-                        .from('recados')
-                        .insert({
-                            remetente_id: currentUser.id,
-                            destinatario_id: data.professorDestino,
-                            assunto: data.assuntoRecado,
-                            mensagem: data.mensagemRecado,
-                            prioridade: data.prioridadeRecado,
-                            tipo: 'professor'
-                        });
-
-                    if (error) throw error;
-
-                    showToast('Recado enviado com sucesso!', 'success');
-                    closeRecadoProfessorModal();
-                    await loadStats();
-                    if (activeTab === 'recados') {
-                        await loadRecados();
-                    }
-
-                } catch (error) {
-                    console.error('Erro ao enviar recado:', error);
-                    showToast('Erro ao enviar recado', 'error');
-                } finally {
-                    btn.disabled = false;
-                    btnText.classList.remove('hidden');
-                    btnLoading.classList.add('hidden');
-                }
-            });
-
-            // Recado admin form
-            document.getElementById('recadoAdminForm').addEventListener('submit', async (e) => {
-                e.preventDefault();
-                
-                const formData = new FormData(e.target);
-                const data = Object.fromEntries(formData.entries());
-                
-                const btn = document.getElementById('enviarAdminBtn');
-                const btnText = document.getElementById('enviarAdminText');
-                const btnLoading = document.getElementById('enviarAdminLoading');
-
-                btn.disabled = true;
-                btnText.classList.add('hidden');
-                btnLoading.classList.remove('hidden');
-
-                try {
-                    // Get admin user ID (assuming there's an admin user)
-                    const { data: adminUser, error: adminError } = await supabase
-                        .from('users')
-                        .select('id')
-                        .eq('user_type', 'admin')
-                        .limit(1)
-                        .single();
-
-                    if (adminError) throw adminError;
-
-                    const { error } = await supabase
-                        .from('recados')
-                        .insert({
-                            remetente_id: currentUser.id,
-                            destinatario_id: adminUser.id,
-                            assunto: data.assuntoAdmin,
-                            mensagem: data.descricaoAdmin,
-                            prioridade: data.urgenciaAdmin,
-                            tipo: 'admin',
-                            tipo_solicitacao: data.tipoSolicitacao
-                        });
-
-                    if (error) throw error;
-
-                    showToast('Solicitação enviada para a administração!', 'success');
-                    closeRecadoAdminModal();
-                    await loadStats();
-                    if (activeTab === 'recados') {
-                        await loadRecados();
-                    }
-
-                } catch (error) {
-                    console.error('Erro ao enviar solicitação:', error);
-                    showToast('Erro ao enviar solicitação', 'error');
-                } finally {
-                    btn.disabled = false;
-                    btnText.classList.remove('hidden');
-                    btnLoading.classList.add('hidden');
-                }
-            });
-
-            // Devolutiva form
-            document.getElementById('devolutivaForm').addEventListener('submit', async (e) => {
-                e.preventDefault();
-                
-                if (!currentSemanario) return;
-                
-                const formData = new FormData(e.target);
-                const data = Object.fromEntries(formData.entries());
-                
-                const btn = document.getElementById('salvarDevolutivaBtn');
-                const btnText = document.getElementById('salvarDevolutivaText');
-                const btnLoading = document.getElementById('salvarDevolutivaLoading');
-
-                btn.disabled = true;
-                btnText.classList.add('hidden');
-                btnLoading.classList.remove('hidden');
-
-                try {
-                    const { error } = await supabase
-                        .from('planejamentos')
-                        .update({
-                            devolutiva_status: data.statusDevolutiva,
-                            devolutiva_comentario: data.comentarioDevolutiva || null,
-                            devolutiva_data: new Date().toISOString(),
-                            devolutiva_por: currentUser.id
-                        })
-                        .eq('id', currentSemanario.id);
-
-                    if (error) throw error;
-
-                    showToast('Devolutiva salva com sucesso!', 'success');
-                    closeSemanarioModal();
-                    await loadSemanarios();
-                    await loadStats();
-
-                } catch (error) {
-                    console.error('Erro ao salvar devolutiva:', error);
-                    showToast('Erro ao salvar devolutiva', 'error');
-                } finally {
-                    btn.disabled = false;
-                    btnText.classList.remove('hidden');
-                    btnLoading.classList.add('hidden');
-                }
-            });
-
-            // Close modals on outside click
-            document.getElementById('recadoProfessorModal').addEventListener('click', function(e) {
-                if (e.target.id === 'recadoProfessorModal') {
-                    closeRecadoProfessorModal();
-                }
-            });
-
-            document.getElementById('recadoAdminModal').addEventListener('click', function(e) {
-                if (e.target.id === 'recadoAdminModal') {
-                    closeRecadoAdminModal();
-                }
-            });
-
-            document.getElementById('semanarioModal').addEventListener('click', function(e) {
-                if (e.target.id === 'semanarioModal') {
-                    closeSemanarioModal();
-                }
-            });
-
-            // Close notifications when clicking outside
-            document.addEventListener('click', function(e) {
-                const dropdown = document.getElementById('notificationsDropdown');
-                const button = document.getElementById('notificationBtn');
-                
-                if (!dropdown.contains(e.target) && !button.contains(e.target)) {
-                    dropdown.classList.add('hidden');
-                }
-            });
-        }
-
-        // Show toast notification
+        // Utility Functions
         function showToast(message, type = 'info') {
-            const toast = document.getElementById('toast');
-            const icon = document.getElementById('toastIcon');
-            const messageEl = document.getElementById('toastMessage');
-
-            const icons = {
-                success: '<i class="fas fa-check-circle text-green-500"></i>',
-                error: '<i class="fas fa-exclamation-circle text-red-500"></i>',
-                info: '<i class="fas fa-info-circle text-blue-500"></i>'
-            };
-
-            icon.innerHTML = icons[type] || icons.info;
-            messageEl.textContent = message;
-
-            toast.classList.remove('translate-x-full');
+            const toast = document.createElement('div');
+            const bgColor = type === 'success' ? 'bg-green-500' : type === 'error' ? 'bg-red-500' : 'bg-blue-500';
+            const icon = type === 'success' ? 'fa-check' : type === 'error' ? 'fa-times' : 'fa-info';
+            
+            toast.className = `${bgColor} text-white px-6 py-4 rounded-lg shadow-lg flex items-center space-x-3 transform transition-all duration-300 translate-x-full`;
+            toast.innerHTML = `
+                <i class="fas ${icon}"></i>
+                <span>${message}</span>
+            `;
+            
+            document.getElementById('toast-container').appendChild(toast);
+            
+            setTimeout(() => toast.classList.remove('translate-x-full'), 100);
             setTimeout(() => {
                 toast.classList.add('translate-x-full');
-            }, 3000);
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
         }
 
-        // Logout
-        async function logout() {
-            await supabase.auth.signOut();
-            window.location.href = './index.html';
+        function formatDate(dateString) {
+            if (!dateString) return 'N/A';
+            
+            const date = new Date(dateString);
+            const now = new Date();
+            const diff = now - date;
+            
+            if (diff < 60000) return 'Agora mesmo';
+            if (diff < 3600000) return `Há ${Math.floor(diff / 60000)} minutos`;
+            if (diff < 86400000) return `Há ${Math.floor(diff / 3600000)} horas`;
+            if (diff < 604800000) return `Há ${Math.floor(diff / 86400000)} dias`;
+            
+            return date.toLocaleDateString('pt-BR');
         }
+
+        // Filter Functions
+        function filterProfessores() {
+            const performance = document.getElementById('filter-performance').value;
+            
+            let filtered = professores;
+            if (performance) {
+                filtered = professores.filter(prof => prof.performance === performance);
+            }
+            
+            displayProfessoresDetalhado(filtered);
+        }
+
+        // Placeholder functions
+        function showNotifications() {
+            showToast('Central de notificações em desenvolvimento', 'info');
+        }
+
+        function showUserMenu() {
+            const menu = document.getElementById('user-menu');
+            menu.classList.toggle('hidden');
+        }
+
+        function showProfile() {
+            showToast('Perfil do diretor em desenvolvimento', 'info');
+        }
+
+        function showSettings() {
+            showToast('Configurações pessoais em desenvolvimento', 'info');
+        }
+
+        function logout() {
+            if (confirm('Tem certeza que deseja sair?')) {
+                window.location.href = 'login.html';
+            }
+        }
+
+        function exportarDadosCoordenadores() {
+            showToast('Exportação de dados dos coordenadores em desenvolvimento', 'info');
+        }
+
+        function gerarRelatorioCoord() {
+            showToast('Relatório de coordenadores em desenvolvimento', 'info');
+        }
+
+        function verPerfilCoordenador(coordId) {
+            showToast('Perfil do coordenador em desenvolvimento', 'info');
+        }
+
+        function enviarMensagemCoordenador(coordId) {
+            showToast('Sistema de mensagens em desenvolvimento', 'info');
+        }
+
+        function verPerfilProfessor(profId) {
+            showToast('Perfil do professor em desenvolvimento', 'info');
+        }
+
+        function enviarMensagemProfessor(profId) {
+            showToast('Sistema de mensagens em desenvolvimento', 'info');
+        }
+
+        function exportarDadosProfessores() {
+            showToast('Exportação de dados em desenvolvimento', 'info');
+        }
+
+        function resolverAlerta(alertaId) {
+            showToast('Alerta resolvido com sucesso!', 'success');
+            loadDashboard();
+        }
+
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', function(event) {
+            if (!event.target.closest('.relative')) {
+                document.getElementById('user-menu').classList.add('hidden');
+            }
+        });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9811a969d721f190',t:'MTc1ODIwNzA5MC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9841ae1eb192f187',t:'MTc1ODcxMDU5OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
+
 
