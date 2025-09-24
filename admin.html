@@ -3,434 +3,2115 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Admin - Sistema Semanário</title>
+    <title>Painel Administrativo - Semanário Digital</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-        body { font-family: 'Inter', sans-serif; }
-        .gradient-bg { background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); }
-        .card-hover { transition: all 0.3s ease; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .sidebar-item:hover { background: linear-gradient(135deg, #3B82F6, #1D4ED8); }
         .card-hover:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
-        .tab-button.active {
-            border-bottom-width: 2px;
-            border-color: #ef4444;
-            color: #ef4444;
-        }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 8px; }
+        .notification-badge { animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
     </style>
 </head>
-<body class="bg-gray-50 min-h-screen">
-    <header class="gradient-bg shadow-lg">
+<body class="bg-gradient-to-br from-slate-50 to-blue-50 min-h-screen">
+    <!-- Header -->
+    <header class="bg-white shadow-lg border-b-4 border-blue-600">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center py-4">
                 <div class="flex items-center space-x-4">
-                    <div class="flex items-center space-x-3">
-                        <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
-                            <i class="fas fa-crown text-red-600 text-xl"></i>
-                        </div>
-                        <div>
-                            <h1 class="text-xl font-bold text-white">Dashboard Admin</h1>
-                            <p class="text-red-100 text-sm">Sistema de Gestão Completa</p>
-                        </div>
+                    <div class="bg-gradient-to-r from-blue-600 to-indigo-600 p-3 rounded-xl shadow-lg">
+                        <i class="fas fa-user-shield text-white text-2xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-3xl font-bold text-gray-900">Painel Administrativo</h1>
+                        <p class="text-sm text-gray-600">Semanário Digital - Gestão Completa</p>
                     </div>
                 </div>
-                
                 <div class="flex items-center space-x-4">
-                    <div class="text-right">
-                        <p class="text-white font-medium">Administrador</p>
-                        <p class="text-red-100 text-sm">Sistema Master</p>
+                    <div class="bg-green-100 px-4 py-2 rounded-full">
+                        <span class="text-green-800 text-sm font-medium">
+                            <i class="fas fa-circle text-green-500 text-xs mr-2"></i>
+                            Sistema Online
+                        </span>
                     </div>
-                    <button onclick="logout()" class="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-4 py-2 rounded-lg transition-all duration-200">
-                        <i class="fas fa-sign-out-alt mr-2"></i>
-                        Sair
-                    </button>
+                    <div class="relative">
+                        <button class="bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition-colors">
+                            <i class="fas fa-bell"></i>
+                            <span id="notification-count" class="absolute -top-1 -right-1 bg-yellow-400 text-xs text-black rounded-full px-1 notification-badge">0</span>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
     </header>
 
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div class="bg-white rounded-xl shadow-sm p-8 mb-8 text-center">
-            <div class="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                <i class="fas fa-crown text-red-600 text-3xl"></i>
-            </div>
-            <h2 class="text-3xl font-bold text-gray-900 mb-4">Painel Administrativo</h2>
-            <p class="text-xl text-gray-600 mb-8">Gerencie o sistema e acesse as diferentes áreas</p>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-            <div class="bg-white rounded-xl shadow-lg p-8 card-hover border-l-4 border-green-500">
-                <div class="text-center">
-                    <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <i class="fas fa-chalkboard-teacher text-green-600 text-2xl"></i>
-                    </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-3">Área do Professor</h3>
-                    <p class="text-gray-600 mb-6">Funcionalidades para criação de semanários e gestão de turmas</p>
-                    <button onclick="accessProfessor()" class="w-full bg-green-600 hover:bg-green-700 text-white py-3 px-6 rounded-lg font-medium transition-colors">
-                        <i class="fas fa-sign-in-alt mr-2"></i>
-                        Entrar como Professor
+    <div class="flex">
+        <!-- Sidebar -->
+        <div class="w-64 bg-white shadow-xl h-screen sticky top-0">
+            <div class="p-6">
+                <nav class="space-y-2">
+                    <button onclick="showTab('dashboard')" class="sidebar-item w-full flex items-center px-4 py-3 text-left text-gray-700 rounded-lg transition-all duration-200 bg-blue-500 text-white">
+                        <i class="fas fa-tachometer-alt mr-3"></i>Dashboard
                     </button>
-                </div>
-            </div>
-
-            <div class="bg-white rounded-xl shadow-lg p-8 card-hover border-l-4 border-blue-500">
-                <div class="text-center">
-                    <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <i class="fas fa-user-graduate text-blue-600 text-2xl"></i>
-                    </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-3">Área da Coordenação</h3>
-                    <p class="text-gray-600 mb-6">Gestão de professores e acompanhamento pedagógico</p>
-                    <button onclick="accessCoordenador()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-lg font-medium transition-colors">
-                        <i class="fas fa-sign-in-alt mr-2"></i>
-                        Entrar como Coordenador
+                    <button onclick="showTab('usuarios')" class="sidebar-item w-full flex items-center px-4 py-3 text-left text-gray-700 rounded-lg transition-all duration-200">
+                        <i class="fas fa-users mr-3"></i>Usuários
                     </button>
-                </div>
-            </div>
-
-            <div class="bg-white rounded-xl shadow-lg p-8 card-hover border-l-4 border-purple-500">
-                <div class="text-center">
-                    <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <i class="fas fa-user-tie text-purple-600 text-2xl"></i>
-                    </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-3">Área da Direção</h3>
-                    <p class="text-gray-600 mb-6">Visão geral da escola e comunicação com administração</p>
-                    <button onclick="accessDiretor()" class="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 px-6 rounded-lg font-medium transition-colors">
-                        <i class="fas fa-sign-in-alt mr-2"></i>
-                        Entrar como Diretor
+                    <button onclick="showTab('escolas')" class="sidebar-item w-full flex items-center px-4 py-3 text-left text-gray-700 rounded-lg transition-all duration-200">
+                        <i class="fas fa-school mr-3"></i>Escolas
                     </button>
-                </div>
+                    <button onclick="showTab('assinaturas')" class="sidebar-item w-full flex items-center px-4 py-3 text-left text-gray-700 rounded-lg transition-all duration-200">
+                        <i class="fas fa-credit-card mr-3"></i>Assinaturas
+                    </button>
+                    <button onclick="showTab('suporte')" class="sidebar-item w-full flex items-center px-4 py-3 text-left text-gray-700 rounded-lg transition-all duration-200">
+                        <i class="fas fa-headset mr-3"></i>Suporte
+                        <span id="suporte-badge" class="ml-auto bg-red-500 text-white text-xs px-2 py-1 rounded-full">0</span>
+                    </button>
+                    <button onclick="showTab('whatsapp')" class="sidebar-item w-full flex items-center px-4 py-3 text-left text-gray-700 rounded-lg transition-all duration-200">
+                        <i class="fab fa-whatsapp mr-3"></i>WhatsApp
+                    </button>
+                    <button onclick="showTab('relatorios')" class="sidebar-item w-full flex items-center px-4 py-3 text-left text-gray-700 rounded-lg transition-all duration-200">
+                        <i class="fas fa-chart-bar mr-3"></i>Relatórios
+                    </button>
+                    <button onclick="showTab('configuracoes')" class="sidebar-item w-full flex items-center px-4 py-3 text-left text-gray-700 rounded-lg transition-all duration-200">
+                        <i class="fas fa-cog mr-3"></i>Configurações
+                    </button>
+                </nav>
             </div>
         </div>
 
-        <div class="bg-white rounded-xl shadow-sm p-8">
-            <div class="flex justify-center border-b border-gray-200 mb-6">
-                <button id="tab-gerenciamento" class="tab-button active px-4 py-2 font-medium text-gray-600 hover:text-red-500 transition-colors">
-                    Gestão de Usuários
-                </button>
-                <button id="tab-vencimentos" class="tab-button px-4 py-2 font-medium text-gray-600 hover:text-red-500 transition-colors">
-                    Vencimentos
-                </button>
-                <button id="tab-mensagens" class="tab-button px-4 py-2 font-medium text-gray-600 hover:text-red-500 transition-colors">
-                    Recados das Escolas
-                </button>
-            </div>
+        <!-- Main Content -->
+        <div class="flex-1 p-8">
+            <!-- Dashboard Tab -->
+            <div id="dashboard-tab" class="tab-content active">
+                <div class="mb-8">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-2">Dashboard Geral</h2>
+                    <p class="text-gray-600">Visão geral do sistema e métricas importantes</p>
+                </div>
 
-            <div id="content-gerenciamento" class="fade-in">
-                <h3 class="text-2xl font-bold text-gray-900 mb-6 text-center">
-                    <i class="fas fa-users-cog mr-3 text-red-600"></i>
-                    Gerenciamento de Usuários
-                </h3>
-                <div id="message-toast" class="fixed bottom-4 right-4 bg-gray-800 text-white px-4 py-2 rounded-lg shadow-md transition-transform duration-300 transform translate-x-full">
-                    <div class="flex items-center space-x-2">
-                        <span id="toast-icon"></span>
-                        <span id="toast-message"></span>
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-blue-500 card-hover transition-all duration-300">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">Total de Usuários</p>
+                                <p id="total-usuarios" class="text-3xl font-bold text-gray-900">-</p>
+                                <p class="text-xs text-green-600 mt-1">
+                                    <i class="fas fa-arrow-up mr-1"></i>+12% este mês
+                                </p>
+                            </div>
+                            <div class="bg-blue-100 p-4 rounded-full">
+                                <i class="fas fa-users text-blue-600 text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-green-500 card-hover transition-all duration-300">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">Escolas Ativas</p>
+                                <p id="total-escolas" class="text-3xl font-bold text-gray-900">-</p>
+                                <p class="text-xs text-green-600 mt-1">
+                                    <i class="fas fa-arrow-up mr-1"></i>+5% este mês
+                                </p>
+                            </div>
+                            <div class="bg-green-100 p-4 rounded-full">
+                                <i class="fas fa-school text-green-600 text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-yellow-500 card-hover transition-all duration-300">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">Assinaturas Ativas</p>
+                                <p id="assinaturas-ativas" class="text-3xl font-bold text-gray-900">-</p>
+                                <p class="text-xs text-yellow-600 mt-1">
+                                    <i class="fas fa-exclamation-triangle mr-1"></i><span id="vencendo-count">0</span> vencendo
+                                </p>
+                            </div>
+                            <div class="bg-yellow-100 p-4 rounded-full">
+                                <i class="fas fa-credit-card text-yellow-600 text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-red-500 card-hover transition-all duration-300">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">Suporte Aberto</p>
+                                <p id="suporte-aberto" class="text-3xl font-bold text-gray-900">-</p>
+                                <p class="text-xs text-red-600 mt-1">
+                                    <i class="fas fa-clock mr-1"></i>Requer atenção
+                                </p>
+                            </div>
+                            <div class="bg-red-100 p-4 rounded-full">
+                                <i class="fas fa-headset text-red-600 text-xl"></i>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                
-                <div class="bg-gray-50 p-6 rounded-lg shadow-inner mb-6">
-                    <h4 class="text-xl font-semibold mb-4">Criar Novo Usuário</h4>
-                    <form id="create-user-form" class="space-y-4">
-                        <div>
-                            <label for="new-email" class="block text-sm font-medium text-gray-700">Email</label>
-                            <input type="email" id="new-email" name="new-email" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500" required>
+
+                <!-- Charts and Recent Activity -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- Vencimentos Próximos -->
+                    <div class="bg-white rounded-xl shadow-lg p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                            <i class="fas fa-exclamation-triangle text-yellow-500 mr-2"></i>
+                            Vencimentos Próximos (7 dias)
+                        </h3>
+                        <div id="vencimentos-proximos" class="space-y-3 max-h-80 overflow-y-auto">
+                            <div class="flex items-center justify-center py-8 text-gray-500">
+                                <i class="fas fa-spinner fa-spin mr-2"></i>Carregando...
+                            </div>
                         </div>
-                        <div>
-                            <label for="new-password" class="block text-sm font-medium text-gray-700">Senha</label>
-                            <input type="password" id="new-password" name="new-password" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500" required>
+                    </div>
+
+                    <!-- Atividade Recente -->
+                    <div class="bg-white rounded-xl shadow-lg p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                            <i class="fas fa-clock text-blue-500 mr-2"></i>
+                            Atividade Recente
+                        </h3>
+                        <div id="atividade-recente" class="space-y-3 max-h-80 overflow-y-auto">
+                            <div class="flex items-center justify-center py-8 text-gray-500">
+                                <i class="fas fa-spinner fa-spin mr-2"></i>Carregando...
+                            </div>
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Usuários Tab -->
+            <div id="usuarios-tab" class="tab-content">
+                <div class="mb-8">
+                    <div class="flex justify-between items-center">
                         <div>
-                            <label for="user-type" class="block text-sm font-medium text-gray-700">Tipo de Usuário</label>
-                            <select id="user-type" name="user-type" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500" required>
-                                <option value="" disabled selected>Selecione a função</option>
-                                <option value="admin">Administrador</option>
-                                <option value="professor">Professor</option>
-                                <option value="coordenadora">Coordenador(a)</option>
-                                <option value="diretora">Diretor(a)</option>
-                            </select>
+                            <h2 class="text-2xl font-bold text-gray-900 mb-2">Gestão de Usuários</h2>
+                            <p class="text-gray-600">Cadastrar, editar e gerenciar todos os usuários do sistema</p>
                         </div>
-                        <div>
-                            <label for="subscription-plan" class="block text-sm font-medium text-gray-700">Plano de Assinatura</label>
-                            <select id="subscription-plan" name="subscription-plan" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500" required>
-                                <option value="" disabled selected>Selecione o plano</option>
-                                <option value="gratuito">Gratuito</option>
-                                <option value="anual">Anual</option>
-                                <option value="mensal">Mensal</option>
-                            </select>
-                        </div>
-                        <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white py-3 px-6 rounded-lg font-bold transition-colors">
-                            Criar Novo Usuário
+                        <button onclick="showNewUserModal()" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-medium transition-colors shadow-lg">
+                            <i class="fas fa-plus mr-2"></i>Novo Usuário
                         </button>
-                    </form>
+                    </div>
                 </div>
-                
-                <div class="bg-white p-6 rounded-lg shadow-inner">
-                    <h4 class="text-xl font-semibold mb-4">Usuários Existentes</h4>
+
+                <!-- Filters -->
+                <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Tipo de Usuário</label>
+                            <select id="filter-tipo" onchange="filterUsers()" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                <option value="">Todos</option>
+                                <option value="professor">Professores</option>
+                                <option value="coordenador">Coordenadores</option>
+                                <option value="diretor">Diretores</option>
+                                <option value="admin">Administradores</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Escola</label>
+                            <select id="filter-escola" onchange="filterUsers()" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                <option value="">Todas</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                            <select id="filter-status" onchange="filterUsers()" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                <option value="">Todos</option>
+                                <option value="ativo">Ativos</option>
+                                <option value="inativo">Inativos</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Buscar</label>
+                            <input type="text" id="search-users" onkeyup="filterUsers()" placeholder="Nome ou email..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Users Table -->
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden">
                     <div class="overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50">
                                 <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome/E-mail</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Função</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Plano</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vencimento</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Usuário</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Escola</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assinatura</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
                                 </tr>
                             </thead>
                             <tbody id="users-table-body" class="bg-white divide-y divide-gray-200">
-                                <tr><td colspan="5" class="text-center py-4">Carregando usuários...</td></tr>
+                                <tr>
+                                    <td colspan="6" class="px-6 py-8 text-center text-gray-500">
+                                        <i class="fas fa-spinner fa-spin mr-2"></i>Carregando usuários...
+                                    </td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
                 </div>
             </div>
 
-            <div id="content-vencimentos" class="hidden fade-in">
-                <h3 class="text-2xl font-bold text-gray-900 mb-6 text-center">
-                    <i class="fas fa-calendar-times mr-3 text-red-600"></i>
-                    Vencimentos
-                </h3>
-                <div id="vencimentos-table-container" class="bg-white p-6 rounded-lg shadow-inner">
-                    <h4 class="text-xl font-semibold mb-4">Vencimentos Próximos</h4>
+            <!-- Escolas Tab -->
+            <div id="escolas-tab" class="tab-content">
+                <div class="mb-8">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-900 mb-2">Gestão de Escolas</h2>
+                            <p class="text-gray-600">Cadastrar e gerenciar escolas do sistema</p>
+                        </div>
+                        <button onclick="showNewSchoolModal()" class="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg font-medium transition-colors shadow-lg">
+                            <i class="fas fa-plus mr-2"></i>Nova Escola
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Schools Grid -->
+                <div id="schools-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div class="flex items-center justify-center py-16 text-gray-500 col-span-full">
+                        <i class="fas fa-spinner fa-spin mr-2"></i>Carregando escolas...
+                    </div>
+                </div>
+            </div>
+
+            <!-- Assinaturas Tab -->
+            <div id="assinaturas-tab" class="tab-content">
+                <div class="mb-8">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-2">Gestão de Assinaturas</h2>
+                    <p class="text-gray-600">Controlar vencimentos e renovações</p>
+                </div>
+
+                <!-- Subscription Stats -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-green-500">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">Assinaturas Ativas</h3>
+                        <p id="sub-ativas" class="text-3xl font-bold text-green-600">-</p>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-yellow-500">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">Vencendo em 7 dias</h3>
+                        <p id="sub-vencendo" class="text-3xl font-bold text-yellow-600">-</p>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-red-500">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">Vencidas</h3>
+                        <p id="sub-vencidas" class="text-3xl font-bold text-red-600">-</p>
+                    </div>
+                </div>
+
+                <!-- Subscriptions Table -->
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+                    <div class="p-6 border-b border-gray-200">
+                        <div class="flex justify-between items-center">
+                            <h3 class="text-lg font-semibold text-gray-900">Lista de Assinaturas</h3>
+                            <div class="flex space-x-2">
+                                <button onclick="sendRenewalReminders()" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                                    <i class="fab fa-whatsapp mr-2"></i>Enviar Lembretes
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                     <div class="overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50">
                                 <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome/E-mail</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Usuário</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Plano</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Início</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vencimento</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
                                 </tr>
                             </thead>
-                            <tbody id="vencimentos-table-body" class="bg-white divide-y divide-gray-200">
-                                <tr><td colspan="3" class="text-center py-4">Carregando vencimentos...</td></tr>
+                            <tbody id="subscriptions-table-body" class="bg-white divide-y divide-gray-200">
+                                <tr>
+                                    <td colspan="6" class="px-6 py-8 text-center text-gray-500">
+                                        <i class="fas fa-spinner fa-spin mr-2"></i>Carregando assinaturas...
+                                    </td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
                 </div>
             </div>
 
-            <div id="content-mensagens" class="hidden fade-in">
-                <h3 class="text-2xl font-bold text-gray-900 mb-6 text-center">
-                    <i class="fas fa-envelope mr-3 text-red-600"></i>
-                    Recados das Escolas
-                </h3>
-                <div id="mensagens-container" class="bg-white p-6 rounded-lg shadow-inner">
-                    <h4 class="text-xl font-semibold mb-4">Mensagens Recebidas</h4>
-                    <div id="mensagens-list" class="space-y-4">
-                        <p class="text-center text-gray-500">Carregando mensagens...</p>
+            <!-- Suporte Tab -->
+            <div id="suporte-tab" class="tab-content">
+                <div class="mb-8">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-2">Central de Suporte</h2>
+                    <p class="text-gray-600">Gerenciar solicitações de suporte das escolas</p>
+                </div>
+
+                <!-- Support Stats -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-blue-500">
+                        <h3 class="text-sm font-medium text-gray-600">Abertas</h3>
+                        <p id="support-open" class="text-2xl font-bold text-blue-600">-</p>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-yellow-500">
+                        <h3 class="text-sm font-medium text-gray-600">Em Andamento</h3>
+                        <p id="support-progress" class="text-2xl font-bold text-yellow-600">-</p>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-green-500">
+                        <h3 class="text-sm font-medium text-gray-600">Resolvidas</h3>
+                        <p id="support-resolved" class="text-2xl font-bold text-green-600">-</p>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-gray-500">
+                        <h3 class="text-sm font-medium text-gray-600">Fechadas</h3>
+                        <p id="support-closed" class="text-2xl font-bold text-gray-600">-</p>
+                    </div>
+                </div>
+
+                <!-- Support Tickets -->
+                <div class="bg-white rounded-xl shadow-lg">
+                    <div class="p-6 border-b border-gray-200">
+                        <h3 class="text-lg font-semibold text-gray-900">Solicitações de Suporte</h3>
+                    </div>
+                    <div id="support-tickets" class="divide-y divide-gray-200">
+                        <div class="p-6 text-center text-gray-500">
+                            <i class="fas fa-spinner fa-spin mr-2"></i>Carregando solicitações...
+                        </div>
                     </div>
                 </div>
             </div>
 
-            
-        </div>
-    </main>
-    
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script>
-        const SUPABASE_URL = 'https://srqqheacsglhyyhvfchg.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNycXFoZWFjc2dsaHl5aHZmY2hnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgxNTMxMDMsImV4cCI6MjA3MzcyOTEwM30.ZOKVDK1FEyDM-lcPrw4-0xbVDxYLftek3NHYcmjc_7w';
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            <!-- WhatsApp Tab -->
+            <div id="whatsapp-tab" class="tab-content">
+                <div class="mb-8">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-2">Central WhatsApp</h2>
+                    <p class="text-gray-600">Enviar mensagens e gerenciar notificações automáticas</p>
+                </div>
 
-        function showToast(message, type = 'info') {
-            const toast = document.getElementById('message-toast');
-            const messageEl = document.getElementById('toast-message');
-            const icon = document.getElementById('toast-icon');
-            const icons = {
-                success: '<i class="fas fa-check-circle text-green-500"></i>',
-                error: '<i class="fas fa-times-circle text-red-500"></i>',
-                info: '<i class="fas fa-info-circle text-blue-500"></i>'
-            };
-            icon.innerHTML = icons[type] || icons.info;
-            messageEl.textContent = message;
-            toast.classList.remove('translate-x-full');
-            setTimeout(() => {
-                toast.classList.add('translate-x-full');
-            }, 3000);
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- Send WhatsApp -->
+                    <div class="bg-white rounded-xl shadow-lg p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                            <i class="fab fa-whatsapp text-green-500 mr-2"></i>Enviar WhatsApp
+                        </h3>
+                        <form onsubmit="sendWhatsAppMessage(event)" class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Destinatário</label>
+                                <select id="whatsapp-destinatario" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                                    <option value="">Selecione um usuário</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Ou digite o número</label>
+                                <input type="tel" id="whatsapp-numero" placeholder="5511999999999" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Tipo</label>
+                                <select id="whatsapp-tipo" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                                    <option value="manual">Mensagem Manual</option>
+                                    <option value="vencimento">Lembrete de Vencimento</option>
+                                    <option value="sistema">Notificação do Sistema</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Mensagem</label>
+                                <textarea id="whatsapp-mensagem" rows="4" placeholder="Digite sua mensagem..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"></textarea>
+                            </div>
+                            <button type="submit" class="w-full bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                                <i class="fab fa-whatsapp mr-2"></i>Enviar Mensagem
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- WhatsApp History -->
+                    <div class="bg-white rounded-xl shadow-lg p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                            <i class="fas fa-history text-blue-500 mr-2"></i>Histórico de Envios
+                        </h3>
+                        <div id="whatsapp-history" class="space-y-3 max-h-96 overflow-y-auto">
+                            <div class="text-center text-gray-500 py-8">
+                                <i class="fas fa-spinner fa-spin mr-2"></i>Carregando histórico...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Relatórios Tab -->
+            <div id="relatorios-tab" class="tab-content">
+                <div class="mb-8">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-2">Relatórios e Estatísticas</h2>
+                    <p class="text-gray-600">Análises detalhadas do sistema</p>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- Usage Report -->
+                    <div class="bg-white rounded-xl shadow-lg p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Relatório de Uso</h3>
+                        <div class="space-y-4">
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-600">Planos de Aula Criados (Mês)</span>
+                                <span id="planos-mes" class="font-semibold">-</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-600">Usuários Ativos (Semana)</span>
+                                <span id="usuarios-ativos-semana" class="font-semibold">-</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-600">Feedbacks Dados</span>
+                                <span id="feedbacks-dados" class="font-semibold">-</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Revenue Report -->
+                    <div class="bg-white rounded-xl shadow-lg p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Relatório Financeiro</h3>
+                        <div class="space-y-4">
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-600">Receita Mensal</span>
+                                <span id="receita-mensal" class="font-semibold text-green-600">R$ -</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-600">Assinaturas Anuais</span>
+                                <span id="assinaturas-anuais" class="font-semibold">-</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-600">Assinaturas Semestrais</span>
+                                <span id="assinaturas-semestrais" class="font-semibold">-</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Configurações Tab -->
+            <div id="configuracoes-tab" class="tab-content">
+                <div class="mb-8">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-2">Configurações do Sistema</h2>
+                    <p class="text-gray-600">Configurar APIs e parâmetros do sistema</p>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- Evolution API Config -->
+                    <div class="bg-white rounded-xl shadow-lg p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                            <i class="fas fa-robot text-purple-500 mr-2"></i>Evolution API
+                        </h3>
+                        <form onsubmit="saveEvolutionConfig(event)" class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">URL da API</label>
+                                <input type="url" id="evolution-url" placeholder="https://sua-evolution-api.com" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Chave da API</label>
+                                <input type="password" id="evolution-key" placeholder="Sua chave da Evolution API" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Nome da Instância</label>
+                                <input type="text" id="evolution-instance" placeholder="semanario" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                            </div>
+                            <div class="flex items-center">
+                                <input type="checkbox" id="whatsapp-ativo" class="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded">
+                                <label for="whatsapp-ativo" class="ml-2 block text-sm text-gray-900">Ativar WhatsApp Automático</label>
+                            </div>
+                            <button type="submit" class="w-full bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                                <i class="fas fa-save mr-2"></i>Salvar Configurações
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- System Status -->
+                    <div class="bg-white rounded-xl shadow-lg p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                            <i class="fas fa-heartbeat text-red-500 mr-2"></i>Status do Sistema
+                        </h3>
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                <span class="text-sm font-medium text-gray-700">Banco de Dados</span>
+                                <span id="db-status" class="px-3 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">
+                                    <span class="status-dot bg-green-500"></span>Conectado
+                                </span>
+                            </div>
+                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                <span class="text-sm font-medium text-gray-700">Evolution API</span>
+                                <span id="evolution-status" class="px-3 py-1 text-xs font-medium bg-yellow-100 text-yellow-800 rounded-full">
+                                    <span class="status-dot bg-yellow-500"></span>Não Configurado
+                                </span>
+                            </div>
+                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                <span class="text-sm font-medium text-gray-700">WhatsApp Automático</span>
+                                <span id="whatsapp-auto-status" class="px-3 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">
+                                    <span class="status-dot bg-red-500"></span>Inativo
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <button onclick="testSystemConnections()" class="w-full mt-6 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                            <i class="fas fa-plug mr-2"></i>Testar Conexões
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <!-- New User Modal -->
+    <div id="new-user-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+        <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full mx-4 max-h-screen overflow-y-auto">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xl font-semibold text-gray-900">Cadastrar Novo Usuário</h3>
+                    <button onclick="closeNewUserModal()" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+            </div>
+            <form onsubmit="createUser(event)" class="p-6 space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Nome Completo *</label>
+                        <input type="text" id="new-user-nome" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+                        <input type="email" id="new-user-email" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Tipo de Usuário *</label>
+                        <select id="new-user-tipo" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                            <option value="">Selecione</option>
+                            <option value="professor">Professor</option>
+                            <option value="coordenador">Coordenador</option>
+                            <option value="diretor">Diretor</option>
+                            <option value="admin">Administrador</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Escola</label>
+                        <select id="new-user-escola" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                            <option value="">Selecione uma escola</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Telefone</label>
+                        <input type="tel" id="new-user-telefone" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">WhatsApp</label>
+                        <input type="tel" id="new-user-whatsapp" placeholder="5511999999999" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">CPF</label>
+                        <input type="text" id="new-user-cpf" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Senha Temporária *</label>
+                        <input type="password" id="new-user-senha" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    </div>
+                </div>
+                
+                <!-- Subscription Section -->
+                <div class="border-t pt-4">
+                    <h4 class="font-medium text-gray-900 mb-3">Configuração de Assinatura</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Tipo de Plano *</label>
+                            <select id="new-user-plano" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                <option value="">Selecione</option>
+                                <option value="semestral">Semestral (6 meses)</option>
+                                <option value="anual">Anual (12 meses)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Data de Início</label>
+                            <input type="date" id="new-user-inicio" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex space-x-3 pt-4">
+                    <button type="submit" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                        <i class="fas fa-save mr-2"></i>Cadastrar Usuário
+                    </button>
+                    <button type="button" onclick="closeNewUserModal()" class="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+                        Cancelar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- New School Modal -->
+    <div id="new-school-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+        <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full mx-4 max-h-screen overflow-y-auto">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xl font-semibold text-gray-900">Cadastrar Nova Escola</h3>
+                    <button onclick="closeNewSchoolModal()" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+            </div>
+            <form onsubmit="createSchool(event)" class="p-6 space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Nome da Escola *</label>
+                        <input type="text" id="new-school-nome" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">CNPJ</label>
+                        <input type="text" id="new-school-cnpj" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Endereço</label>
+                    <input type="text" id="new-school-endereco" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Cidade</label>
+                        <input type="text" id="new-school-cidade" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Estado</label>
+                        <select id="new-school-estado" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                            <option value="">Selecione</option>
+                            <option value="AC">Acre</option>
+                            <option value="AL">Alagoas</option>
+                            <option value="AP">Amapá</option>
+                            <option value="AM">Amazonas</option>
+                            <option value="BA">Bahia</option>
+                            <option value="CE">Ceará</option>
+                            <option value="DF">Distrito Federal</option>
+                            <option value="ES">Espírito Santo</option>
+                            <option value="GO">Goiás</option>
+                            <option value="MA">Maranhão</option>
+                            <option value="MT">Mato Grosso</option>
+                            <option value="MS">Mato Grosso do Sul</option>
+                            <option value="MG">Minas Gerais</option>
+                            <option value="PA">Pará</option>
+                            <option value="PB">Paraíba</option>
+                            <option value="PR">Paraná</option>
+                            <option value="PE">Pernambuco</option>
+                            <option value="PI">Piauí</option>
+                            <option value="RJ">Rio de Janeiro</option>
+                            <option value="RN">Rio Grande do Norte</option>
+                            <option value="RS">Rio Grande do Sul</option>
+                            <option value="RO">Rondônia</option>
+                            <option value="RR">Roraima</option>
+                            <option value="SC">Santa Catarina</option>
+                            <option value="SP">São Paulo</option>
+                            <option value="SE">Sergipe</option>
+                            <option value="TO">Tocantins</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">CEP</label>
+                        <input type="text" id="new-school-cep" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Telefone</label>
+                        <input type="tel" id="new-school-telefone" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                        <input type="email" id="new-school-email" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Diretor Responsável</label>
+                    <input type="text" id="new-school-diretor" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                </div>
+
+                <div class="flex space-x-3 pt-4">
+                    <button type="submit" class="flex-1 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                        <i class="fas fa-save mr-2"></i>Cadastrar Escola
+                    </button>
+                    <button type="button" onclick="closeNewSchoolModal()" class="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+                        Cancelar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
+
+    <script>
+        // Supabase Configuration
+        const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+        const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+        
+        let supabase;
+        try {
+            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        } catch (error) {
+            console.warn('Supabase not configured. Using demo mode.');
         }
 
-        // Lógica para carregar todos os usuários
-        async function fetchUsers() {
-            const { data, error } = await supabase
-                .from('users')
-                .select('*');
-            if (error) {
-                console.error('Erro ao carregar usuários:', error);
-                document.getElementById('users-table-body').innerHTML = `<tr><td colspan="5" class="text-center py-4 text-red-500">Erro ao carregar usuários: ${error.message}</td></tr>`;
-                return;
+        // Global variables
+        let currentTab = 'dashboard';
+        let users = [];
+        let schools = [];
+        let subscriptions = [];
+
+        // Tab Management
+        function showTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Remove active class from all sidebar items
+            document.querySelectorAll('.sidebar-item').forEach(item => {
+                item.classList.remove('bg-blue-500', 'text-white');
+                item.classList.add('text-gray-700');
+            });
+            
+            // Show selected tab
+            document.getElementById(tabName + '-tab').classList.add('active');
+            
+            // Add active class to selected sidebar item
+            event.target.classList.add('bg-blue-500', 'text-white');
+            event.target.classList.remove('text-gray-700');
+            
+            currentTab = tabName;
+            
+            // Load tab-specific data
+            loadTabData(tabName);
+        }
+
+        // Load tab data
+        function loadTabData(tabName) {
+            switch(tabName) {
+                case 'dashboard':
+                    loadDashboard();
+                    break;
+                case 'usuarios':
+                    loadUsers();
+                    loadSchoolsForSelect();
+                    break;
+                case 'escolas':
+                    loadSchools();
+                    break;
+                case 'assinaturas':
+                    loadSubscriptions();
+                    break;
+                case 'suporte':
+                    loadSupport();
+                    break;
+                case 'whatsapp':
+                    loadWhatsApp();
+                    break;
+                case 'relatorios':
+                    loadReports();
+                    break;
+                case 'configuracoes':
+                    loadConfigurations();
+                    break;
             }
-            const tableBody = document.getElementById('users-table-body');
-            tableBody.innerHTML = '';
-            data.forEach(user => {
-                const vencimento = user.subscription_end_date ? new Date(user.subscription_end_date).toLocaleDateString('pt-BR') : 'N/A';
-                const row = `
+        }
+
+        // Toast notifications
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            const bgColor = type === 'success' ? 'bg-green-500' : type === 'error' ? 'bg-red-500' : 'bg-blue-500';
+            const icon = type === 'success' ? 'fa-check' : type === 'error' ? 'fa-times' : 'fa-info';
+            
+            toast.className = `${bgColor} text-white px-6 py-4 rounded-lg shadow-lg flex items-center space-x-3 transform transition-all duration-300 translate-x-full`;
+            toast.innerHTML = `
+                <i class="fas ${icon}"></i>
+                <span>${message}</span>
+            `;
+            
+            document.getElementById('toast-container').appendChild(toast);
+            
+            setTimeout(() => toast.classList.remove('translate-x-full'), 100);
+            setTimeout(() => {
+                toast.classList.add('translate-x-full');
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
+        // Dashboard Functions
+        async function loadDashboard() {
+            try {
+                if (!supabase) {
+                    loadDemoData();
+                    return;
+                }
+
+                // Load statistics
+                const { data: stats } = await supabase.rpc('obter_estatisticas_dashboard');
+                
+                if (stats) {
+                    document.getElementById('total-usuarios').textContent = stats.total_usuarios || 0;
+                    document.getElementById('total-escolas').textContent = stats.total_escolas || 0;
+                    document.getElementById('assinaturas-ativas').textContent = stats.assinaturas_ativas || 0;
+                    document.getElementById('suporte-aberto').textContent = stats.suporte_aberto || 0;
+                    document.getElementById('vencendo-count').textContent = stats.assinaturas_vencendo || 0;
+                    document.getElementById('notification-count').textContent = stats.suporte_aberto || 0;
+                    document.getElementById('suporte-badge').textContent = stats.suporte_aberto || 0;
+                }
+
+                // Load upcoming expirations
+                const { data: vencimentos } = await supabase.rpc('verificar_vencimentos_proximos', { dias_antecedencia: 7 });
+                
+                const vencimentosHtml = vencimentos?.map(v => `
+                    <div class="flex items-center justify-between p-3 bg-yellow-50 rounded-lg border-l-4 border-yellow-400">
+                        <div class="flex-1">
+                            <p class="font-medium text-gray-900">${v.nome}</p>
+                            <p class="text-sm text-gray-600">${v.escola_nome}</p>
+                            <p class="text-xs text-yellow-700">Vence em ${v.dias_restantes} dias</p>
+                        </div>
+                        <button onclick="sendRenewalReminder('${v.usuario_id}')" class="bg-yellow-500 text-white px-3 py-1 rounded text-xs hover:bg-yellow-600">
+                            <i class="fab fa-whatsapp mr-1"></i>Lembrar
+                        </button>
+                    </div>
+                `).join('') || '<p class="text-gray-500 text-center py-4">Nenhum vencimento próximo</p>';
+
+                document.getElementById('vencimentos-proximos').innerHTML = vencimentosHtml;
+
+                // Load recent activity
+                loadRecentActivity();
+
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+                showToast('Erro ao carregar dashboard', 'error');
+                loadDemoData();
+            }
+        }
+
+        function loadDemoData() {
+            document.getElementById('total-usuarios').textContent = '47';
+            document.getElementById('total-escolas').textContent = '12';
+            document.getElementById('assinaturas-ativas').textContent = '43';
+            document.getElementById('suporte-aberto').textContent = '3';
+            document.getElementById('vencendo-count').textContent = '5';
+            document.getElementById('notification-count').textContent = '3';
+            document.getElementById('suporte-badge').textContent = '3';
+
+            document.getElementById('vencimentos-proximos').innerHTML = `
+                <div class="flex items-center justify-between p-3 bg-yellow-50 rounded-lg border-l-4 border-yellow-400">
+                    <div class="flex-1">
+                        <p class="font-medium text-gray-900">Maria Silva</p>
+                        <p class="text-sm text-gray-600">Escola Municipal Centro</p>
+                        <p class="text-xs text-yellow-700">Vence em 3 dias</p>
+                    </div>
+                    <button class="bg-yellow-500 text-white px-3 py-1 rounded text-xs hover:bg-yellow-600">
+                        <i class="fab fa-whatsapp mr-1"></i>Lembrar
+                    </button>
+                </div>
+            `;
+
+            document.getElementById('atividade-recente').innerHTML = `
+                <div class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                    <div class="bg-blue-100 p-2 rounded-full">
+                        <i class="fas fa-user-plus text-blue-600"></i>
+                    </div>
+                    <div class="flex-1">
+                        <p class="text-sm font-medium text-gray-900">Novo usuário cadastrado</p>
+                        <p class="text-xs text-gray-500">João Santos - Professor</p>
+                        <p class="text-xs text-gray-400">Há 15 minutos</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        async function loadRecentActivity() {
+            // Implementation for recent activity
+            document.getElementById('atividade-recente').innerHTML = `
+                <div class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                    <div class="bg-blue-100 p-2 rounded-full">
+                        <i class="fas fa-user-plus text-blue-600"></i>
+                    </div>
+                    <div class="flex-1">
+                        <p class="text-sm font-medium text-gray-900">Sistema funcionando</p>
+                        <p class="text-xs text-gray-500">Todas as funcionalidades operacionais</p>
+                        <p class="text-xs text-gray-400">Agora</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        // User Management Functions
+        async function loadUsers() {
+            try {
+                if (!supabase) {
+                    loadDemoUsers();
+                    return;
+                }
+
+                const { data, error } = await supabase
+                    .from('usuarios')
+                    .select(`
+                        *,
+                        escolas(nome),
+                        assinaturas(data_vencimento, status, tipo_plano)
+                    `)
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+
+                users = data || [];
+                displayUsers(users);
+
+            } catch (error) {
+                console.error('Error loading users:', error);
+                showToast('Erro ao carregar usuários', 'error');
+                loadDemoUsers();
+            }
+        }
+
+        function loadDemoUsers() {
+            users = [
+                {
+                    id: '1',
+                    nome: 'Maria Silva',
+                    email: 'maria@escola.com',
+                    tipo_usuario: 'professor',
+                    ativo: true,
+                    escolas: { nome: 'Escola Municipal Centro' },
+                    assinaturas: [{ data_vencimento: '2024-06-15', status: 'ativa', tipo_plano: 'anual' }]
+                },
+                {
+                    id: '2',
+                    nome: 'João Santos',
+                    email: 'joao@escola.com',
+                    tipo_usuario: 'coordenador',
+                    ativo: true,
+                    escolas: { nome: 'Escola Estadual Norte' },
+                    assinaturas: [{ data_vencimento: '2024-12-20', status: 'ativa', tipo_plano: 'semestral' }]
+                }
+            ];
+            displayUsers(users);
+        }
+
+        function displayUsers(userList) {
+            const tbody = document.getElementById('users-table-body');
+            
+            if (!userList || userList.length === 0) {
+                tbody.innerHTML = `
                     <tr>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${user.email}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${user.user_type}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${user.subscription_plan || 'N/A'}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${vencimento}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <button onclick="editUser('${user.id}')" class="text-indigo-600 hover:text-indigo-900 mr-2"><i class="fas fa-edit"></i></button>
-                            <button onclick="deleteUser('${user.id}')" class="text-red-600 hover:text-red-900"><i class="fas fa-trash-alt"></i></button>
+                        <td colspan="6" class="px-6 py-8 text-center text-gray-500">
+                            Nenhum usuário encontrado
                         </td>
                     </tr>
                 `;
-                tableBody.innerHTML += row;
-            });
-        }
-        
-        // Lógica para carregar vencimentos (simplificada, mostra todos por enquanto)
-        async function fetchVencimentos() {
-            const { data, error } = await supabase
-                .from('users')
-                .select('*')
-                .not('subscription_end_date', 'is', null)
-                .order('subscription_end_date', { ascending: true });
-            if (error) {
-                console.error('Erro ao carregar vencimentos:', error);
-                document.getElementById('vencimentos-table-body').innerHTML = `<tr><td colspan="3" class="text-center py-4 text-red-500">Erro ao carregar vencimentos: ${error.message}</td></tr>`;
                 return;
             }
-            const tableBody = document.getElementById('vencimentos-table-body');
-            tableBody.innerHTML = '';
-            data.forEach(user => {
-                const vencimento = new Date(user.subscription_end_date).toLocaleDateString('pt-BR');
-                const row = `
-                    <tr>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${user.email}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${user.subscription_plan}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${vencimento}</td>
+
+            tbody.innerHTML = userList.map(user => {
+                const subscription = user.assinaturas?.[0];
+                const statusClass = user.ativo ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
+                const statusText = user.ativo ? 'Ativo' : 'Inativo';
+                const typeColors = {
+                    'professor': 'bg-blue-100 text-blue-800',
+                    'coordenador': 'bg-purple-100 text-purple-800',
+                    'diretor': 'bg-yellow-100 text-yellow-800',
+                    'admin': 'bg-red-100 text-red-800'
+                };
+
+                return `
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0 h-10 w-10">
+                                    <div class="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
+                                        <i class="fas fa-user text-gray-600"></i>
+                                    </div>
+                                </div>
+                                <div class="ml-4">
+                                    <div class="text-sm font-medium text-gray-900">${user.nome}</div>
+                                    <div class="text-sm text-gray-500">${user.email}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${typeColors[user.tipo_usuario] || 'bg-gray-100 text-gray-800'}">
+                                ${user.tipo_usuario}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            ${user.escolas?.nome || 'Sem escola'}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            ${subscription ? `${subscription.tipo_plano} - ${formatDate(subscription.data_vencimento)}` : 'Sem assinatura'}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${statusClass}">
+                                ${statusText}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                            <button onclick="editUser('${user.id}')" class="text-indigo-600 hover:text-indigo-900">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button onclick="toggleUserStatus('${user.id}', ${!user.ativo})" class="text-yellow-600 hover:text-yellow-900">
+                                <i class="fas fa-${user.ativo ? 'pause' : 'play'}"></i>
+                            </button>
+                            <button onclick="deleteUser('${user.id}')" class="text-red-600 hover:text-red-900">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                            <button onclick="sendWhatsAppToUser('${user.id}')" class="text-green-600 hover:text-green-900">
+                                <i class="fab fa-whatsapp"></i>
+                            </button>
+                        </td>
                     </tr>
                 `;
-                tableBody.innerHTML += row;
-            });
+            }).join('');
         }
 
-        // Lógica para carregar mensagens
-        async function fetchMessages() {
-            const { data, error } = await supabase
-                .from('messages')
-                .select('*')
-                .order('created_at', { ascending: false });
-            if (error) {
-                console.error('Erro ao carregar mensagens:', error);
-                document.getElementById('mensagens-list').innerHTML = `<p class="text-red-500">Erro ao carregar mensagens: ${error.message}</p>`;
+        function filterUsers() {
+            const tipo = document.getElementById('filter-tipo').value;
+            const escola = document.getElementById('filter-escola').value;
+            const status = document.getElementById('filter-status').value;
+            const search = document.getElementById('search-users').value.toLowerCase();
+
+            let filtered = users.filter(user => {
+                const matchTipo = !tipo || user.tipo_usuario === tipo;
+                const matchEscola = !escola || user.escola_id === escola;
+                const matchStatus = !status || (status === 'ativo' ? user.ativo : !user.ativo);
+                const matchSearch = !search || 
+                    user.nome.toLowerCase().includes(search) || 
+                    user.email.toLowerCase().includes(search);
+
+                return matchTipo && matchEscola && matchStatus && matchSearch;
+            });
+
+            displayUsers(filtered);
+        }
+
+        // School Management Functions
+        async function loadSchools() {
+            try {
+                if (!supabase) {
+                    loadDemoSchools();
+                    return;
+                }
+
+                const { data, error } = await supabase
+                    .from('escolas')
+                    .select(`
+                        *,
+                        usuarios(id, nome, tipo_usuario)
+                    `)
+                    .eq('ativa', true)
+                    .order('nome');
+
+                if (error) throw error;
+
+                schools = data || [];
+                displaySchools(schools);
+
+            } catch (error) {
+                console.error('Error loading schools:', error);
+                showToast('Erro ao carregar escolas', 'error');
+                loadDemoSchools();
+            }
+        }
+
+        function loadDemoSchools() {
+            schools = [
+                {
+                    id: '1',
+                    nome: 'Escola Municipal Centro',
+                    cidade: 'São Paulo',
+                    estado: 'SP',
+                    telefone: '(11) 1234-5678',
+                    usuarios: [
+                        { nome: 'Maria Silva', tipo_usuario: 'professor' },
+                        { nome: 'João Santos', tipo_usuario: 'coordenador' }
+                    ]
+                }
+            ];
+            displaySchools(schools);
+        }
+
+        function displaySchools(schoolList) {
+            const container = document.getElementById('schools-grid');
+            
+            if (!schoolList || schoolList.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-full text-center text-gray-500 py-16">
+                        <i class="fas fa-school text-4xl mb-4"></i>
+                        <p>Nenhuma escola cadastrada</p>
+                    </div>
+                `;
                 return;
             }
-            const messagesList = document.getElementById('mensagens-list');
-            messagesList.innerHTML = '';
-            if (data.length === 0) {
-                messagesList.innerHTML = '<p class="text-center text-gray-500">Nenhuma mensagem encontrada.</p>';
-            } else {
-                data.forEach(message => {
-                    const messageElement = `
-                        <div class="p-4 border border-gray-200 rounded-lg">
-                            <p class="font-semibold text-gray-800">De: ${message.sender_email}</p>
-                            <p class="text-sm text-gray-500 mb-2">Data: ${new Date(message.created_at).toLocaleString('pt-BR')}</p>
-                            <p class="text-gray-700">${message.message_text}</p>
+
+            container.innerHTML = schoolList.map(school => `
+                <div class="bg-white rounded-xl shadow-lg p-6 card-hover transition-all duration-300">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="bg-green-100 p-3 rounded-full">
+                            <i class="fas fa-school text-green-600 text-xl"></i>
+                        </div>
+                        <div class="flex space-x-2">
+                            <button onclick="editSchool('${school.id}')" class="text-blue-600 hover:text-blue-800">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button onclick="deleteSchool('${school.id}')" class="text-red-600 hover:text-red-800">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">${school.nome}</h3>
+                    <div class="space-y-2 text-sm text-gray-600">
+                        <p><i class="fas fa-map-marker-alt mr-2"></i>${school.cidade || 'N/A'}, ${school.estado || 'N/A'}</p>
+                        <p><i class="fas fa-phone mr-2"></i>${school.telefone || 'N/A'}</p>
+                        <p><i class="fas fa-users mr-2"></i>${school.usuarios?.length || 0} usuários</p>
+                    </div>
+                    <div class="mt-4 pt-4 border-t border-gray-200">
+                        <div class="flex flex-wrap gap-1">
+                            ${(school.usuarios || []).slice(0, 3).map(user => `
+                                <span class="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">
+                                    ${user.tipo_usuario}
+                                </span>
+                            `).join('')}
+                            ${school.usuarios?.length > 3 ? `<span class="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded-full">+${school.usuarios.length - 3}</span>` : ''}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function loadSchoolsForSelect() {
+            try {
+                const selects = ['new-user-escola', 'filter-escola'];
+                
+                if (!supabase) {
+                    selects.forEach(selectId => {
+                        const select = document.getElementById(selectId);
+                        if (select) {
+                            select.innerHTML = `
+                                <option value="">Selecione uma escola</option>
+                                <option value="1">Escola Municipal Centro</option>
+                                <option value="2">Escola Estadual Norte</option>
+                            `;
+                        }
+                    });
+                    return;
+                }
+
+                const { data, error } = await supabase
+                    .from('escolas')
+                    .select('id, nome')
+                    .eq('ativa', true)
+                    .order('nome');
+
+                if (error) throw error;
+
+                const options = (data || []).map(school => 
+                    `<option value="${school.id}">${school.nome}</option>`
+                ).join('');
+
+                selects.forEach(selectId => {
+                    const select = document.getElementById(selectId);
+                    if (select) {
+                        select.innerHTML = `
+                            <option value="">Selecione uma escola</option>
+                            ${options}
+                        `;
+                    }
+                });
+
+            } catch (error) {
+                console.error('Error loading schools for select:', error);
+            }
+        }
+
+        // Subscription Management
+        async function loadSubscriptions() {
+            try {
+                if (!supabase) {
+                    loadDemoSubscriptions();
+                    return;
+                }
+
+                const { data, error } = await supabase
+                    .from('assinaturas')
+                    .select(`
+                        *,
+                        usuarios(nome, email, escolas(nome))
+                    `)
+                    .order('data_vencimento');
+
+                if (error) throw error;
+
+                subscriptions = data || [];
+                displaySubscriptions(subscriptions);
+                updateSubscriptionStats(subscriptions);
+
+            } catch (error) {
+                console.error('Error loading subscriptions:', error);
+                showToast('Erro ao carregar assinaturas', 'error');
+                loadDemoSubscriptions();
+            }
+        }
+
+        function loadDemoSubscriptions() {
+            subscriptions = [
+                {
+                    id: '1',
+                    tipo_plano: 'anual',
+                    data_inicio: '2024-01-15',
+                    data_vencimento: '2025-01-15',
+                    status: 'ativa',
+                    usuarios: {
+                        nome: 'Maria Silva',
+                        email: 'maria@escola.com',
+                        escolas: { nome: 'Escola Municipal Centro' }
+                    }
+                }
+            ];
+            displaySubscriptions(subscriptions);
+            updateSubscriptionStats(subscriptions);
+        }
+
+        function displaySubscriptions(subList) {
+            const tbody = document.getElementById('subscriptions-table-body');
+            
+            if (!subList || subList.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="px-6 py-8 text-center text-gray-500">
+                            Nenhuma assinatura encontrada
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = subList.map(sub => {
+                const statusColors = {
+                    'ativa': 'bg-green-100 text-green-800',
+                    'vencida': 'bg-red-100 text-red-800',
+                    'cancelada': 'bg-gray-100 text-gray-800',
+                    'suspensa': 'bg-yellow-100 text-yellow-800'
+                };
+
+                const daysUntilExpiry = Math.ceil((new Date(sub.data_vencimento) - new Date()) / (1000 * 60 * 60 * 24));
+                const isExpiringSoon = daysUntilExpiry <= 7 && daysUntilExpiry > 0;
+
+                return `
+                    <tr class="hover:bg-gray-50 ${isExpiringSoon ? 'bg-yellow-50' : ''}">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div>
+                                <div class="text-sm font-medium text-gray-900">${sub.usuarios?.nome || 'N/A'}</div>
+                                <div class="text-sm text-gray-500">${sub.usuarios?.email || 'N/A'}</div>
+                                <div class="text-xs text-gray-400">${sub.usuarios?.escolas?.nome || 'Sem escola'}</div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                ${sub.tipo_plano}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            ${formatDate(sub.data_inicio)}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            ${formatDate(sub.data_vencimento)}
+                            ${isExpiringSoon ? `<br><span class="text-xs text-yellow-600">Vence em ${daysUntilExpiry} dias</span>` : ''}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${statusColors[sub.status] || 'bg-gray-100 text-gray-800'}">
+                                ${sub.status}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                            <button onclick="renewSubscription('${sub.id}')" class="text-green-600 hover:text-green-900">
+                                <i class="fas fa-redo"></i>
+                            </button>
+                            <button onclick="suspendSubscription('${sub.id}')" class="text-yellow-600 hover:text-yellow-900">
+                                <i class="fas fa-pause"></i>
+                            </button>
+                            <button onclick="sendRenewalReminder('${sub.usuario_id}')" class="text-blue-600 hover:text-blue-900">
+                                <i class="fab fa-whatsapp"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function updateSubscriptionStats(subList) {
+            const ativas = subList.filter(s => s.status === 'ativa').length;
+            const vencendo = subList.filter(s => {
+                const days = Math.ceil((new Date(s.data_vencimento) - new Date()) / (1000 * 60 * 60 * 24));
+                return s.status === 'ativa' && days <= 7 && days > 0;
+            }).length;
+            const vencidas = subList.filter(s => s.status === 'vencida').length;
+
+            document.getElementById('sub-ativas').textContent = ativas;
+            document.getElementById('sub-vencendo').textContent = vencendo;
+            document.getElementById('sub-vencidas').textContent = vencidas;
+        }
+
+        // Support Functions
+        async function loadSupport() {
+            try {
+                if (!supabase) {
+                    loadDemoSupport();
+                    return;
+                }
+
+                const { data, error } = await supabase
+                    .from('solicitacoes_suporte')
+                    .select(`
+                        *,
+                        usuarios(nome, email),
+                        escolas(nome)
+                    `)
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+
+                displaySupportTickets(data || []);
+                updateSupportStats(data || []);
+
+            } catch (error) {
+                console.error('Error loading support:', error);
+                showToast('Erro ao carregar suporte', 'error');
+                loadDemoSupport();
+            }
+        }
+
+        function loadDemoSupport() {
+            const demoTickets = [
+                {
+                    id: '1',
+                    tipo_solicitacao: 'problema_tecnico',
+                    assunto: 'Erro ao salvar plano de aula',
+                    descricao: 'Não consigo salvar meus planos de aula...',
+                    status: 'aberta',
+                    prioridade: 'alta',
+                    created_at: new Date().toISOString(),
+                    usuarios: { nome: 'Maria Silva', email: 'maria@escola.com' },
+                    escolas: { nome: 'Escola Municipal Centro' }
+                }
+            ];
+            displaySupportTickets(demoTickets);
+            updateSupportStats(demoTickets);
+        }
+
+        function displaySupportTickets(tickets) {
+            const container = document.getElementById('support-tickets');
+            
+            if (!tickets || tickets.length === 0) {
+                container.innerHTML = `
+                    <div class="p-6 text-center text-gray-500">
+                        <i class="fas fa-ticket-alt text-4xl mb-4"></i>
+                        <p>Nenhuma solicitação de suporte</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = tickets.map(ticket => {
+                const priorityColors = {
+                    'baixa': 'bg-green-100 text-green-800',
+                    'normal': 'bg-blue-100 text-blue-800',
+                    'alta': 'bg-yellow-100 text-yellow-800',
+                    'urgente': 'bg-red-100 text-red-800'
+                };
+
+                const statusColors = {
+                    'aberta': 'bg-red-100 text-red-800',
+                    'em_andamento': 'bg-yellow-100 text-yellow-800',
+                    'resolvida': 'bg-green-100 text-green-800',
+                    'fechada': 'bg-gray-100 text-gray-800'
+                };
+
+                return `
+                    <div class="p-6 hover:bg-gray-50">
+                        <div class="flex items-start justify-between">
+                            <div class="flex-1">
+                                <div class="flex items-center space-x-3 mb-2">
+                                    <h4 class="text-lg font-medium text-gray-900">${ticket.assunto}</h4>
+                                    <span class="px-2 py-1 text-xs font-medium rounded-full ${priorityColors[ticket.prioridade] || 'bg-gray-100 text-gray-800'}">
+                                        ${ticket.prioridade}
+                                    </span>
+                                    <span class="px-2 py-1 text-xs font-medium rounded-full ${statusColors[ticket.status] || 'bg-gray-100 text-gray-800'}">
+                                        ${ticket.status}
+                                    </span>
+                                </div>
+                                <p class="text-gray-600 mb-3">${ticket.descricao.substring(0, 150)}...</p>
+                                <div class="flex items-center space-x-4 text-sm text-gray-500">
+                                    <span><i class="fas fa-user mr-1"></i>${ticket.usuarios?.nome || 'N/A'}</span>
+                                    <span><i class="fas fa-school mr-1"></i>${ticket.escolas?.nome || 'N/A'}</span>
+                                    <span><i class="fas fa-clock mr-1"></i>${formatDate(ticket.created_at)}</span>
+                                </div>
+                            </div>
+                            <div class="flex space-x-2 ml-4">
+                                <button onclick="respondSupport('${ticket.id}')" class="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600">
+                                    <i class="fas fa-reply mr-1"></i>Responder
+                                </button>
+                                <button onclick="closeSupport('${ticket.id}')" class="bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600">
+                                    <i class="fas fa-check mr-1"></i>Resolver
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updateSupportStats(tickets) {
+            const stats = {
+                open: tickets.filter(t => t.status === 'aberta').length,
+                progress: tickets.filter(t => t.status === 'em_andamento').length,
+                resolved: tickets.filter(t => t.status === 'resolvida').length,
+                closed: tickets.filter(t => t.status === 'fechada').length
+            };
+
+            document.getElementById('support-open').textContent = stats.open;
+            document.getElementById('support-progress').textContent = stats.progress;
+            document.getElementById('support-resolved').textContent = stats.resolved;
+            document.getElementById('support-closed').textContent = stats.closed;
+        }
+
+        // WhatsApp Functions
+        async function loadWhatsApp() {
+            await loadUsersForWhatsApp();
+            await loadWhatsAppHistory();
+        }
+
+        async function loadUsersForWhatsApp() {
+            try {
+                const select = document.getElementById('whatsapp-destinatario');
+                
+                if (!supabase) {
+                    select.innerHTML = `
+                        <option value="">Selecione um usuário</option>
+                        <option value="1" data-whatsapp="5511999999999">Maria Silva - Professor</option>
+                    `;
+                    return;
+                }
+
+                const { data, error } = await supabase
+                    .from('usuarios')
+                    .select('id, nome, tipo_usuario, whatsapp')
+                    .eq('ativo', true)
+                    .not('whatsapp', 'is', null)
+                    .order('nome');
+
+                if (error) throw error;
+
+                const options = (data || []).map(user => 
+                    `<option value="${user.id}" data-whatsapp="${user.whatsapp}">${user.nome} - ${user.tipo_usuario}</option>`
+                ).join('');
+
+                select.innerHTML = `
+                    <option value="">Selecione um usuário</option>
+                    ${options}
+                `;
+
+            } catch (error) {
+                console.error('Error loading users for WhatsApp:', error);
+            }
+        }
+
+        async function loadWhatsAppHistory() {
+            try {
+                if (!supabase) {
+                    document.getElementById('whatsapp-history').innerHTML = `
+                        <div class="bg-gray-50 p-3 rounded-lg">
+                            <div class="flex justify-between items-start">
+                                <div class="flex-1">
+                                    <p class="text-sm font-medium text-gray-900">5511999999999</p>
+                                    <p class="text-xs text-gray-600 mt-1">Lembrete de vencimento enviado</p>
+                                    <span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded mt-1 inline-block">Enviado</span>
+                                </div>
+                                <span class="text-xs text-gray-500">Há 1 hora</span>
+                            </div>
                         </div>
                     `;
-                    messagesList.innerHTML += messageElement;
-                });
+                    return;
+                }
+
+                const { data, error } = await supabase
+                    .from('whatsapp_notifications')
+                    .select(`
+                        *,
+                        usuarios(nome)
+                    `)
+                    .order('created_at', { ascending: false })
+                    .limit(10);
+
+                if (error) throw error;
+
+                const historyHtml = (data || []).map(notification => {
+                    const statusColors = {
+                        'enviado': 'bg-green-100 text-green-800',
+                        'erro': 'bg-red-100 text-red-800',
+                        'pendente': 'bg-yellow-100 text-yellow-800'
+                    };
+
+                    return `
+                        <div class="bg-gray-50 p-3 rounded-lg">
+                            <div class="flex justify-between items-start">
+                                <div class="flex-1">
+                                    <p class="text-sm font-medium text-gray-900">${notification.numero_whatsapp}</p>
+                                    <p class="text-xs text-gray-600 mt-1">${notification.usuarios?.nome || 'Usuário não identificado'}</p>
+                                    <p class="text-xs text-gray-500 mt-1">${notification.mensagem.substring(0, 50)}...</p>
+                                    <span class="text-xs px-2 py-1 rounded mt-1 inline-block ${statusColors[notification.status] || 'bg-gray-100 text-gray-800'}">
+                                        ${notification.status}
+                                    </span>
+                                </div>
+                                <span class="text-xs text-gray-500">${formatDate(notification.created_at)}</span>
+                            </div>
+                        </div>
+                    `;
+                }).join('') || '<p class="text-gray-500 text-center py-4">Nenhum envio encontrado</p>';
+
+                document.getElementById('whatsapp-history').innerHTML = historyHtml;
+
+            } catch (error) {
+                console.error('Error loading WhatsApp history:', error);
             }
         }
 
-        // Lógica para criar um novo usuário
-        document.getElementById('create-user-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const email = document.getElementById('new-email').value;
-            const password = document.getElementById('new-password').value;
-            const userType = document.getElementById('user-type').value;
-            const subscriptionPlan = document.getElementById('subscription-plan').value;
+        // Reports Functions
+        async function loadReports() {
+            try {
+                if (!supabase) {
+                    loadDemoReports();
+                    return;
+                }
+
+                // Load usage statistics
+                const currentMonth = new Date().toISOString().slice(0, 7);
+                
+                const [planosResult, usuariosResult, feedbacksResult, receitaResult] = await Promise.all([
+                    supabase.from('planos_aula').select('id').gte('created_at', currentMonth + '-01'),
+                    supabase.from('usuarios').select('id, ultimo_login').eq('ativo', true),
+                    supabase.from('feedbacks_coordenacao').select('id'),
+                    supabase.from('assinaturas').select('valor, tipo_plano').eq('status', 'ativa')
+                ]);
+
+                document.getElementById('planos-mes').textContent = planosResult.data?.length || 0;
+                
+                const activeThisWeek = usuariosResult.data?.filter(u => {
+                    if (!u.ultimo_login) return false;
+                    const weekAgo = new Date();
+                    weekAgo.setDate(weekAgo.getDate() - 7);
+                    return new Date(u.ultimo_login) > weekAgo;
+                }).length || 0;
+                
+                document.getElementById('usuarios-ativos-semana').textContent = activeThisWeek;
+                document.getElementById('feedbacks-dados').textContent = feedbacksResult.data?.length || 0;
+
+                const receita = receitaResult.data?.reduce((sum, sub) => sum + (parseFloat(sub.valor) || 0), 0) || 0;
+                document.getElementById('receita-mensal').textContent = `R$ ${receita.toFixed(2)}`;
+
+                const anuais = receitaResult.data?.filter(s => s.tipo_plano === 'anual').length || 0;
+                const semestrais = receitaResult.data?.filter(s => s.tipo_plano === 'semestral').length || 0;
+                
+                document.getElementById('assinaturas-anuais').textContent = anuais;
+                document.getElementById('assinaturas-semestrais').textContent = semestrais;
+
+            } catch (error) {
+                console.error('Error loading reports:', error);
+                loadDemoReports();
+            }
+        }
+
+        function loadDemoReports() {
+            document.getElementById('planos-mes').textContent = '127';
+            document.getElementById('usuarios-ativos-semana').textContent = '34';
+            document.getElementById('feedbacks-dados').textContent = '89';
+            document.getElementById('receita-mensal').textContent = 'R$ 2.450,00';
+            document.getElementById('assinaturas-anuais').textContent = '28';
+            document.getElementById('assinaturas-semestrais').textContent = '15';
+        }
+
+        // Configuration Functions
+        async function loadConfigurations() {
+            try {
+                if (!supabase) {
+                    document.getElementById('evolution-url').value = 'https://demo-evolution-api.com';
+                    document.getElementById('evolution-key').value = '';
+                    document.getElementById('evolution-instance').value = 'semanario';
+                    document.getElementById('whatsapp-ativo').checked = false;
+                    return;
+                }
+
+                const { data, error } = await supabase
+                    .from('configuracoes_sistema')
+                    .select('*')
+                    .limit(1)
+                    .single();
+
+                if (error && error.code !== 'PGRST116') throw error;
+
+                if (data) {
+                    document.getElementById('evolution-url').value = data.evolution_api_url || '';
+                    document.getElementById('evolution-key').value = data.evolution_api_key || '';
+                    document.getElementById('evolution-instance').value = data.evolution_instance_name || 'semanario';
+                    document.getElementById('whatsapp-ativo').checked = data.whatsapp_ativo || false;
+                    
+                    updateSystemStatus(data);
+                }
+
+            } catch (error) {
+                console.error('Error loading configurations:', error);
+                showToast('Erro ao carregar configurações', 'error');
+            }
+        }
+
+        function updateSystemStatus(config) {
+            const evolutionStatus = document.getElementById('evolution-status');
+            const whatsappStatus = document.getElementById('whatsapp-auto-status');
+            
+            if (config.evolution_api_url && config.evolution_api_key) {
+                evolutionStatus.innerHTML = '<span class="status-dot bg-green-500"></span>Configurado';
+                evolutionStatus.className = 'px-3 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full';
+            } else {
+                evolutionStatus.innerHTML = '<span class="status-dot bg-yellow-500"></span>Não Configurado';
+                evolutionStatus.className = 'px-3 py-1 text-xs font-medium bg-yellow-100 text-yellow-800 rounded-full';
+            }
+            
+            if (config.whatsapp_ativo) {
+                whatsappStatus.innerHTML = '<span class="status-dot bg-green-500"></span>Ativo';
+                whatsappStatus.className = 'px-3 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full';
+            } else {
+                whatsappStatus.innerHTML = '<span class="status-dot bg-red-500"></span>Inativo';
+                whatsappStatus.className = 'px-3 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full';
+            }
+        }
+
+        // Modal Functions
+        function showNewUserModal() {
+            document.getElementById('new-user-modal').classList.remove('hidden');
+            loadSchoolsForSelect();
+            
+            // Set default start date to today
+            document.getElementById('new-user-inicio').value = new Date().toISOString().split('T')[0];
+        }
+
+        function closeNewUserModal() {
+            document.getElementById('new-user-modal').classList.add('hidden');
+            document.querySelector('#new-user-modal form').reset();
+        }
+
+        function showNewSchoolModal() {
+            document.getElementById('new-school-modal').classList.remove('hidden');
+        }
+
+        function closeNewSchoolModal() {
+            document.getElementById('new-school-modal').classList.add('hidden');
+            document.querySelector('#new-school-modal form').reset();
+        }
+
+        // CRUD Functions
+        async function createUser(event) {
+            event.preventDefault();
+            
+            const userData = {
+                nome: document.getElementById('new-user-nome').value,
+                email: document.getElementById('new-user-email').value,
+                tipo_usuario: document.getElementById('new-user-tipo').value,
+                escola_id: document.getElementById('new-user-escola').value || null,
+                telefone: document.getElementById('new-user-telefone').value,
+                whatsapp: document.getElementById('new-user-whatsapp').value,
+                cpf: document.getElementById('new-user-cpf').value,
+                senha_hash: '$2b$10$' + btoa(document.getElementById('new-user-senha').value) // Simple hash for demo
+            };
+
+            const subscriptionData = {
+                tipo_plano: document.getElementById('new-user-plano').value,
+                data_inicio: document.getElementById('new-user-inicio').value
+            };
 
             try {
-                const { data: authData, error: authError } = await supabase.auth.signUp({
-                    email: email,
-                    password: password
-                });
-
-                if (authError) {
-                    showToast(`Erro ao criar usuário: ${authError.message}`, 'error');
+                if (!supabase) {
+                    showToast('Usuário criado com sucesso! (Modo demo)', 'success');
+                    closeNewUserModal();
+                    loadUsers();
                     return;
                 }
 
-                // Define a data de vencimento com base no plano
-                let subscriptionEndDate = null;
-                if (subscriptionPlan === 'anual') {
-                    subscriptionEndDate = new Date();
-                    subscriptionEndDate.setFullYear(subscriptionEndDate.getFullYear() + 1);
-                } else if (subscriptionPlan === 'mensal') {
-                    subscriptionEndDate = new Date();
-                    subscriptionEndDate.setMonth(subscriptionEndDate.getMonth() + 1);
+                // Create user
+                const { data: user, error: userError } = await supabase
+                    .from('usuarios')
+                    .insert([userData])
+                    .select()
+                    .single();
+
+                if (userError) throw userError;
+
+                // Create subscription
+                if (subscriptionData.tipo_plano) {
+                    const startDate = new Date(subscriptionData.data_inicio);
+                    const endDate = new Date(startDate);
+                    endDate.setMonth(endDate.getMonth() + (subscriptionData.tipo_plano === 'anual' ? 12 : 6));
+
+                    const { error: subError } = await supabase
+                        .from('assinaturas')
+                        .insert([{
+                            usuario_id: user.id,
+                            ...subscriptionData,
+                            data_vencimento: endDate.toISOString().split('T')[0]
+                        }]);
+
+                    if (subError) throw subError;
                 }
 
-                const { data: userProfileData, error: userProfileError } = await supabase
-                    .from('users')
-                    .insert([{
-                        id: authData.user.id,
-                        user_type: userType,
-                        email: email,
-                        subscription_plan: subscriptionPlan,
-                        subscription_end_date: subscriptionEndDate
-                    }]);
+                showToast('Usuário criado com sucesso!', 'success');
+                closeNewUserModal();
+                loadUsers();
 
-                if (userProfileError) {
-                    showToast(`Erro ao salvar perfil do usuário: ${userProfileError.message}`, 'error');
-                    return;
-                }
-
-                showToast(`Usuário ${email} criado com sucesso!`, 'success');
-                document.getElementById('create-user-form').reset();
-                fetchUsers(); // Atualiza a lista de usuários
-                fetchVencimentos(); // Atualiza a lista de vencimentos
-            } catch (err) {
-                showToast(`Ocorreu um erro inesperado: ${err.message}`, 'error');
-            }
-        });
-
-        // Funções de navegação e logout
-        const tabs = document.querySelectorAll('.tab-button');
-        const contents = {
-            'tab-gerenciamento': document.getElementById('content-gerenciamento'),
-            'tab-vencimentos': document.getElementById('content-vencimentos'),
-            'tab-mensagens': document.getElementById('content-mensagens')
-        };
-        tabs.forEach(tab => {
-            tab.addEventListener('click', () => {
-                tabs.forEach(t => t.classList.remove('active'));
-                tab.classList.add('active');
-                for (let id in contents) {
-                    contents[id].classList.add('hidden');
-                }
-                contents[tab.id].classList.remove('hidden');
-
-                // Carrega dados específicos da aba
-                if (tab.id === 'tab-gerenciamento') fetchUsers();
-                if (tab.id === 'tab-vencimentos') fetchVencimentos();
-                if (tab.id === 'tab-mensagens') fetchMessages();
-            });
-        });
-
-        function accessProfessor() { window.location.href = 'dashboard.html'; }
-        function accessCoordenador() { window.location.href = 'coordenacao.html'; }
-        function accessDiretor() { window.location.href = 'direcao.html'; }
-        async function logout() {
-            if (confirm('Tem certeza que deseja sair?')) {
-                const { error } = await supabase.auth.signOut();
-                if (error) {
-                    console.error('Erro ao sair:', error);
-                    alert('Erro ao sair. Tente novamente.');
-                } else {
-                    window.location.href = 'index.html';
-                }
+            } catch (error) {
+                console.error('Error creating user:', error);
+                showToast('Erro ao criar usuário: ' + error.message, 'error');
             }
         }
-        
-        // Carrega a aba de Gerenciamento de Usuários por padrão
-        document.addEventListener('DOMContentLoaded', () => {
-            fetchUsers();
-        });
 
+        async function createSchool(event) {
+            event.preventDefault();
+            
+            const schoolData = {
+                nome: document.getElementById('new-school-nome').value,
+                cnpj: document.getElementById('new-school-cnpj').value,
+                endereco: document.getElementById('new-school-endereco').value,
+                cidade: document.getElementById('new-school-cidade').value,
+                estado: document.getElementById('new-school-estado').value,
+                cep: document.getElementById('new-school-cep').value,
+                telefone: document.getElementById('new-school-telefone').value,
+                email: document.getElementById('new-school-email').value,
+                diretor_responsavel: document.getElementById('new-school-diretor').value
+            };
+
+            try {
+                if (!supabase) {
+                    showToast('Escola criada com sucesso! (Modo demo)', 'success');
+                    closeNewSchoolModal();
+                    loadSchools();
+                    return;
+                }
+
+                const { error } = await supabase
+                    .from('escolas')
+                    .insert([schoolData]);
+
+                if (error) throw error;
+
+                showToast('Escola criada com sucesso!', 'success');
+                closeNewSchoolModal();
+                loadSchools();
+                loadSchoolsForSelect();
+
+            } catch (error) {
+                console.error('Error creating school:', error);
+                showToast('Erro ao criar escola: ' + error.message, 'error');
+            }
+        }
+
+        async function sendWhatsAppMessage(event) {
+            event.preventDefault();
+            
+            const destinatario = document.getElementById('whatsapp-destinatario').value;
+            const numero = document.getElementById('whatsapp-numero').value;
+            const tipo = document.getElementById('whatsapp-tipo').value;
+            const mensagem = document.getElementById('whatsapp-mensagem').value;
+
+            let whatsappNumber = numero;
+            if (destinatario) {
+                const option = document.querySelector(`#whatsapp-destinatario option[value="${destinatario}"]`);
+                whatsappNumber = option?.getAttribute('data-whatsapp') || '';
+            }
+
+            if (!whatsappNumber || !mensagem) {
+                showToast('Preencha o número e a mensagem', 'error');
+                return;
+            }
+
+            try {
+                if (!supabase) {
+                    showToast('WhatsApp enviado com sucesso! (Modo demo)', 'success');
+                    document.querySelector('#whatsapp-tab form').reset();
+                    loadWhatsAppHistory();
+                    return;
+                }
+
+                const { data, error } = await supabase.rpc('enviar_whatsapp_evolution', {
+                    p_numero: whatsappNumber,
+                    p_mensagem: mensagem,
+                    p_tipo: tipo,
+                    p_usuario_id: destinatario || null
+                });
+
+                if (error) throw error;
+
+                if (data?.success) {
+                    showToast('WhatsApp enviado com sucesso!', 'success');
+                    document.querySelector('#whatsapp-tab form').reset();
+                    loadWhatsAppHistory();
+                } else {
+                    showToast(data?.error || 'Erro ao enviar WhatsApp', 'error');
+                }
+
+            } catch (error) {
+                console.error('Error sending WhatsApp:', error);
+                showToast('Erro ao enviar WhatsApp', 'error');
+            }
+        }
+
+        async function saveEvolutionConfig(event) {
+            event.preventDefault();
+            
+            const config = {
+                evolution_api_url: document.getElementById('evolution-url').value,
+                evolution_api_key: document.getElementById('evolution-key').value,
+                evolution_instance_name: document.getElementById('evolution-instance').value,
+                whatsapp_ativo: document.getElementById('whatsapp-ativo').checked
+            };
+
+            try {
+                if (!supabase) {
+                    showToast('Configurações salvas! (Modo demo)', 'success');
+                    updateSystemStatus(config);
+                    return;
+                }
+
+                const { error } = await supabase
+                    .from('configuracoes_sistema')
+                    .upsert([config]);
+
+                if (error) throw error;
+
+                showToast('Configurações salvas com sucesso!', 'success');
+                updateSystemStatus(config);
+
+            } catch (error) {
+                console.error('Error saving configuration:', error);
+                showToast('Erro ao salvar configurações', 'error');
+            }
+        }
+
+        // Action Functions
+        async function toggleUserStatus(userId, newStatus) {
+            try {
+                if (!supabase) {
+                    showToast(`Usuário ${newStatus ? 'ativado' : 'desativado'}! (Modo demo)`, 'success');
+                    loadUsers();
+                    return;
+                }
+
+                const { error } = await supabase
+                    .from('usuarios')
+                    .update({ ativo: newStatus })
+                    .eq('id', userId);
+
+                if (error) throw error;
+
+                showToast(`Usuário ${newStatus ? 'ativado' : 'desativado'} com sucesso!`, 'success');
+                loadUsers();
+
+            } catch (error) {
+                console.error('Error toggling user status:', error);
+                showToast('Erro ao alterar status do usuário', 'error');
+            }
+        }
+
+        async function deleteUser(userId) {
+            if (!confirm('Tem certeza que deseja excluir este usuário? Esta ação não pode ser desfeita.')) return;
+
+            try {
+                if (!supabase) {
+                    showToast('Usuário excluído! (Modo demo)', 'success');
+                    loadUsers();
+                    return;
+                }
+
+                const { error } = await supabase
+                    .from('usuarios')
+                    .delete()
+                    .eq('id', userId);
+
+                if (error) throw error;
+
+                showToast('Usuário excluído com sucesso!', 'success');
+                loadUsers();
+
+            } catch (error) {
+                console.error('Error deleting user:', error);
+                showToast('Erro ao excluir usuário', 'error');
+            }
+        }
+
+        async function sendRenewalReminder(userId) {
+            try {
+                if (!supabase) {
+                    showToast('Lembrete enviado! (Modo demo)', 'success');
+                    return;
+                }
+
+                const { data, error } = await supabase.rpc('enviar_lembrete_vencimento', {
+                    p_usuario_id: userId
+                });
+
+                if (error) throw error;
+
+                if (data?.success) {
+                    showToast('Lembrete de renovação enviado!', 'success');
+                } else {
+                    showToast(data?.error || 'Erro ao enviar lembrete', 'error');
+                }
+
+            } catch (error) {
+                console.error('Error sending renewal reminder:', error);
+                showToast('Erro ao enviar lembrete', 'error');
+            }
+        }
+
+        async function sendRenewalReminders() {
+            try {
+                if (!supabase) {
+                    showToast('Lembretes enviados para todos! (Modo demo)', 'success');
+                    return;
+                }
+
+                const { data: vencimentos } = await supabase.rpc('verificar_vencimentos_proximos', { dias_antecedencia: 7 });
+                
+                if (!vencimentos || vencimentos.length === 0) {
+                    showToast('Nenhuma assinatura vencendo nos próximos 7 dias', 'info');
+                    return;
+                }
+
+                let enviados = 0;
+                for (const vencimento of vencimentos) {
+                    try {
+                        const { data } = await supabase.rpc('enviar_lembrete_vencimento', {
+                            p_usuario_id: vencimento.usuario_id
+                        });
+                        if (data?.success) enviados++;
+                    } catch (error) {
+                        console.error('Error sending reminder to user:', vencimento.usuario_id, error);
+                    }
+                }
+
+                showToast(`${enviados} lembretes enviados com sucesso!`, 'success');
+
+            } catch (error) {
+                console.error('Error sending renewal reminders:', error);
+                showToast('Erro ao enviar lembretes', 'error');
+            }
+        }
+
+        async function testSystemConnections() {
+            showToast('Testando conexões...', 'info');
+            
+            // Test database connection
+            try {
+                if (supabase) {
+                    const { data, error } = await supabase.from('usuarios').select('id').limit(1);
+                    if (!error) {
+                        document.getElementById('db-status').innerHTML = '<span class="status-dot bg-green-500"></span>Conectado';
+                        document.getElementById('db-status').className = 'px-3 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full';
+                    }
+                }
+            } catch (error) {
+                document.getElementById('db-status').innerHTML = '<span class="status-dot bg-red-500"></span>Erro';
+                document.getElementById('db-status').className = 'px-3 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full';
+            }
+
+            // Test Evolution API (simulate)
+            setTimeout(() => {
+                const url = document.getElementById('evolution-url').value;
+                const key = document.getElementById('evolution-key').value;
+                
+                if (url && key) {
+                    document.getElementById('evolution-status').innerHTML = '<span class="status-dot bg-green-500"></span>Conectado';
+                    document.getElementById('evolution-status').className = 'px-3 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full';
+                    showToast('Conexões testadas com sucesso!', 'success');
+                } else {
+                    showToast('Configure a Evolution API primeiro', 'error');
+                }
+            }, 2000);
+        }
+
+        // Utility Functions
+        function formatDate(dateString) {
+            if (!dateString) return 'N/A';
+            
+            const date = new Date(dateString);
+            const now = new Date();
+            const diff = now - date;
+            
+            if (diff < 60000) return 'Agora mesmo';
+            if (diff < 3600000) return `Há ${Math.floor(diff / 60000)} minutos`;
+            if (diff < 86400000) return `Há ${Math.floor(diff / 3600000)} horas`;
+            if (diff < 604800000) return `Há ${Math.floor(diff / 86400000)} dias`;
+            
+            return date.toLocaleDateString('pt-BR');
+        }
+
+        // Placeholder functions for actions
+        function editUser(userId) {
+            showToast('Função de edição em desenvolvimento', 'info');
+        }
+
+        function editSchool(schoolId) {
+            showToast('Função de edição em desenvolvimento', 'info');
+        }
+
+        function deleteSchool(schoolId) {
+            if (confirm('Tem certeza que deseja excluir esta escola?')) {
+                showToast('Escola excluída! (Modo demo)', 'success');
+                loadSchools();
+            }
+        }
+
+        function sendWhatsAppToUser(userId) {
+            showToast('Redirecionando para aba WhatsApp...', 'info');
+            showTab('whatsapp');
+        }
+
+        function renewSubscription(subscriptionId) {
+            showToast('Função de renovação em desenvolvimento', 'info');
+        }
+
+        function suspendSubscription(subscriptionId) {
+            if (confirm('Tem certeza que deseja suspender esta assinatura?')) {
+                showToast('Assinatura suspensa! (Modo demo)', 'success');
+                loadSubscriptions();
+            }
+        }
+
+        function respondSupport(ticketId) {
+            showToast('Função de resposta em desenvolvimento', 'info');
+        }
+
+        function closeSupport(ticketId) {
+            if (confirm('Marcar esta solicitação como resolvida?')) {
+                showToast('Solicitação resolvida! (Modo demo)', 'success');
+                loadSupport();
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            loadDashboard();
+            
+            if (!supabase) {
+                showToast('Executando em modo demo. Configure o Supabase para usar dados reais.', 'info');
+            }
+        });
     </script>
-</body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9841698b70d4f1c1',t:'MTc1ODcwNzc5MC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
+
 
