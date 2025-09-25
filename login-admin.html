@@ -8,7 +8,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-        body { font-family: 'Inter', sans-serif; }
+        body { font-family: 'Inter', sans-serif; box-sizing: border-box; }
         .gradient-bg { background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); }
     </style>
 </head>
@@ -34,7 +34,7 @@
                     <label for="password" class="block text-sm font-medium text-gray-700">Senha</label>
                     <input type="password" id="password" name="password" class="mt-1 block w-full px-4 py-2 bg-gray-100 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-red-500" required>
                 </div>
-                <button type="submit" onclick="signInWithPassword(event)" class="w-full bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-full font-bold transition-colors">
+                <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-full font-bold transition-colors">
                     Entrar como Admin
                 </button>
                 <button type="button" onclick="signInWithMagicLink()" class="w-full bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded-full font-bold transition-colors mt-2">
@@ -47,8 +47,11 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         const SUPABASE_URL = 'https://srqqheacsglhyyhvfchg.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNycXFoZWFjc2dsaHl5aHZmY2hnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgxNTMxMDMsImV4cCI6MjA3MzcyOTEwM30.ZOKVDK1FEyDM-lcPrw4-0xbVDxYLftek3NHYcmjc_7w';
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNycXFoZWFjc2dsaHl5aHZmY2hnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgxNTMxMDMsImV4cCI6MjA3MzcyOTEwM30.ZOKVDK1FEyDM-lcPrw4-0xbVDxYLftek3NHYcmjc_7w';
+        
+        // Inicializar Supabase corretamente
+        const { createClient } = supabase;
+        const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         // Toast Messages
         function showToast(message, type = 'info') {
@@ -68,56 +71,87 @@
             }, 3000);
         }
 
-        // Função de verificação de autenticação
-        async function checkAdminSession() {
-            const { data: { session }, error } = await supabase.auth.getSession();
-            if (error || !session) {
-                // Se não houver sessão, não faz nada
-                return;
-            }
-            if (session.user.email === 'artebr.firme@gmail.com') {
-                window.location.href = './admin.html';
-            } else {
-                // Se o usuário logado não for o admin, desloga e redireciona
-                await supabase.auth.signOut();
-                window.location.href = './index.html';
-            }
-        }
-        checkAdminSession();
-
-        // Login por senha
-        async function signInWithPassword(e) {
-            e.preventDefault();
+        // Login com senha
+        async function signInWithPassword(event) {
+            event.preventDefault();
+            
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
-            const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-            if (error) {
-                showToast(`Erro no login: ${error.message}`, 'error');
-            } else {
-                showToast('Login bem-sucedido!', 'success');
-                checkAdminSession();
+
+            try {
+                showToast('Fazendo login...', 'info');
+                
+                const { data, error } = await supabaseClient.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                });
+
+                if (error) {
+                    console.error('Erro de login:', error);
+                    showToast('Erro: ' + error.message, 'error');
+                    return;
+                }
+
+                if (data.user) {
+                    showToast('Login realizado com sucesso!', 'success');
+                    
+                    // Buscar tipo do usuário
+                    const { data: userData, error: userError } = await supabaseClient
+                        .from('usuarios')
+                        .select('tipo')
+                        .eq('email', email)
+                        .single();
+
+                    if (userError) {
+                        console.error('Erro ao buscar usuário:', userError);
+                        showToast('Erro ao verificar permissões', 'error');
+                        return;
+                    }
+
+                    // Redirecionar baseado no tipo
+                    if (userData.tipo === 'admin') {
+                        window.location.href = 'admin.html';
+                    } else {
+                        showToast('Acesso negado. Você não é um administrador.', 'error');
+                        await supabaseClient.auth.signOut();
+                    }
+                }
+            } catch (error) {
+                console.error('Erro inesperado:', error);
+                showToast('Erro inesperado: ' + error.message, 'error');
             }
         }
 
-        // Login por "Link Mágico"
+        // Login com Magic Link
         async function signInWithMagicLink() {
             const email = document.getElementById('email').value;
+            
             if (!email) {
-                showToast('Por favor, digite seu email.', 'error');
+                showToast('Por favor, insira seu email primeiro', 'error');
                 return;
             }
-            const { error } = await supabase.auth.signInWithOtp({
-                email: email,
-                options: {
-                    emailRedirectTo: 'https://eduplan-sistema.vercel.app' 
+
+            try {
+                const { error } = await supabaseClient.auth.signInWithOtp({
+                    email: email,
+                    options: {
+                        emailRedirectTo: window.location.origin + '/admin.html'
+                    }
+                });
+
+                if (error) {
+                    showToast('Erro: ' + error.message, 'error');
+                } else {
+                    showToast('Link mágico enviado! Verifique seu email.', 'success');
                 }
-            });
-            if (error) {
-                showToast(`Erro ao enviar link: ${error.message}`, 'error');
-            } else {
-                showToast('Link de login enviado para o seu e-mail!', 'success');
+            } catch (error) {
+                showToast('Erro inesperado: ' + error.message, 'error');
             }
         }
+
+        // Event listener para o formulário
+        document.getElementById('login-form').addEventListener('submit', signInWithPassword);
     </script>
-</body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'984ae83502b2f2b4',t:'MTc1ODgwNzM1MC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
+
