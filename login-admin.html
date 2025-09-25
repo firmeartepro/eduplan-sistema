@@ -94,23 +94,20 @@
 
                 if (data.user) {
                     showToast('Login realizado com sucesso!', 'success');
+                    console.log('Usuário logado:', data.user.email);
                     
-                    // Buscar tipo do usuário (CORRIGIDO: tipo_usuario)
-                    const { data: userData, error: userError } = await supabaseClient
-                        .from('usuarios')
-                        .select('tipo_usuario')
-                        .eq('email', email)
-                        .single();
+                    // Lista de emails admin (sem consultar tabela para evitar RLS)
+                    const adminEmails = [
+                        'admin@sistema.com',
+                        'artesnew@outlook.com'
+                    ];
 
-                    if (userError) {
-                        console.error('Erro ao buscar usuário:', userError);
-                        showToast('Erro ao verificar permissões', 'error');
-                        return;
-                    }
-
-                    // Redirecionar baseado no tipo
-                    if (userData.tipo_usuario === 'admin') {
-                        window.location.href = 'admin.html';
+                    // Verificar se é admin
+                    if (adminEmails.includes(email.toLowerCase())) {
+                        showToast('Redirecionando para painel admin...', 'success');
+                        setTimeout(() => {
+                            window.location.href = 'admin.html';
+                        }, 1000);
                     } else {
                         showToast('Acesso negado. Você não é um administrador.', 'error');
                         await supabaseClient.auth.signOut();
@@ -152,7 +149,7 @@
         // Event listener para o formulário
         document.getElementById('login-form').addEventListener('submit', signInWithPassword);
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'984afd5325a1128c',t:'MTc1ODgwODIxNS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'984b14cb626188b4',t:'MTc1ODgwOTE3Ny4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
 
 
